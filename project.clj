@@ -1,6 +1,7 @@
 (defproject pigeon-scoops-backend "0.1.0-SNAPSHOT"
   :description "Pigeon Scoops manager API"
   :url "http://api.pigeon-scoops.com/"
+  :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.12.0"]
                  [ring "1.13.0"]
                  [integrant "0.13.1"]
