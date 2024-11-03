@@ -17,4 +17,4 @@
                    :resource-paths ["dev/resources"]
                    :dependencies [[ring/ring-mock "0.4.0"]
                                   [integrant/repl "0.3.3"]]}}
-  :uperjar-name "pigeon-scoops.jar")
+  :uberjar-name "pigeon-scoops.jar")
