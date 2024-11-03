@@ -1,1 +1,1 @@
-web: java $JVM_OPTS -cp target/pigeon-scoops-backend.jar clojure.main -m pigeon-scoops-backend.server "resources/config.edn"
+web: java $JVM_OPTS -cp target/pigeon-scoops.jar clojure.main -m pigeon-scoops-backend.server "resources/config.edn"
