@@ -11,8 +11,7 @@
                  [org.postgresql/postgresql "42.7.4"]
                  [clj-http "3.13.0"]
                  [ovotech/ring-jwt "2.3.0"]]
-  :profiles {:uberjar {:aot :all
-                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
+  :profiles {:uberjar {:aot :all}
              :dev {:source-paths ["dev/src"]
                    :resource-paths ["dev/resources"]
                    :dependencies [[ring/ring-mock "0.4.0"]
