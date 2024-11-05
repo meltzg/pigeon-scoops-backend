@@ -17,7 +17,7 @@
     {:no-doc true
      :swagger {:basePath "/"
                :info {:title "Pigeon Scoops Backend Reference"
-                      :description "recipe manager"
+                      :description "The Pigeon Scoops Backend API is organized around REST. Returns JSON, Transit (msgpack, json), or EDN  encoded responses."
                       :version "1.0.0"}}
      :handler (swagger/create-swagger-handler)}}])
 
