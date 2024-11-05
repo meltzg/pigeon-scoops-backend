@@ -15,12 +15,12 @@
 (def reset ig-repl/reset)
 (def reset-all ig-repl/reset-all)
 
-(defn app []
-  (-> state/system :pigeon-scoops-backend/app))
-(defn db []
-  (-> state/system :db/postgres))
+(def app (-> state/system :pigeon-scoops-backend/app))
+(def db (-> state/system :db/postgres))
 
 (comment
+  (app {:request-method :get
+        :uri "/swagger.json"})
   (go)
   (halt)
   (reset)

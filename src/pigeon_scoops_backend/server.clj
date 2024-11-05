@@ -2,15 +2,12 @@
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
             [reitit.ring :as ring]
-            [ring.adapter.jetty :as jetty])
+            [ring.adapter.jetty :as jetty]
+            [pigeon-scoops-backend.router :as router])
   (:import (org.eclipse.jetty.server Server)))
 
 (defn app [env]
-  (ring/ring-handler
-    (ring/router
-      [["/"
-        {:get {:handler (fn [req] {:status 200
-                                   :body   "Hello reitit"})}}]])))
+  (router/routes env))
 
 (defmethod ig/expand-key :server/jetty [k config]
   {k (merge config {:port (Integer/parseInt (env :port))})})
