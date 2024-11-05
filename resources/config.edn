@@ -1,1 +1,4 @@
-{}
+{:server/jetty {:handler #ig/ref :pigeon-scoops-backend/app
+                :port 3000}
+ :pigeon-scoops-backend/app {:jdbc-url #ig/ref :db/postgres}
+ :db/postgres {:jdbc-url "jdbc-url"}}
