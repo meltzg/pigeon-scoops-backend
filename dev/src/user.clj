@@ -1,7 +1,9 @@
 (ns user
-  (:require [integrant.repl :as ig-repl]
-            [integrant.core :as ig]
+  (:require [integrant.core :as ig]
+            [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
+            [next.jdbc :as jdbc]
+            [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.server]))
 
 (ig-repl/set-prep!
@@ -19,8 +21,10 @@
 (def db (-> state/system :db/postgres))
 
 (comment
-  (app {:request-method :get
-        :uri "/swagger.json"})
+  (-> (app {:request-method :get
+            :uri            "/v1/recipes/a3dde84c-4a33-45aa-b0f3-4bf9ac997680"})
+      :body
+      (slurp))
   (go)
   (halt)
   (reset)

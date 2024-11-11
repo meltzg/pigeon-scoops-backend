@@ -12,6 +12,9 @@
 (defmethod ig/expand-key :server/jetty [k config]
   {k (merge config {:port (Integer/parseInt (env :port))})})
 
+(defmethod ig/expand-key :db/postgres [k config]
+  {k (merge config {:jdbc-url (env :jdbc-database-url)})})
+
 (defmethod ig/init-key :server/jetty [_ {:keys [handler port]}]
   (println "\n Server running on port" port)
   (jetty/run-jetty handler {:port port :join? false}))
