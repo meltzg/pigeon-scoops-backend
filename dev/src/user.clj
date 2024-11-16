@@ -2,8 +2,6 @@
   (:require [integrant.core :as ig]
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
-            [next.jdbc :as jdbc]
-            [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.server]))
 
 (ig-repl/set-prep!
@@ -23,6 +21,13 @@
 (comment
   (-> (app {:request-method :get
             :uri            "/v1/recipes/a3dde84c-4a33-45aa-b0f3-4bf9ac997680"})
+      :body
+      (slurp))
+  (-> (app {:request-method :post
+            :uri            "/v1/recipes"
+            :body-params    {:name      "My recipe"
+                             :prep-time 49
+                             :img       "image-url"}})
       :body
       (slurp))
   (go)

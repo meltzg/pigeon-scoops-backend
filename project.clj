@@ -13,8 +13,8 @@
                  [clj-http "3.13.0"]
                  [ovotech/ring-jwt "2.3.0"]]
   :profiles {:uberjar {:aot :all}
-             :dev {:source-paths ["dev/src"]
-                   :resource-paths ["dev/resources"]
-                   :dependencies [[ring/ring-mock "0.4.0"]
-                                  [integrant/repl "0.3.3"]]}}
+             :dev     {:source-paths   ["dev/src"]
+                       :resource-paths ["dev/resources"]
+                       :dependencies   [[ring/ring-mock "0.4.0"]
+                                        [integrant/repl "0.3.3"]]}}
   :uberjar-name "pigeon-scoops.jar")

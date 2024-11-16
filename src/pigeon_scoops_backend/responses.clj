@@ -1,6 +1,8 @@
 (ns pigeon-scoops-backend.responses
   (:require [spec-tools.data-spec :as ds]))
 
+(def base-url "https://api.pigeon-scoops.com")
+
 (def step
   {:step/step_id     string?
    :step/sort        int?

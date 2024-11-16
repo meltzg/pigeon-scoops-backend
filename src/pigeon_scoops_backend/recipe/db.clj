@@ -20,3 +20,12 @@
         (assoc recipe
           :recipe/steps steps
           :recipe/ingredients ingredients)))))
+
+(defn insert-recipe! [db {:keys [recipe-id uid prep-time img name]}]
+  (sql/insert! db :recipe {:recipe_id      recipe-id
+                           :uid            uid
+                           :name           name
+                           :prep_time      prep-time
+                           :img            img
+                           :public         false
+                           :favorite_count 0}))

@@ -1,9 +1,8 @@
 (ns pigeon-scoops-backend.server
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
-            [reitit.ring :as ring]
-            [ring.adapter.jetty :as jetty]
-            [pigeon-scoops-backend.router :as router])
+            [pigeon-scoops-backend.router :as router]
+            [ring.adapter.jetty :as jetty])
   (:import (org.eclipse.jetty.server Server)))
 
 (defn app [env]
