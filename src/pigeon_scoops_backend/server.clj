@@ -39,8 +39,3 @@
     (-> config
         ig/expand
         ig/init)))
-
-(comment
-  (app {:request-method :get
-        :uri            "/"})
-  (-main))
