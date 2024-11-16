@@ -23,6 +23,10 @@
             :uri            "/v1/recipes/a3dde84c-4a33-45aa-b0f3-4bf9ac997680"})
       :body
       (slurp))
+  (-> (app {:request-method :get
+            :uri            "/v1/recipes"})
+      :body
+      (slurp))
   (-> (app {:request-method :post
             :uri            "/v1/recipes"
             :body-params    {:name      "My recipe"

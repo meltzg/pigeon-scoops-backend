@@ -11,7 +11,8 @@
                  [seancorfield/next.jdbc "1.2.659"]
                  [org.postgresql/postgresql "42.7.4"]
                  [clj-http "3.13.0"]
-                 [ovotech/ring-jwt "2.3.0"]]
+                 [ovotech/ring-jwt "2.3.0"]
+                 [camel-snake-kebab "0.4.3"]]
   :profiles {:uberjar {:aot :all}
              :dev     {:source-paths   ["dev/src"]
                        :resource-paths ["dev/resources"]

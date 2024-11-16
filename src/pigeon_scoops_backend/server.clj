@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.server
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
+            [next.jdbc :as jdbc]
             [pigeon-scoops-backend.router :as router]
             [ring.adapter.jetty :as jetty])
   (:import (org.eclipse.jetty.server Server)))
@@ -22,9 +23,9 @@
   (println "\n Starting app")
   (app config))
 
-(defmethod ig/init-key :db/postgres [_ config]
+(defmethod ig/init-key :db/postgres [_ {:keys [jdbc-url]}]
   (println "\n Configured DB")
-  (:jdbc-url config))
+  (jdbc/with-options jdbc-url jdbc/snake-kebab-opts))
 
 (defmethod ig/halt-key! :server/jetty [_ ^Server jetty]
   (.stop jetty))
