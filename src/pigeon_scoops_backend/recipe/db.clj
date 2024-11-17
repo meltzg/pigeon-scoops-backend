@@ -23,3 +23,8 @@
 
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (assoc recipe :favorite-count 0 :public false)))
+
+(defn update-recipe! [db recipe]
+  (-> (sql/update! db :recipe recipe (select-keys recipe [:recipe-id]))
+      ::jdbc/update-count
+      (pos?)))

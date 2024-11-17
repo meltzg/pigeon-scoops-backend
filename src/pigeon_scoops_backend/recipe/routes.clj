@@ -10,11 +10,19 @@
                  :summary   "list of recipes"}
           :post {:handler    (recipe/create-recipe! db)
                  :parameters {:body {:name      string?
-                                     :prep-time number?
+                                     :prep-time int?
                                      :img       string?}}
                  :responses  {201 {:body {:recipe-id string?}}}
                  :summary    "Create recipe"}}]
      ["/:recipe-id" {:get {:handler    (recipe/retrieve-recipe db)
                            :parameters {:path {:recipe-id string?}}
                            :responses  {200 {:body responses/recipe}}
-                           :summary    "Retrieve recipe"}}]]))
+                           :summary    "Retrieve recipe"}
+                     :put {:handler    (recipe/update-recipe! db)
+                           :parameters {:path {:recipe-id string?}
+                                        :body {:name      string?
+                                               :prep-time int?
+                                               :img       string?
+                                               :public    boolean?}}
+                           :responses  {204 {:body nil}}
+                           :summary    "Update recipe"}}]]))
