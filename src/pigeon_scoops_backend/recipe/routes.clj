@@ -14,15 +14,19 @@
                                      :img       string?}}
                  :responses  {201 {:body {:recipe-id string?}}}
                  :summary    "Create recipe"}}]
-     ["/:recipe-id" {:get {:handler    (recipe/retrieve-recipe db)
-                           :parameters {:path {:recipe-id string?}}
-                           :responses  {200 {:body responses/recipe}}
-                           :summary    "Retrieve recipe"}
-                     :put {:handler    (recipe/update-recipe! db)
-                           :parameters {:path {:recipe-id string?}
-                                        :body {:name      string?
-                                               :prep-time int?
-                                               :img       string?
-                                               :public    boolean?}}
-                           :responses  {204 {:body nil}}
-                           :summary    "Update recipe"}}]]))
+     ["/:recipe-id" {:get    {:handler    (recipe/retrieve-recipe db)
+                              :parameters {:path {:recipe-id string?}}
+                              :responses  {200 {:body responses/recipe}}
+                              :summary    "Retrieve recipe"}
+                     :put    {:handler    (recipe/update-recipe! db)
+                              :parameters {:path {:recipe-id string?}
+                                           :body {:name      string?
+                                                  :prep-time int?
+                                                  :img       string?
+                                                  :public    boolean?}}
+                              :responses  {204 {:body nil}}
+                              :summary    "Update recipe"}
+                     :delete {:handler    (recipe/delete-recipe! db)
+                              :parameters {:path {:recipe-id string?}}
+                              :response   {204 {:body nil}}
+                              :summary    "Delete recipe"}}]]))

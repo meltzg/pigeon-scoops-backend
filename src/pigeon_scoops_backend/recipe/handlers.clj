@@ -38,3 +38,11 @@
       (if update-successful?
         (rr/status 204)
         (rr/not-found {:recipe-id recipe-id})))))
+
+(defn delete-recipe! [db]
+  (fn [request]
+    (let [recipe-id (-> request :parameters :path :recipe-id)
+          delete-successful? (recipe-db/delete-recipe! db recipe-id)]
+      (if delete-successful?
+        (rr/status 204)
+        (rr/not-found {:recipe-id recipe-id})))))
