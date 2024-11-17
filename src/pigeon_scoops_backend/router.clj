@@ -33,8 +33,7 @@
     (ring/router
       [swagger-docs
        ["/v1"
-        (recipe/routes env)]
-       ["/foo" {:get {:handler (fn [_] {:status 200 :body "hello world"})}}]]
+        (recipe/routes env)]]
       router-config)
     (ring/routes
       (swagger-ui/create-swagger-ui-handler {:path "/"}))))
