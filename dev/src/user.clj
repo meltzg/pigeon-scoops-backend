@@ -34,6 +34,10 @@
                              :img       "image-url"}})
       :body
       (slurp))
+  (-> (app {:request-method :get
+            :uri            "/foo"})
+      :body
+      (slurp))
   (go)
   (halt)
   (reset)

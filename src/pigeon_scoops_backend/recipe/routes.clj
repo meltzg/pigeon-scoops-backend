@@ -17,5 +17,4 @@
      ["/:recipe-id" {:get {:handler    (recipe/retrieve-recipe db)
                            :parameters {:path {:recipe-id string?}}
                            :responses  {200 {:body responses/recipe}}
-                           :summary    "Retrieve recipe"}}]
-     "/foo" {:get (fn [_] "hello world")}]))
+                           :summary    "Retrieve recipe"}}]]))
