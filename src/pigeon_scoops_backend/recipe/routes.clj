@@ -1,10 +1,12 @@
 (ns pigeon-scoops-backend.recipe.routes
   (:require [pigeon-scoops-backend.recipe.handlers :as recipe]
-            [pigeon-scoops-backend.responses :as responses]))
+            [pigeon-scoops-backend.responses :as responses]
+            [pigeon-scoops-backend.middleware :as mw]))
 
 (defn routes [env]
   (let [db (:jdbc-url env)]
-    ["/recipes" {:swagger {:tags ["recipes"]}}
+    ["/recipes" {:swagger {:tags ["recipes"]}
+                 :middleware [[mw/wrap-auth0]]}
      ["" {:get  {:handler   (recipe/list-all-recipes db)
                  :responses {200 {:body responses/recipes}}
                  :summary   "list of recipes"}
