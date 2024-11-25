@@ -3,16 +3,20 @@
             [pigeon-scoops-backend.server :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
+(def recipe-id (atom nil))
+
 (def recipe
   {:img "http://image.com/foo.png"
    :prep-time 100
    :name "a spicy meatball"})
 
+(def updated-recipe
+  (assoc recipe :public true))
+
 (deftest recipes-list-test
   (testing "List recipes"
     (testing "with auth -- public and drafts"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/recipes" {:auth true})]
-        (println body)
         (is (= 200 status))
         (is (vector? (:public body)))
         (is (vector? (:drafts body)))))
@@ -23,9 +27,13 @@
         (is (nil? (:drafts body)))))))
 
 (deftest recipes-crud-test
-  (testing "create recipe")
-  (testing "update recipe")
-  (testing "delete recipe"))
-
-(comment
-  (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe}))
+  (testing "create recipe"
+    (let [{:keys [status body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})]
+      (reset! recipe-id (:recipe-id body))
+      (is (= status 201))))
+  (testing "update recipe"
+    (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id) {:auth true :body updated-recipe})]
+      (is (= status 204))))
+  (testing "delete recipe"
+    (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:auth true})]
+      (is (= status 204)))))
