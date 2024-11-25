@@ -1,7 +1,7 @@
 -- account
 truncate table account cascade;
 insert into account ("uid", "name")
-values ('aauth0|673a8167069108b622f0ac19', 'Auth0'),
+values ('auth0|673a8167069108b622f0ac19', 'Auth0'),
        ('mike@mailinator.com', 'Mike'),
        ('jade@mailinator.com', 'Jade'),
        ('mark@mailinator.com', 'Mark');
