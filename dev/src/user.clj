@@ -2,6 +2,7 @@
   (:require [integrant.core :as ig]
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
+            [muuntaja.core :as m]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.server]))
 
@@ -32,17 +33,20 @@
                              :prep-time 49
                              :img       "image-url"
                              :public    true}}))
-  (-> (app {:request-method :get
-            :uri            "/v1/recipes"})
-      :body
-      (slurp))
-  (-> (app {:request-method :post
-            :uri            "/v1/recipes"
-            :body-params    {:name      "My recipe"
-                             :prep-time 49
-                             :img       "image-url"}})
-      :body
-      (slurp))
+  (->> (app {:request-method :get
+             :uri            "/v1/recipes"})
+       :body (slurp)
+       (m/decode "application/json"))
+  (->> (app (-> {:request-method :post
+                 :uri            "/v1/recipes"
+                 :body-params    {:name      "My recipe"
+                                  :prep-time 49
+                                  :img       "image-url"}}
+                (mock/header :authorization (str "Bearer " (auth0/get-test-token)))
+                (mock/header :accept "application/transit+json")))
+       :body
+       (slurp)
+       (m/decode "application/transit+json"))
   (-> (sql/find-by-keys db :recipe {:public true})
       (first)
       :recipe/recipe-id)
