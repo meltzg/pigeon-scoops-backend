@@ -35,8 +35,8 @@
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           recipe (-> request :parameters :body)
-          update-successful? (recipe-db/update-recipe! db (assoc recipe :recipe-id recipe-id))]
-      (if update-successful?
+          successful? (recipe-db/update-recipe! db (assoc recipe :recipe-id recipe-id))]
+      (if successful?
         (rr/status 204)
         (rr/not-found {:type    "recipe-not-found"
                        :message "Recipe not found"
@@ -45,8 +45,26 @@
 (defn delete-recipe! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
-          delete-successful? (recipe-db/delete-recipe! db recipe-id)]
-      (if delete-successful?
+          successful? (recipe-db/delete-recipe! db recipe-id)]
+      (if successful?
+        (rr/status 204)
+        (rr/not-found {:type    "recipe-not-found"
+                       :message "Recipe not found"
+                       :data    (str "recipe-id " recipe-id)})))))
+
+(defn favorite-recipe! [db]
+  (fn [request]
+    (let [recipe-id (-> request :parameters :path :recipe-id)
+          uid (-> request :claims :sub)]
+      (recipe-db/favorite-recipe! db {:recipe-id recipe-id :uid uid})
+      (rr/status 204))))
+
+(defn unfavorite-recipe! [db]
+  (fn [request]
+    (let [recipe-id (-> request :parameters :path :recipe-id)
+          uid (-> request :claims :sub)
+          successful? (recipe-db/unfavorite-recipe! db {:recipe-id recipe-id :uid uid})]
+      (if successful?
         (rr/status 204)
         (rr/not-found {:type    "recipe-not-found"
                        :message "Recipe not found"

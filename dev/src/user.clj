@@ -47,9 +47,7 @@
        :body
        (slurp)
        (m/decode "application/transit+json"))
-  (-> (sql/find-by-keys db :recipe {:public true})
-      (first)
-      :recipe/recipe-id)
+  (-> (sql/find-by-keys db :recipe {:public false}))
   (go)
   (halt)
   (reset)

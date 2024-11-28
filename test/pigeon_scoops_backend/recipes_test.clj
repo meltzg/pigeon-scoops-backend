@@ -3,6 +3,8 @@
             [pigeon-scoops-backend.server :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
+(use-fixtures :once ts/token-fixture)
+
 (def recipe
   {:img       "http://image.com/foo.png"
    :prep-time 100
@@ -32,6 +34,12 @@
         (is (= status 201))))
     (testing "update recipe"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id) {:auth true :body updated-recipe})]
+        (is (= status 204))))
+    (testing "favorite recipe"
+      (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
+        (is (= status 204))))
+    (testing "unfavorite recipe"
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
         (is (= status 204))))
     (testing "delete recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:auth true})]

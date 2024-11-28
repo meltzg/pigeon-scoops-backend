@@ -2,21 +2,24 @@
   (:require [muuntaja.core :as m]
             [pigeon-scoops-backend.recipe.routes :as recipe]
             [reitit.coercion.spec :as coercion-spec]
+            [reitit.dev.pretty :as pretty]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
-            [reitit.ring.middleware.exception :as exception]
             [reitit.ring.middleware.muuntaja :as muuntaja]
+            [reitit.ring.spec :as rs]
             [reitit.swagger :as swagger]
             [reitit.swagger-ui :as swagger-ui]))
 
 (def router-config
-  {:data {:coercion   coercion-spec/coercion
-          :muuntaja   m/instance
-          :middleware [swagger/swagger-feature
-                       muuntaja/format-middleware
-                       exception/exception-middleware
-                       coercion/coerce-request-middleware
-                       coercion/coerce-response-middleware]}})
+  {:validate  rs/validate
+   :exception pretty/exception
+   :data      {:coercion   coercion-spec/coercion
+               :muuntaja   m/instance
+               :middleware [swagger/swagger-feature
+                            muuntaja/format-middleware
+                            ;exception/exception-middleware
+                            coercion/coerce-request-middleware
+                            coercion/coerce-response-middleware]}})
 
 (def swagger-docs
   ["/swagger.json"
