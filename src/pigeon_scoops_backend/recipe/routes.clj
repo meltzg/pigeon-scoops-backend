@@ -44,21 +44,43 @@
                              :parameters {:path {:recipe-id string?}}
                              :response   {204 {:body nil}}
                              :summary    "Unfavorite recipe"}}]
-      ["/step" {:post   {:handler    (recipe/create-step! db)
-                         :middleware [[mw/wrap-recipe-owner db]]
-                         :parameters {:path {:recipe-id string?}
-                                      :body {:sort        pos-int?
-                                             :description string?}}
-                         :responses  {201 {:body {:step-id string?}}}}
-                :put    {:handler    (recipe/update-step! db)
-                         :middleware [[mw/wrap-recipe-owner db]]
-                         :parameters {:path {:recipe-id string?}
-                                      :body {:step-id     string?
-                                             :sort        pos-int?
-                                             :description string?}}
-                         :responses  {204 {:body nil}}}
-                :delete {:handler    (recipe/delete-step! db)
-                         :middleware [[mw/wrap-recipe-owner db]]
-                         :parameters {:path {:recipe-id string?}
-                                      :body {:step-id string?}}
-                         :responses  {204 {:body nil}}}}]]]))
+      ["/steps" {:post   {:handler    (recipe/create-step! db)
+                          :middleware [[mw/wrap-recipe-owner db]]
+                          :parameters {:path {:recipe-id string?}
+                                       :body {:sort        pos-int?
+                                              :description string?}}
+                          :responses  {201 {:body {:step-id string?}}}}
+                 :put    {:handler    (recipe/update-step! db)
+                          :middleware [[mw/wrap-recipe-owner db]]
+                          :parameters {:path {:recipe-id string?}
+                                       :body {:step-id     string?
+                                              :sort        pos-int?
+                                              :description string?}}
+                          :responses  {204 {:body nil}}}
+                 :delete {:handler    (recipe/delete-step! db)
+                          :middleware [[mw/wrap-recipe-owner db]]
+                          :parameters {:path {:recipe-id string?}
+                                       :body {:step-id string?}}
+                          :responses  {204 {:body nil}}}}]
+      ["/ingredients" {:post   {:handler    (recipe/create-ingredient! db)
+                                :middleware [[mw/wrap-recipe-owner db]]
+                                :parameters {:path {:recipe-id string?}
+                                             :body {:sort    pos-int?
+                                                    :name    string?
+                                                    :amount  pos-int?
+                                                    :measure string?}}
+                                :responses  {201 {:body {:ingredient-id string?}}}}
+                       :put    {:handler    (recipe/update-ingredient! db)
+                                :middleware [[mw/wrap-recipe-owner db]]
+                                :parameters {:path {:recipe-id string?}
+                                             :body {:ingredient-id string?
+                                                    :sort          pos-int?
+                                                    :name          string?
+                                                    :amount        pos-int?
+                                                    :measure       string?}}
+                                :responses  {204 {:body nil}}}
+                       :delete {:handler    (recipe/delete-ingredient! db)
+                                :middleware [[mw/wrap-recipe-owner db]]
+                                :parameters {:path {:recipe-id string?}
+                                             :body {:ingredient-id string?}}
+                                :responses  {204 {:body nil}}}}]]]))

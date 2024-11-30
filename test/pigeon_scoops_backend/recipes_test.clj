@@ -20,6 +20,15 @@
 (def updated-step
   (assoc step :description "mix it all about"))
 
+(def ingredient
+  {:name    "sugar"
+   :sort    1
+   :amount  1
+   :measure "Tbsp"})
+
+(def updated-ingredient
+  (assoc ingredient :measure "tsp"))
+
 (deftest recipes-list-test
   (testing "List recipes"
     (testing "with auth -- public and drafts"
@@ -35,7 +44,8 @@
 
 (deftest recipes-crud-test
   (let [recipe-id (atom nil)
-        step-id (atom nil)]
+        step-id (atom nil)
+        ingredient-id (atom nil)]
     (testing "create recipe"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})]
         (reset! recipe-id (:recipe-id body))
@@ -50,14 +60,24 @@
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
         (is (= status 204))))
     (testing "create step"
-      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/step") {:auth true :body step})]
+      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/steps") {:auth true :body step})]
         (reset! step-id (:step-id body))
         (is (= status 201))))
     (testing "update step"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/step") {:auth true :body (assoc updated-step :step-id @step-id)})]
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/steps") {:auth true :body (assoc updated-step :step-id @step-id)})]
         (is (= status 204))))
     (testing "delete step"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/step") {:auth true :body {:step-id @step-id}})]
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/steps") {:auth true :body {:step-id @step-id}})]
+        (is (= status 204))))
+    (testing "create ingredient"
+      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body ingredient})]
+        (reset! ingredient-id (:ingredient-id body))
+        (is (= status 201))))
+    (testing "update ingredient"
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body (assoc updated-ingredient :ingredient-id @ingredient-id)})]
+        (is (= status 204))))
+    (testing "delete ingredient"
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body {:ingredient-id @ingredient-id}})]
         (is (= status 204))))
     (testing "delete recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:auth true})]

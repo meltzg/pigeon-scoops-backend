@@ -29,7 +29,7 @@
                                              :name      "my name"
                                              :prep-time 30}})
   (test-endpoint :delete "/v1/recipes/4fa73cb5-e0cd-471f-b5c2-b080eb2039ab/favorite" {:auth true})
-  (test-endpoint :post "/v1/recipes/c4aa000e-24c7-46b0-8a5e-1fcb0a5f8e30/step"
+  (test-endpoint :post "/v1/recipes/c4aa000e-24c7-46b0-8a5e-1fcb0a5f8e30/steps"
                  {:auth true
                   :body {:sort        1
                          :description "shake"}}))

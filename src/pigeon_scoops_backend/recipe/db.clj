@@ -67,3 +67,16 @@
   (-> (sql/delete! db :step step)
       ::jdbc/update-count
       (pos?)))
+
+(defn insert-ingredient! [db ingredient]
+  (sql/insert! db, :ingredient ingredient))
+
+(defn update-ingredient! [db ingredient]
+  (-> (sql/update! db :ingredient ingredient (select-keys ingredient [:recipe-id :ingredient-id]))
+      ::jdbc/update-count
+      (pos?)))
+
+(defn delete-ingredient! [db ingredient]
+  (-> (sql/delete! db :ingredient ingredient)
+      ::jdbc/update-count
+      (pos?)))
