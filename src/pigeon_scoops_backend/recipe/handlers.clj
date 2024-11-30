@@ -76,7 +76,7 @@
           step-id (str (UUID/randomUUID))]
       (recipe-db/insert-step! db (assoc step :recipe-id recipe-id
                                              :step-id step-id))
-      (rr/created (str responses/base-url "/recipes/" recipe-id "/steps")
+      (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:step-id step-id}))))
 
 (defn update-step! [db]
@@ -86,20 +86,16 @@
           successful? (recipe-db/update-step! db (assoc step :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)
-        (rr/not-found {:type    "recipe-not-found"
-                       :message "Recipe not found"
-                       :data    (str "recipe-id " recipe-id)})))))
+        (rr/bad-request (select-keys step [:step-id]))))))
 
 (defn delete-step! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           step (-> request :parameters :body)
-          successful? (recipe-db/delete-step! db step)]
+          successful? (recipe-db/delete-step! db (assoc step :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)
-        (rr/not-found {:type    "recipe-not-found"
-                       :message "Recipe not found"
-                       :data    (str "recipe-id " recipe-id)})))))
+        (rr/bad-request (select-keys step [:step-id]))))))
 
 (defn create-ingredient! [db]
   (fn [request]
@@ -108,7 +104,7 @@
           ingredient-id (str (UUID/randomUUID))]
       (recipe-db/insert-ingredient! db (assoc ingredient :recipe-id recipe-id
                                                          :ingredient-id ingredient-id))
-      (rr/created (str responses/base-url "/recipes/" recipe-id "/ingredients")
+      (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:ingredient-id ingredient-id}))))
 
 (defn update-ingredient! [db]
@@ -118,17 +114,13 @@
           successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)
-        (rr/not-found {:type    "recipe-not-found"
-                       :message "Recipe not found"
-                       :data    (str "recipe-id " recipe-id)})))))
+        (rr/bad-request (select-keys ingredient [:ingredient-id]))))))
 
 (defn delete-ingredient! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)
-          successful? (recipe-db/delete-ingredient! db ingredient)]
+          successful? (recipe-db/delete-ingredient! db (assoc ingredient :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)
-        (rr/not-found {:type    "recipe-not-found"
-                       :message "Recipe not found"
-                       :data    (str "recipe-id " recipe-id)})))))
+        (rr/bad-request (select-keys ingredient [:ingredient-id]))))))
