@@ -13,6 +13,13 @@
 (def updated-recipe
   (assoc recipe :public true))
 
+(def step
+  {:sort        1
+   :description "put the lime in the coconut"})
+
+(def updated-step
+  (assoc step :description "mix it all about"))
+
 (deftest recipes-list-test
   (testing "List recipes"
     (testing "with auth -- public and drafts"
@@ -27,7 +34,8 @@
         (is (nil? (:drafts body)))))))
 
 (deftest recipes-crud-test
-  (let [recipe-id (atom nil)]
+  (let [recipe-id (atom nil)
+        step-id (atom nil)]
     (testing "create recipe"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})]
         (reset! recipe-id (:recipe-id body))
@@ -40,6 +48,16 @@
         (is (= status 204))))
     (testing "unfavorite recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
+        (is (= status 204))))
+    (testing "create step"
+      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/step") {:auth true :body step})]
+        (reset! step-id (:step-id body))
+        (is (= status 201))))
+    (testing "update step"
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/step") {:auth true :body (assoc updated-step :step-id @step-id)})]
+        (is (= status 204))))
+    (testing "delete step"
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/step") {:auth true :body {:step-id @step-id}})]
         (is (= status 204))))
     (testing "delete recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:auth true})]

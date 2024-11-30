@@ -4,7 +4,9 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [next.jdbc.sql :as sql]
-            [pigeon-scoops-backend.server]))
+            [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.server]
+            [ring.mock.request :as mock]))
 
 (ig-repl/set-prep!
   (fn []
@@ -19,12 +21,17 @@
 
 (def app (-> state/system :pigeon-scoops-backend/app))
 (def db (-> state/system :db/postgres))
+(def token (atom nil))
 
 (comment
-  (-> (app {:request-method :get
-            :uri            "/v1/recipes/1c449b14-cf10-4295-b2b5-bdf12d5f55cf"})
-      :body
-      (slurp))
+  (reset! token (auth0/get-test-token))
+  @token
+  (->> (app (-> {:request-method :get
+                 :uri            "/v1/recipes/a3dde84c-4a33-45aa-b0f3-4bf9ac997680"}
+                (mock/header :authorization (str "Bearer " (or @token (auth0/get-test-token))))))
+       :body
+       (slurp)
+       (m/decode "application/json"))
   (-> (app {:request-method :delete
             :uri            "/v1/recipes/1c449b14-cf10-4295-b2b5-bdf12d5f55cf"}))
   (-> (app {:request-method :put
@@ -35,7 +42,8 @@
                              :public    true}}))
   (->> (app {:request-method :get
              :uri            "/v1/recipes"})
-       :body (slurp)
+       :body
+       (slurp)
        (m/decode "application/json"))
   (->> (app (-> {:request-method :post
                  :uri            "/v1/recipes"
@@ -48,6 +56,13 @@
        (slurp)
        (m/decode "application/transit+json"))
   (-> (sql/find-by-keys db :recipe {:public false}))
+  (-> (sql/insert! db :recipe {:name      "My recipe"
+                               :prep-time 49
+                               :img       "image-url"
+                               :recipe-id "foobar"
+                               :public    false
+                               :uid       "auth0|673a8167069108b622f0ac19"}))
+
   (go)
   (halt)
   (reset)

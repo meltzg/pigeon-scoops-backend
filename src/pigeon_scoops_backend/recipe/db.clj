@@ -14,8 +14,8 @@
 (defn find-recipe-by-id [db recipe-id]
   (with-open [conn (jdbc/get-connection db)]
     (let [[recipe] (sql/find-by-keys conn :recipe {:recipe_id recipe-id})
-          steps (sql/find-by-keys conn :step {:recipe_id recipe-id})
-          ingredients (sql/find-by-keys conn :ingredient {:recipe_id recipe-id})]
+          steps (sql/find-by-keys conn :step {:recipe_id recipe-id} {:order-by [[:sort :asc]]})
+          ingredients (sql/find-by-keys conn :ingredient {:recipe_id recipe-id} {:order-by [[:sort :asc]]})]
       (when (seq recipe)
         (assoc recipe
           :recipe/steps steps
@@ -52,5 +52,18 @@
         (jdbc/execute-one! tx ["UPDATE recipe
                                 SET favorite_count = favorite_count - 1
                                 WHERE recipe_id = ?" recipe-id]))
+      ::jdbc/update-count
+      (pos?)))
+
+(defn insert-step! [db step]
+  (sql/insert! db, :step step))
+
+(defn update-step! [db step]
+  (-> (sql/update! db :step step (select-keys step [:recipe-id :step-id]))
+      ::jdbc/update-count
+      (pos?)))
+
+(defn delete-step! [db step]
+  (-> (sql/delete! db :step step)
       ::jdbc/update-count
       (pos?)))
