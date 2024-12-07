@@ -4,18 +4,18 @@
 
 (defn find-all-recipes [db uid]
   (with-open [conn (jdbc/get-connection db)]
-    (let [public (sql/find-by-keys conn :recipe {:public true})
+    (let [public (sql/find-by-keys conn :recipe {:public true} (:options db))
           drafts (when uid (sql/find-by-keys conn :recipe {:uid    uid
-                                                           :public false}))]
+                                                           :public false} (:options db)))]
       (merge {:public public}
              (when drafts
                {:drafts drafts})))))
 
 (defn find-recipe-by-id [db recipe-id]
   (with-open [conn (jdbc/get-connection db)]
-    (let [[recipe] (sql/find-by-keys conn :recipe {:recipe_id recipe-id})
-          steps (sql/find-by-keys conn :step {:recipe_id recipe-id} {:order-by [[:sort :asc]]})
-          ingredients (sql/find-by-keys conn :ingredient {:recipe_id recipe-id} {:order-by [[:sort :asc]]})]
+    (let [[recipe] (sql/find-by-keys conn :recipe {:recipe_id recipe-id} (:options db))
+          steps (sql/find-by-keys conn :step {:recipe_id recipe-id} (merge {:order-by [[:sort :asc]]} (:options db)))
+          ingredients (sql/find-by-keys conn :ingredient {:recipe_id recipe-id} (merge {:order-by [[:sort :asc]]} (:options db)))]
       (when (seq recipe)
         (assoc recipe
           :recipe/steps steps
