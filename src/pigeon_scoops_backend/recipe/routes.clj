@@ -27,17 +27,17 @@
                                    :prep-time int?
                                    :img       string?
                                    :public    boolean?}}
-               :responses  {204 {:body nil}}
+               :responses  {204 {:body nil?}}
                :summary    "Update recipe"}
       :delete {:handler    (recipe/delete-recipe! db)
                :middleware [[mw/wrap-recipe-owner db]]
-               :response   {204 {:body nil}}
+               :response   {204 {:body nil?}}
                :summary    "Delete recipe"}}]
     ["/favorite" {:post   {:handler    (recipe/favorite-recipe! db)
-                           :responses  {204 {:body nil}}
+                           :responses  {204 {:body nil?}}
                            :summary    "Favorite recipe"}
                   :delete {:handler    (recipe/unfavorite-recipe! db)
-                           :response   {204 {:body nil}}
+                           :response   {204 {:body nil?}}
                            :summary    "Unfavorite recipe"}}]
     ["/steps" {:post   {:handler    (recipe/create-step! db)
                         :middleware [[mw/wrap-recipe-owner db]]
@@ -51,11 +51,11 @@
                                             :sort        pos-int?
                                             :description string?}}
                         :summary    "Update step"
-                        :responses  {204 {:body nil}}}
+                        :responses  {204 {:body nil?}}}
                :delete {:handler    (recipe/delete-step! db)
                         :middleware [[mw/wrap-recipe-owner db]]
                         :parameters {:body {:step-id string?}}
-                        :responses  {204 {:body nil}}
+                        :responses  {204 {:body nil?}}
                         :summary    "Delete step"}}]
     ["/ingredients" {:post   {:handler    (recipe/create-ingredient! db)
                               :middleware [[mw/wrap-recipe-owner db]]
@@ -72,10 +72,10 @@
                                                   :name          string?
                                                   :amount        pos-int?
                                                   :measure       string?}}
-                              :responses  {204 {:body nil}}
+                              :responses  {204 {:body nil?}}
                               :summary    "Update ingredient"}
                      :delete {:handler    (recipe/delete-ingredient! db)
                               :middleware [[mw/wrap-recipe-owner db]]
                               :parameters {:body {:ingredient-id string?}}
-                              :responses  {204 {:body nil}}
+                              :responses  {204 {:body nil?}}
                               :summary    "delete ingredient"}}]]])
