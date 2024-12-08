@@ -7,7 +7,6 @@
   (:import (org.eclipse.jetty.server Server)))
 
 (defn app [env]
-  (clojure.pprint/pprint env)
   (router/routes env))
 
 (defmethod ig/expand-key :server/jetty [k config]
