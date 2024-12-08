@@ -21,10 +21,11 @@
 
 (def app (-> state/system :pigeon-scoops-backend/app))
 (def db (-> state/system :db/postgres))
+(def auth (-> state/system :auth/auth0))
 (def token (atom nil))
 
 (comment
-  (reset! token (auth0/get-test-token))
+  (reset! token (auth0/get-test-token auth))
   @token
   (->> (app (-> {:request-method :get
                  :uri            "/v1/recipes/a3dde84c-4a33-45aa-b0f3-4bf9ac997680"}

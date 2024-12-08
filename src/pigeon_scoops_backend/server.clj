@@ -7,6 +7,7 @@
   (:import (org.eclipse.jetty.server Server)))
 
 (defn app [env]
+  (clojure.pprint/pprint env)
   (router/routes env))
 
 (defmethod ig/expand-key :server/jetty [k config]
@@ -26,6 +27,9 @@
 (defmethod ig/init-key :db/postgres [_ {:keys [jdbc-url]}]
   (println "\n Configured DB")
   (jdbc/with-options jdbc-url jdbc/snake-kebab-opts))
+
+(defmethod ig/init-key :auth/auth0 [_ config]
+  config)
 
 (defmethod ig/halt-key! :server/jetty [_ ^Server jetty]
   (.stop jetty))

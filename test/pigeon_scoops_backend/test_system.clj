@@ -8,17 +8,19 @@
 (def token (atom nil))
 
 (defn token-fixture [f]
-  (reset! token (auth0/get-test-token))
-  (f)
-  (reset! token nil))
+  (let [auth (-> state/system :auth/auth0)]
+    (reset! token (auth0/get-test-token auth))
+    (f)
+    (reset! token nil)))
 
 (defn test-endpoint
   ([method uri]
    (test-endpoint method uri nil))
   ([method uri opts]
    (let [app (-> state/system :pigeon-scoops-backend/app)
+         auth (-> state/system :auth/auth0)
          response (app (-> (mock/request method uri)
-                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (auth0/get-test-token))))
+                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (auth0/get-test-token auth))))
                                    (:body opts) (mock/json-body (:body opts)))))]
      (update response :body (partial m/decode "application/json")))))
 

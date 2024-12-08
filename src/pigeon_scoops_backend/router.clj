@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.router
   (:require [muuntaja.core :as m]
             [pigeon-scoops-backend.recipe.routes :as recipe]
+            [pigeon-scoops-backend.account.routes :as account]
             [reitit.coercion.spec :as coercion-spec]
             [reitit.dev.pretty :as pretty]
             [reitit.ring :as ring]
@@ -36,7 +37,8 @@
     (ring/router
       [swagger-docs
        ["/v1"
-        (recipe/routes env)]]
+        (recipe/routes env)
+        (account/routes env)]]
       router-config)
     (ring/routes
       (swagger-ui/create-swagger-ui-handler {:path "/"}))))
