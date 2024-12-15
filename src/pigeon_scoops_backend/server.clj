@@ -15,6 +15,10 @@
 (defmethod ig/expand-key :db/postgres [k config]
   {k (merge config {:jdbc-url (env :jdbc-database-url)})})
 
+(defmethod ig/expand-key :auth/auth0 [k config]
+  {k (merge config {:management-client-id (env :management-client-id)
+                    :management-client-secret (env :management-client-secret)})})
+
 (defmethod ig/init-key :server/jetty [_ {:keys [handler port]}]
   (println "\n Server running on port" port)
   (jetty/run-jetty handler {:port port :join? false}))

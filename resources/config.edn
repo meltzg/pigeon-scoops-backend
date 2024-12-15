@@ -4,4 +4,6 @@
  :db/postgres               {:jdbc-url "jdbc-url"}
  :auth/auth0                {:test-user      "testing-user"
                              :test-password  "test-password"
-                             :test-client-id "test-client-id"}}
+                             :test-client-id "test-client-id"
+                             :management-client-id "client-id"
+                             :management-client-secret "client-secret"}}
