@@ -1,11 +1,24 @@
 (ns pigeon-scoops-backend.test-system
   (:require [clojure.test :refer :all]
+            [integrant.core :as ig]
             [integrant.repl.state :as state]
+            [integrant.repl :as ig-repl]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
             [ring.mock.request :as mock]))
 
 (def token (atom nil))
+
+(defn system-fixture [f]
+  (ig-repl/set-prep!
+    (fn []
+      (-> "resources/config.edn"
+          slurp
+          ig/read-string
+          ig/expand)))
+  (ig-repl/go)
+  (f)
+  (ig-repl/halt))
 
 (defn token-fixture [f]
   (let [auth (-> state/system :auth/auth0)]

@@ -10,14 +10,18 @@
   (router/routes env))
 
 (defmethod ig/expand-key :server/jetty [k config]
-  {k (merge config {:port (Integer/parseInt (env :port))})})
+  {k (merge config (when-some [port (env :port)]
+                     {:port (Integer/parseInt port)}))})
 
 (defmethod ig/expand-key :db/postgres [k config]
-  {k (merge config {:jdbc-url (env :jdbc-database-url)})})
+  {k (merge config (when-some [jdbc-url (env :jdbc-database-url)]
+                     {:jdbc-url jdbc-url}))})
 
 (defmethod ig/expand-key :auth/auth0 [k config]
-  {k (merge config {:management-client-id     (env :management-client-id)
-                    :management-client-secret (env :management-client-secret)})})
+  {k (merge config (cond-> {}
+                           (env :test-user) (conj {:test-user (env :test-user)})
+                           (env :management-client-id) (conj {:management-client-id (env :management-client-id)})
+                           (env :management-client-secret) (conj {:management-client-secret (env :management-client-secret)})))})
 
 (defmethod ig/init-key :server/jetty [_ {:keys [handler port]}]
   (println "\n Server running on port" port)

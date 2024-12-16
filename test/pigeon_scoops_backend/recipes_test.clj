@@ -4,6 +4,7 @@
             [pigeon-scoops-backend.test-system :as ts]))
 
 (use-fixtures :once ts/token-fixture)
+(use-fixtures :once ts/system-fixture)
 
 (def recipe
   {:img       "http://image.com/foo.png"
