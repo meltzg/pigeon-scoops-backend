@@ -3,8 +3,8 @@
             [pigeon-scoops-backend.middleware :as mw]))
 
 (defn routes [{:keys [auth] db :jdbc-url}]
-  ["/account" {:swagger {:tags       ["account"]
-                         :middleware [[mw/wrap-auth0]]}}
+  ["/account" {:swagger    {:tags ["account"]}
+               :middleware [[mw/wrap-auth0]]}
    ["" {:post   {:handler   (account/create-account! db)
                  :responses {204 {:body nil?}}
                  :summary   "Create account"}
