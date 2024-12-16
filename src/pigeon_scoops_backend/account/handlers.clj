@@ -9,10 +9,10 @@
       (account-db/create-account! db {:uid sub :name name :picture picture})
       (rr/status 204))))
 
-(defn delete-account! [db]
+(defn delete-account! [auth db]
   (fn [request]
     (let [uid (-> request :claims :sub)
-          delete-auth0-account! (auth0/delete-user! uid)]
+          delete-auth0-account! (auth0/delete-user! auth uid)]
       (if (= (:status delete-auth0-account!) 204)
         (do
           (account-db/delete-account! db {:uid uid})
