@@ -18,9 +18,9 @@
    ["/:recipe-id"
     {:parameters {:path {:recipe-id string?}}}
     [""
-     {:get    {:handler    (recipe/retrieve-recipe db)
-               :responses  {200 {:body responses/recipe}}
-               :summary    "Retrieve recipe"}
+     {:get    {:handler   (recipe/retrieve-recipe db)
+               :responses {200 {:body responses/recipe}}
+               :summary   "Retrieve recipe"}
       :put    {:handler    (recipe/update-recipe! db)
                :middleware [[mw/wrap-recipe-owner db]]
                :parameters {:body {:name      string?
@@ -33,12 +33,12 @@
                :middleware [[mw/wrap-recipe-owner db]]
                :response   {204 {:body nil?}}
                :summary    "Delete recipe"}}]
-    ["/favorite" {:post   {:handler    (recipe/favorite-recipe! db)
-                           :responses  {204 {:body nil?}}
-                           :summary    "Favorite recipe"}
-                  :delete {:handler    (recipe/unfavorite-recipe! db)
-                           :response   {204 {:body nil?}}
-                           :summary    "Unfavorite recipe"}}]
+    ["/favorite" {:post   {:handler   (recipe/favorite-recipe! db)
+                           :responses {204 {:body nil?}}
+                           :summary   "Favorite recipe"}
+                  :delete {:handler  (recipe/unfavorite-recipe! db)
+                           :response {204 {:body nil?}}
+                           :summary  "Unfavorite recipe"}}]
     ["/steps" {:post   {:handler    (recipe/create-step! db)
                         :middleware [[mw/wrap-recipe-owner db]]
                         :parameters {:body {:sort        pos-int?

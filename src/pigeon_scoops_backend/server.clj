@@ -16,7 +16,7 @@
   {k (merge config {:jdbc-url (env :jdbc-database-url)})})
 
 (defmethod ig/expand-key :auth/auth0 [k config]
-  {k (merge config {:management-client-id (env :management-client-id)
+  {k (merge config {:management-client-id     (env :management-client-id)
                     :management-client-secret (env :management-client-secret)})})
 
 (defmethod ig/init-key :server/jetty [_ {:keys [handler port]}]

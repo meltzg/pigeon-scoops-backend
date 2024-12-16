@@ -1,7 +1,7 @@
 (ns pigeon-scoops-backend.account.handlers
-  (:require [ring.util.response :as rr]
-            [pigeon-scoops-backend.account.db :as account-db]
-            [pigeon-scoops-backend.auth0 :as auth0]))
+  (:require [pigeon-scoops-backend.account.db :as account-db]
+            [pigeon-scoops-backend.auth0 :as auth0]
+            [ring.util.response :as rr]))
 
 (defn create-account! [db]
   (fn [request]
