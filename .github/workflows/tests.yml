@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Install dependencies
-      run: lein deps
-    - name: Run tests
-      env:
-        TEST_USER: ${{ secrets.TEST_USER }}
-        TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-        TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-        JDBC_DATABASE_URL: ${{ secrets.JDBC_DATABASE_URL }}
-      run: lein test
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: lein deps
+      - name: Run tests
+        env:
+          TEST_USER: ${{ secrets.TEST_USER }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
+          JDBC_DATABASE_URL: ${{ secrets.JDBC_DATABASE_URL }}
+        run: lein test

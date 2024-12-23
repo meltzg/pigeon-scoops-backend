@@ -63,7 +63,6 @@
                                :recipe-id "foobar"
                                :public    false
                                :uid       "auth0|673a8167069108b622f0ac19"}))
-
   (go)
   (halt)
   (reset)

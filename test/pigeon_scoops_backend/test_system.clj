@@ -1,24 +1,42 @@
 (ns pigeon-scoops-backend.test-system
   (:require [clojure.test :refer :all]
             [integrant.core :as ig]
-            [integrant.repl.state :as state]
             [integrant.repl :as ig-repl]
+            [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
             [ring.mock.request :as mock]))
 
 (def token (atom nil))
 
+(defn port-available? [port]
+  (try
+    (.close (java.net.Socket. "localhost" port))
+    false
+    (catch Exception _
+      true)))
+
+(defn find-next-available-port [ports]
+  (first (filter port-available? ports)))
+
 (defn system-fixture [f]
-  (ig-repl/set-prep!
-    (fn []
-      (-> "resources/config.edn"
-          slurp
-          ig/read-string
-          ig/expand)))
-  (ig-repl/go)
-  (f)
-  (ig-repl/halt))
+  (let [port (find-next-available-port (range 3000 4000))]
+    (cond state/system
+          (f)
+          port
+          (do
+            (ig-repl/set-prep!
+              (fn []
+                (-> "resources/config.edn"
+                    slurp
+                    ig/read-string
+                    ig/expand
+                    (assoc-in [:server/jetty :port] port))))
+            (ig-repl/go)
+            (f)
+            (ig-repl/halt))
+          :else
+          (throw (RuntimeException. "No available port")))))
 
 (defn token-fixture [f]
   (let [auth (-> state/system :auth/auth0)]
