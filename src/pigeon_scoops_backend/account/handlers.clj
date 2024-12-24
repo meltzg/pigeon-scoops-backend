@@ -23,5 +23,5 @@
 
 (defn update-role-to-cook! [auth]
   (fn [request]
-    (let [uid (-> request :claims :sub)]
+    (let [uid (-> request :parameters :path :user-id)]
       (auth0/update-role! auth uid :manage-recipes))))
