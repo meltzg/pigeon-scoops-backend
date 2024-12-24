@@ -3,7 +3,7 @@
             [pigeon-scoops-backend.server :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
-(use-fixtures :once ts/system-fixture ts/account-fixture ts/recipe-admin-fixture ts/token-fixture)
+(use-fixtures :once ts/system-fixture (ts/make-account-fixture) ts/recipe-admin-fixture ts/token-fixture)
 
 (def recipe
   {:img       "http://image.com/foo.png"

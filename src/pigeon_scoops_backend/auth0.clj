@@ -56,12 +56,12 @@
        (first)
        :id))
 
-(defn update-role-to-cook! [auth uid]
+(defn update-role! [auth uid role]
   (let [token (get-management-token auth)]
     (->> {:headers          {"Authorization" (str "Bearer " token)}
           :cookie-policy    :standard
           :content-type     :json
           :throw-exceptions false
           :body             (m/encode "application/json"
-                                      {:roles [(get-role-id token "manage-recipes")]})}
+                                      {:roles [(get-role-id token (name role))]})}
          (http/post (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles")))))

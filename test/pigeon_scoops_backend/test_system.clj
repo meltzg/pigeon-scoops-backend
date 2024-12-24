@@ -51,28 +51,37 @@
           :else
           (throw (RuntimeException. "No available port")))))
 
-(defn account-fixture [f]
-  (let [auth (:auth/auth0 state/system)
-        username (str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com")
-        password (str (UUID/randomUUID))
-        create-response (auth0/create-user! auth
-                                            {:connection "Username-Password-Authentication"
-                                             :email      username
-                                             :password   password})]
-    (reset! test-user {:username username
-                       :password password
-                       :uid      (:user_id create-response)})
-    (reset! token (auth0/get-test-token (conj auth @test-user)))
-    (f)
-    (try
-      (test-endpoint :delete "/v1/account" {:auth true})
-      (catch Exception e
-        (println "could not delete user")))))
+(defn make-account-fixture
+  ([]
+   (make-account-fixture true))
+  ([manage-user?]
+   (fn [f]
+     (let [auth (:auth/auth0 state/system)
+           username (str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com")
+           password (str (UUID/randomUUID))
+           create-response (auth0/create-user! auth
+                                               {:connection "Username-Password-Authentication"
+                                                :email      username
+                                                :password   password})]
+       (reset! test-user {:username username
+                          :password password
+                          :uid      (:user_id create-response)})
+       (reset! token (auth0/get-test-token (conj auth @test-user)))
+       (when manage-user?
+         (test-endpoint :post "/v1/account" {:auth true}))
+       (f)
+       (when manage-user?
+         (test-endpoint :delete "/v1/account" {:auth true}))))))
 
 (defn recipe-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
-    (auth0/update-role-to-cook! auth (:uid @test-user))
-    (test-endpoint :post "/v1/account" {:auth true})
+    (auth0/update-role! auth (:uid @test-user) :manage-recipes)
+    (reset! token (auth0/get-test-token (conj auth @test-user)))
+    (f)))
+
+(defn roles-admin-fixture [f]
+  (let [auth (:auth/auth0 state/system)]
+    (auth0/update-role! auth (:uid @test-user) :manage-roles)
     (reset! token (auth0/get-test-token (conj auth @test-user)))
     (f)))
 

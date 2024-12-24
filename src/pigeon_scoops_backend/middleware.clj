@@ -39,3 +39,16 @@
                                           :data    (:uri request)
                                           :type    :authorization-required})
                             (rr/status 401))))))})
+
+(def wrap-manage-roles
+  {:name        ::manage-roles
+   :description "Middleware to check if a user can manage user roles"
+   :wrap        (fn [handler]
+                  (fn [request]
+                    (let [roles (get-in request [:claims "https://api.pigeon-scoops.com/roles"])]
+                      (if (some #{"manage-roles"} roles)
+                        (handler request)
+                        (-> (rr/response {:message "Operation requires manage-roles role"
+                                          :data    (:uri request)
+                                          :type    :authorization-required})
+                            (rr/status 401))))))})

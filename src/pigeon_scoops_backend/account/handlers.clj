@@ -24,4 +24,4 @@
 (defn update-role-to-cook! [auth]
   (fn [request]
     (let [uid (-> request :claims :sub)]
-      (auth0/update-role-to-cook! auth uid))))
+      (auth0/update-role! auth uid :manage-recipes))))

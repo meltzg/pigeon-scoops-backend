@@ -23,8 +23,23 @@
 (def db (-> state/system :db/postgres))
 (def auth (-> state/system :auth/auth0))
 (def token (atom nil))
+(def test-user (atom nil))
 
 (comment
+  auth
+  (let [auth (:auth/auth0 state/system)
+        username "repl-user@pigeon-scoops.com"
+        password (:test-password auth)
+        create-response (auth0/create-user! auth
+                                            {:connection "Username-Password-Authentication"
+                                             :email      username
+                                             :password   password})]
+    (reset! test-user {:username username
+                       :password password
+                       :uid      (:user_id create-response)})
+    (reset! token (auth0/get-test-token (conj auth @test-user))))
+  (reset! token (auth0/get-test-token (merge auth {:username "repl-user@pigeon-scoops.com"
+                                                   :password (:test-password auth)})))
   (->> (app (-> {:request-method :get
                  :uri            "/v1/recipes/a3dde84c-4a33-45aa-b0f3-4bf9ac997680"}
                 (mock/header :authorization (str "Bearer " @token))))
@@ -49,7 +64,7 @@
                  :body-params    {:name      "My recipe"
                                   :prep-time 49
                                   :img       "image-url"}}
-                (mock/header :authorization (str "Bearer " (auth0/get-test-token)))
+                (mock/header :authorization (str "Bearer " (auth0/get-test-token (merge auth {:username "repl-user@pigeon-scoops.com"}))))
                 (mock/header :accept "application/transit+json")))
        :body
        (slurp)

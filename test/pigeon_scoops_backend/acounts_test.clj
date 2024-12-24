@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
-(use-fixtures :once ts/system-fixture ts/account-fixture ts/token-fixture)
+(use-fixtures :once ts/system-fixture (ts/make-account-fixture false) ts/roles-admin-fixture ts/token-fixture)
 
 (deftest account-tests
   (testing "Create user account"
