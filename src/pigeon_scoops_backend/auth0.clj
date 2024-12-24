@@ -2,20 +2,6 @@
   (:require [clj-http.client :as http]
             [muuntaja.core :as m]))
 
-(defn get-test-token [{:keys [test-client-id username password]}]
-  (->> {:content-type  :json
-        :cookie-policy :standard
-        :body          (m/encode "application/json"
-                                 {:client_id  test-client-id
-                                  :audience   "https://pigeon-scoops.us.auth0.com/api/v2/"
-                                  :grant_type "password"
-                                  :username   username
-                                  :password   password
-                                  :scope      "openid profile email"})}
-       (http/post "https://pigeon-scoops.us.auth0.com/oauth/token")
-       (m/decode-response-body)
-       :access_token))
-
 (defn get-management-token [{:keys [management-client-id management-client-secret]}]
   (->> {:content-type  :json
         :cookie-policy :standard

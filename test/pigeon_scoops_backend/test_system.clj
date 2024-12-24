@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.test-system
-  (:require [clojure.test :refer :all]
+  (:require [clj-http.client :as http]
+            [clojure.test :refer :all]
             [integrant.core :as ig]
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
@@ -11,6 +12,20 @@
 (def token (atom nil))
 (def test-user (atom nil))
 
+(defn get-test-token [{:keys [test-client-id username password]}]
+  (->> {:content-type  :json
+        :cookie-policy :standard
+        :body          (m/encode "application/json"
+                                 {:client_id  test-client-id
+                                  :audience   "https://pigeon-scoops.us.auth0.com/api/v2/"
+                                  :grant_type "password"
+                                  :username   username
+                                  :password   password
+                                  :scope      "openid profile email"})}
+       (http/post "https://pigeon-scoops.us.auth0.com/oauth/token")
+       (m/decode-response-body)
+       :access_token))
+
 (defn test-endpoint
   ([method uri]
    (test-endpoint method uri nil))
@@ -18,7 +33,7 @@
    (let [app (-> state/system :pigeon-scoops-backend/app)
          auth (-> state/system :auth/auth0)
          response (app (-> (mock/request method uri)
-                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (auth0/get-test-token (conj auth @test-user)))))
+                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-test-token (conj auth @test-user)))))
                                    (:body opts) (mock/json-body (:body opts)))))]
      (update response :body (partial m/decode "application/json")))))
 
@@ -66,7 +81,7 @@
        (reset! test-user {:username username
                           :password password
                           :uid      (:user_id create-response)})
-       (reset! token (auth0/get-test-token (conj auth @test-user)))
+       (reset! token (get-test-token (conj auth @test-user)))
        (when manage-user?
          (test-endpoint :post "/v1/account" {:auth true}))
        (f)
@@ -76,29 +91,17 @@
 (defn recipe-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
     (auth0/update-role! auth (:uid @test-user) :manage-recipes)
-    (reset! token (auth0/get-test-token (conj auth @test-user)))
+    (reset! token (get-test-token (conj auth @test-user)))
     (f)))
 
 (defn roles-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
     (auth0/update-role! auth (:uid @test-user) :manage-roles)
-    (reset! token (auth0/get-test-token (conj auth @test-user)))
+    (reset! token (get-test-token (conj auth @test-user)))
     (f)))
 
 (defn token-fixture [f]
   (let [auth (-> state/system :auth/auth0)]
-    (reset! token (auth0/get-test-token (conj auth @test-user)))
+    (reset! token (get-test-token (conj auth @test-user)))
     (f)
     (reset! token nil)))
-
-(comment
-  (test-endpoint :get "/v1/recipes/c4aa000e-24c7-46b0-8a5e-1fcb0a5f8e30")
-  (test-endpoint :post "/v1/recipes" {:auth true
-                                      :body {:img       "string"
-                                             :name      "my name"
-                                             :prep-time 30}})
-  (test-endpoint :delete "/v1/recipes/4fa73cb5-e0cd-471f-b5c2-b080eb2039ab/favorite" {:auth true})
-  (test-endpoint :post "/v1/recipes/c4aa000e-24c7-46b0-8a5e-1fcb0a5f8e30/steps"
-                 {:auth true
-                  :body {:sort        1
-                         :description "shake"}}))
