@@ -27,17 +27,7 @@
 
 (comment
   auth
-  (let [auth (:auth/auth0 state/system)
-        username "repl-user@pigeon-scoops.com"
-        password (:test-password auth)
-        create-response (auth0/create-user! auth
-                                            {:connection "Username-Password-Authentication"
-                                             :email      username
-                                             :password   password})]
-    (reset! test-user {:username username
-                       :password password
-                       :uid      (:user_id create-response)})
-    (reset! token (auth0/get-test-token (conj auth @test-user))))
+
   (reset! token (auth0/get-test-token (merge auth {:username "repl-user@pigeon-scoops.com"
                                                    :password (:test-password auth)})))
   (->> (app (-> {:request-method :get

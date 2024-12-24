@@ -9,8 +9,9 @@
    :wrap        (fn [handler]
                   (jwt/wrap-jwt
                     handler
-                    {:alg          :RS256
-                     :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}))})
+                    {:issuers {"https://pigeon-scoops.us.auth0.com/"
+                               {:alg          :RS256
+                                :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
 
 (def wrap-recipe-owner
   {:name        ::recipe-owner
