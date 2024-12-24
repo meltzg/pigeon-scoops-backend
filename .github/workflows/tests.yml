@@ -17,8 +17,8 @@ jobs:
         run: lein deps
       - name: Run tests
         env:
-          TEST_USER: ${{ secrets.TEST_USER }}
-          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
+          MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
           JDBC_DATABASE_URL: ${{ secrets.JDBC_DATABASE_URL }}
         run: lein test
