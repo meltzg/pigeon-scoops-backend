@@ -19,8 +19,6 @@
 
 (defmethod ig/expand-key :auth/auth0 [k config]
   {k (merge config (cond-> {}
-                           (env :test-user) (conj {:test-user (env :test-user)})
-                           (env :test-password) (conj {:test-password (env :test-password)})
                            (env :test-client-id) (conj {:test-client-id (env :test-client-id)})
                            (env :management-client-id) (conj {:management-client-id (env :management-client-id)})
                            (env :management-client-secret) (conj {:management-client-secret (env :management-client-secret)})))})

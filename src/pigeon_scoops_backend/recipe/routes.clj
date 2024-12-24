@@ -10,6 +10,7 @@
                :responses {200 {:body responses/recipes}}
                :summary   "list of recipes"}
         :post {:handler    (recipe/create-recipe! db)
+               :middleware [[mw/wrap-manage-recipes]]
                :parameters {:body {:name      string?
                                    :prep-time int?
                                    :img       string?}}
@@ -22,7 +23,8 @@
                :responses {200 {:body responses/recipe}}
                :summary   "Retrieve recipe"}
       :put    {:handler    (recipe/update-recipe! db)
-               :middleware [[mw/wrap-recipe-owner db]]
+               :middleware [[mw/wrap-recipe-owner db]
+                            [mw/wrap-manage-recipes]]
                :parameters {:body {:name      string?
                                    :prep-time int?
                                    :img       string?
@@ -30,7 +32,8 @@
                :responses  {204 {:body nil?}}
                :summary    "Update recipe"}
       :delete {:handler    (recipe/delete-recipe! db)
-               :middleware [[mw/wrap-recipe-owner db]]
+               :middleware [[mw/wrap-recipe-owner db]
+                            [mw/wrap-manage-recipes]]
                :response   {204 {:body nil?}}
                :summary    "Delete recipe"}}]
     ["/favorite" {:post   {:handler   (recipe/favorite-recipe! db)
@@ -39,43 +42,44 @@
                   :delete {:handler  (recipe/unfavorite-recipe! db)
                            :response {204 {:body nil?}}
                            :summary  "Unfavorite recipe"}}]
-    ["/steps" {:post   {:handler    (recipe/create-step! db)
-                        :middleware [[mw/wrap-recipe-owner db]]
-                        :parameters {:body {:sort        pos-int?
-                                            :description string?}}
-                        :responses  {201 {:body {:step-id string?}}}
-                        :summary    "Create step"}
-               :put    {:handler    (recipe/update-step! db)
-                        :middleware [[mw/wrap-recipe-owner db]]
-                        :parameters {:body {:step-id     string?
-                                            :sort        pos-int?
-                                            :description string?}}
-                        :summary    "Update step"
-                        :responses  {204 {:body nil?}}}
-               :delete {:handler    (recipe/delete-step! db)
-                        :middleware [[mw/wrap-recipe-owner db]]
-                        :parameters {:body {:step-id string?}}
-                        :responses  {204 {:body nil?}}
-                        :summary    "Delete step"}}]
-    ["/ingredients" {:post   {:handler    (recipe/create-ingredient! db)
-                              :middleware [[mw/wrap-recipe-owner db]]
-                              :parameters {:body {:sort    pos-int?
-                                                  :name    string?
-                                                  :amount  pos-int?
-                                                  :measure string?}}
-                              :responses  {201 {:body {:ingredient-id string?}}}
-                              :summary    "Create ingredient"}
-                     :put    {:handler    (recipe/update-ingredient! db)
-                              :middleware [[mw/wrap-recipe-owner db]]
-                              :parameters {:body {:ingredient-id string?
-                                                  :sort          pos-int?
-                                                  :name          string?
-                                                  :amount        pos-int?
-                                                  :measure       string?}}
-                              :responses  {204 {:body nil?}}
-                              :summary    "Update ingredient"}
-                     :delete {:handler    (recipe/delete-ingredient! db)
-                              :middleware [[mw/wrap-recipe-owner db]]
-                              :parameters {:body {:ingredient-id string?}}
-                              :responses  {204 {:body nil?}}
-                              :summary    "delete ingredient"}}]]])
+    ["/steps" {:middleware [[mw/wrap-recipe-owner db]
+                            [mw/wrap-manage-recipes]]}
+     ["" {:post   {:handler    (recipe/create-step! db)
+                   :parameters {:body {:sort        pos-int?
+                                       :description string?}}
+                   :responses  {201 {:body {:step-id string?}}}
+                   :summary    "Create step"}
+          :put    {:handler    (recipe/update-step! db)
+                   :parameters {:body {:step-id     string?
+                                       :sort        pos-int?
+                                       :description string?}}
+                   :summary    "Update step"
+                   :responses  {204 {:body nil?}}}
+          :delete {:handler    (recipe/delete-step! db)
+                   :parameters {:body {:step-id string?}}
+                   :responses  {204 {:body nil?}}
+                   :summary    "Delete step"}}]]
+    ["/ingredients" {:middleware [[mw/wrap-recipe-owner db]
+                                  [mw/wrap-manage-recipes]]}
+     ["" {:post   {:handler    (recipe/create-ingredient! db)
+                   :middleware [[mw/wrap-recipe-owner db]]
+                   :parameters {:body {:sort    pos-int?
+                                       :name    string?
+                                       :amount  pos-int?
+                                       :measure string?}}
+                   :responses  {201 {:body {:ingredient-id string?}}}
+                   :summary    "Create ingredient"}
+          :put    {:handler    (recipe/update-ingredient! db)
+                   :middleware [[mw/wrap-recipe-owner db]]
+                   :parameters {:body {:ingredient-id string?
+                                       :sort          pos-int?
+                                       :name          string?
+                                       :amount        pos-int?
+                                       :measure       string?}}
+                   :responses  {204 {:body nil?}}
+                   :summary    "Update ingredient"}
+          :delete {:handler    (recipe/delete-ingredient! db)
+                   :middleware [[mw/wrap-recipe-owner db]]
+                   :parameters {:body {:ingredient-id string?}}
+                   :responses  {204 {:body nil?}}
+                   :summary    "delete ingredient"}}]]]])

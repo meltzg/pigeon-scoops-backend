@@ -25,11 +25,9 @@
 (def token (atom nil))
 
 (comment
-  (reset! token (auth0/get-test-token auth))
-  @token
   (->> (app (-> {:request-method :get
                  :uri            "/v1/recipes/a3dde84c-4a33-45aa-b0f3-4bf9ac997680"}
-                (mock/header :authorization (str "Bearer " (or @token (auth0/get-test-token))))))
+                (mock/header :authorization (str "Bearer " @token))))
        :body
        (slurp)
        (m/decode "application/json"))

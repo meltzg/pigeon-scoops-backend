@@ -26,3 +26,16 @@
                                           :data    (str "recipe-id " recipe-id)
                                           :type    :authorization-required})
                             (rr/status 401))))))})
+
+(def wrap-manage-recipes
+  {:name        ::manage-recipes
+   :description "Middleware to check if a user can manage recipes"
+   :wrap        (fn [handler]
+                  (fn [request]
+                    (let [roles (get-in request [:claims "https://api.pigeon-scoops.com/roles"])]
+                      (if (some #{"manage-recipes"} roles)
+                        (handler request)
+                        (-> (rr/response {:message "Operation requires manage-recipes role"
+                                          :data    (:uri request)
+                                          :type    :authorization-required})
+                            (rr/status 401))))))})

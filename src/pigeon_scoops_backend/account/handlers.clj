@@ -7,7 +7,7 @@
   (fn [request]
     (let [{:keys [sub name picture]} (:claims request)]
       (account-db/create-account! db {:uid sub :name name :picture picture})
-      (rr/status 204))))
+      (rr/status 201))))
 
 (defn delete-account! [auth db]
   (fn [request]
@@ -20,3 +20,8 @@
         (rr/not-found {:type    "user-not-found"
                        :message "User not found"
                        :data    (str "uid " uid)})))))
+
+(defn update-role-to-cook! [auth]
+  (fn [request]
+    (let [uid (-> request :claims :sub)]
+      (auth0/update-role-to-cook! auth uid))))
