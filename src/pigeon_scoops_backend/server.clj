@@ -3,8 +3,10 @@
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [pigeon-scoops-backend.router :as router]
-            [ring.adapter.jetty :as jetty])
-  (:import (org.eclipse.jetty.server Server)))
+            [ring.adapter.jetty :as jetty]
+            [next.jdbc.connection :as njc])
+  (:import (com.zaxxer.hikari HikariDataSource)
+           (org.eclipse.jetty.server Server)))
 
 (defn app [env]
   (router/routes env))
@@ -33,13 +35,18 @@
 
 (defmethod ig/init-key :db/postgres [_ {:keys [jdbc-url]}]
   (println "\n Configured DB")
-  (jdbc/with-options jdbc-url jdbc/snake-kebab-opts))
+  (jdbc/with-options
+    (njc/->pool HikariDataSource {:jdbcUrl jdbc-url})
+    jdbc/snake-kebab-opts))
 
 (defmethod ig/init-key :auth/auth0 [_ config]
   config)
 
 (defmethod ig/halt-key! :server/jetty [_ ^Server jetty]
   (.stop jetty))
+
+(defmethod ig/halt-key! :db/postgres [_ config]
+  (.close ^HikariDataSource (:connectable config)))
 
 (defn -main
   "I don't do a whole lot ... yet."
