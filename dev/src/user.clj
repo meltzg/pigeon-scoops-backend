@@ -10,7 +10,7 @@
 
 (ig-repl/set-prep!
   (fn []
-    (-> "resources/config.edn"
+    (-> "dev/resources/config.edn"
         slurp
         ig/read-string)))
 
