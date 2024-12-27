@@ -2,9 +2,9 @@
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
+            [next.jdbc.connection :as njc]
             [pigeon-scoops-backend.router :as router]
-            [ring.adapter.jetty :as jetty]
-            [next.jdbc.connection :as njc])
+            [ring.adapter.jetty :as jetty])
   (:import (com.zaxxer.hikari HikariDataSource)
            (org.eclipse.jetty.server Server)))
 

@@ -55,7 +55,7 @@
           (do
             (ig-repl/set-prep!
               (fn []
-                (-> "resources/config.edn"
+                (-> "dev/resources/config.edn"
                     slurp
                     ig/read-string
                     ig/expand
@@ -117,4 +117,6 @@
     (reset! test-user {:username username
                        :password password
                        :uid      (:user_id create-response)})
-    (reset! token (get-test-token (conj auth @test-user)))))
+    (reset! token (get-test-token (conj auth @test-user))))
+  (get-test-token (merge (:auth/auth0 state/system) {:username "repl-user@pigeon-scoops.com"
+                                                     :password (:test-password (:auth/auth0 state/system))})))

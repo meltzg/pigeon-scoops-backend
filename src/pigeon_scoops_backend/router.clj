@@ -33,9 +33,9 @@
                                      :description "The Pigeon Scoops Backend API is organized around REST. Returns JSON, Transit (msgpack, json), or EDN  encoded responses."
                                      :version     "1.0.0"}
                :securityDefinitions {:BearerAuth
-                                     {:type "apiKey"
-                                      :name "Authorization"
-                                      :in   "header"
+                                     {:type        "apiKey"
+                                      :name        "Authorization"
+                                      :in          "header"
                                       :description "Token must be prepended with \"Bearer \""}}}
      :handler (swagger/create-swagger-handler)}}])
 
