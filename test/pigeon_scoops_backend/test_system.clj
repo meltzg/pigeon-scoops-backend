@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.test-system
   (:require [clj-http.client :as http]
             [clojure.test :refer :all]
+            [environ.core :refer [env]]
             [integrant.core :as ig]
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
@@ -55,7 +56,9 @@
           (do
             (ig-repl/set-prep!
               (fn []
-                (-> "dev/resources/config.edn"
+                (-> (if (env "CI_ENV")
+                      "resources/config.edn"
+                      "dev/resources/config.edn")
                     slurp
                     ig/read-string
                     ig/expand
