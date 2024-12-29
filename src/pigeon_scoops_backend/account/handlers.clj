@@ -6,7 +6,7 @@
 (defn create-account! [db]
   (fn [request]
     (let [{:keys [sub name picture]} (:claims request)]
-      (account-db/create-account! db {:uid sub :name name :picture picture})
+      (account-db/create-account! db {:id sub :name name :picture picture})
       (rr/status 201))))
 
 (defn delete-account! [auth db]
@@ -15,7 +15,7 @@
           delete-auth0-account! (auth0/delete-user! auth uid)]
       (if (= (:status delete-auth0-account!) 204)
         (do
-          (account-db/delete-account! db {:uid uid})
+          (account-db/delete-account! db {:id uid})
           (rr/status 204))
         (rr/not-found {:type    "user-not-found"
                        :message "User not found"

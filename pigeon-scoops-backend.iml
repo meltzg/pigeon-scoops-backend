@@ -35,7 +35,8 @@
     <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.core/jackson-databind:2.17.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-cbor:2.10.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-smile:2.10.2" level="project" />
-    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.datatype/jackson-datatype-jsr310:2.17.2" level="project" />
+    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-toml:2.15.2" level="project" />
+    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.datatype/jackson-datatype-jsr310:2.15.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.google.code.findbugs/jsr305:3.0.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.google.errorprone/error_prone_annotations:2.3.4" level="project" />
     <orderEntry type="library" name="Leiningen: com.google.guava/failureaccess:1.0.1" level="project" />
@@ -118,6 +119,8 @@
     <orderEntry type="library" name="Leiningen: org.eclipse.jetty/jetty-util:11.0.24" level="project" />
     <orderEntry type="library" name="Leiningen: org.eclipse.jetty/jetty-webapp:11.0.24" level="project" />
     <orderEntry type="library" name="Leiningen: org.eclipse.jetty/jetty-xml:11.0.24" level="project" />
+    <orderEntry type="library" name="Leiningen: org.flywaydb/flyway-core:11.1.0" level="project" />
+    <orderEntry type="library" name="Leiningen: org.flywaydb/flyway-database-postgresql:11.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.javassist/javassist:3.18.1-GA" level="project" />
     <orderEntry type="library" name="Leiningen: org.msgpack/msgpack:0.6.12" level="project" />
     <orderEntry type="library" name="Leiningen: org.nrepl/incomplete:0.1.0" level="project" />
@@ -126,6 +129,7 @@
     <orderEntry type="library" name="Leiningen: org.ring-clojure/ring-jakarta-servlet:1.13.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.ring-clojure/ring-websocket-protocols:1.13.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.slf4j/slf4j-api:1.7.36" level="project" />
+    <orderEntry type="library" name="Leiningen: org.xerial/sqlite-jdbc:3.47.1.0" level="project" />
     <orderEntry type="library" name="Leiningen: ovotech/ring-jwt:2.3.0" level="project" />
     <orderEntry type="library" name="Leiningen: potemkin:0.4.7" level="project" />
     <orderEntry type="library" name="Leiningen: prismatic/schema:1.1.12" level="project" />
