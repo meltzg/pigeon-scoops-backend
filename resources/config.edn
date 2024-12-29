@@ -2,8 +2,8 @@
                              :port    3000}
  :pigeon-scoops-backend/app {:jdbc-url #ig/ref :db/postgres
                              :auth     #ig/ref :auth/auth0}
- :db/migration              {:jdbc-url #ig/ref :db/postgres}
  :db/postgres               {:jdbc-url "jdbc-url"}
+ :db/migration              {:jdbc-url #ig/ref :db/postgres}
  :auth/auth0                {:test-client-id           "test-client-id"
                              :management-client-id     "client-id"
                              :management-client-secret "client-secret"}}
