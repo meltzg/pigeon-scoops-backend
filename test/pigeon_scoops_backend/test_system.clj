@@ -56,7 +56,7 @@
           (do
             (ig-repl/set-prep!
               (fn []
-                (println "AAA" (env :ci-env))
+                (println "AAA" (env :jdbc-database-url))
                 (-> (if (env :ci-env)
                       "resources/config.edn"
                       "dev/resources/config.edn")
