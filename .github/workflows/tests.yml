@@ -11,6 +11,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env: # Environment variable for the entire job
+      CI_ENV: true
+      JDBC_DATABASE_URL: jdbc:sqlite:dev/resources/db.sqlite
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java 21
