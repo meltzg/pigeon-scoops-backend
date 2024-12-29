@@ -56,7 +56,8 @@
           (do
             (ig-repl/set-prep!
               (fn []
-                (-> (if (env "CI_ENV")
+                (println "AAA" (env :ci-env))
+                (-> (if (env :ci-env)
                       "resources/config.edn"
                       "dev/resources/config.edn")
                     slurp
