@@ -2,29 +2,42 @@
   (:require [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]))
 
+(defn keywordize-amount-unit [recipe]
+  (-> recipe
+      (assoc :recipe/amount-unit (keyword (:recipe/amount-unit-type recipe)
+                                          (:recipe/amount-unit recipe)))))
+
 (defn find-all-recipes [db uid]
   (with-open [conn (jdbc/get-connection db)]
     (let [conn-opts (jdbc/with-options conn (:options db))
           public (sql/find-by-keys conn-opts :recipe {:public true})
-          drafts (when uid (sql/find-by-keys conn-opts :recipe {:uid    uid
-                                                                :public false}))]
-      (merge {:public public}
-             (when drafts
-               {:drafts drafts})))))
+          private (when uid (sql/find-by-keys conn-opts :recipe {:user-id uid
+                                                                 :public  false}))]
+      (merge {:public (map keywordize-amount-unit public)}
+             (when private
+               {:private (map keywordize-amount-unit private)})))))
 
 (defn find-recipe-by-id [db recipe-id]
   (with-open [conn (jdbc/get-connection db)]
     (let [conn-opts (jdbc/with-options conn (:options db))
-          [recipe] (sql/find-by-keys conn-opts :recipe {:recipe_id recipe-id})
-          steps (sql/find-by-keys conn-opts :step {:recipe_id recipe-id} (merge {:order-by [[:sort :asc]]}))
-          ingredients (sql/find-by-keys conn-opts :ingredient {:recipe_id recipe-id} (merge {:order-by [[:sort :asc]]}))]
+          [recipe] (sql/find-by-keys conn-opts :recipe {:id recipe-id})
+          ingredients (sql/find-by-keys conn-opts :ingredient {:recipe-id recipe-id})
+          favorite-count (count (sql/find-by-keys conn-opts :recipe-favorite {:recipe-id recipe-id}))]
       (when (seq recipe)
-        (assoc recipe
-          :recipe/steps steps
-          :recipe/ingredients ingredients)))))
+        (-> recipe
+            (keywordize-amount-unit)
+            (assoc
+              :recipe/ingredients ingredients
+              :recipe/favorite-count favorite-count))))))
 
 (defn insert-recipe! [db recipe]
-  (sql/insert! db :recipe (assoc recipe :favorite-count 0 :public false)))
+  (println (assoc recipe :public false
+                         :amount-unit (name (:amount-unit recipe))
+                         :amount-unit-type (namespace (:amount-unit recipe))))
+  (sql/insert! db :recipe (assoc recipe :public false
+                                        :instructions (into-array String (:instructions recipe))
+                                        :amount-unit (name (:amount-unit recipe))
+                                        :amount-unit-type (namespace (:amount-unit recipe)))))
 
 (defn update-recipe! [db recipe]
   (-> (sql/update! db :recipe recipe (select-keys recipe [:recipe-id]))
@@ -54,19 +67,6 @@
         (jdbc/execute-one! tx ["UPDATE recipe
                                 SET favorite_count = favorite_count - 1
                                 WHERE recipe_id = ?" recipe-id]))
-      ::jdbc/update-count
-      (pos?)))
-
-(defn insert-step! [db step]
-  (sql/insert! db, :step step))
-
-(defn update-step! [db step]
-  (-> (sql/update! db :step step (select-keys step [:recipe-id :step-id]))
-      ::jdbc/update-count
-      (pos?)))
-
-(defn delete-step! [db step]
-  (-> (sql/delete! db :step step)
       ::jdbc/update-count
       (pos?)))
 

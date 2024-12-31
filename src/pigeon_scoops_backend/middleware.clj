@@ -21,7 +21,7 @@
                     (let [uid (-> request :claims :sub)
                           recipe-id (-> request :parameters :path :recipe-id)
                           recipe (recipe-db/find-recipe-by-id db recipe-id)]
-                      (if (= (:recipe/uid recipe) uid)
+                      (if (= (:recipe/user-id recipe) uid)
                         (handler request)
                         (-> (rr/response {:message "Operation requires recipe ownership"
                                           :data    (str "recipe-id " recipe-id)

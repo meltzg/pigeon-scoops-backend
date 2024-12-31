@@ -3,9 +3,11 @@
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [next.jdbc.connection :as njc]
+            [next.jdbc.result-set :as rs]
             [pigeon-scoops-backend.router :as router]
             [ring.adapter.jetty :as jetty])
   (:import (com.zaxxer.hikari HikariDataSource)
+           (java.sql Array)
            (org.eclipse.jetty.server Server)
            (org.flywaydb.core Flyway)))
 
@@ -35,7 +37,13 @@
   (app config))
 
 (defmethod ig/init-key :db/postgres [_ {:keys [jdbc-url]}]
-  (println "\n Configured DB")
+  (println "\n Configured DB" jdbc-url)
+  (extend-protocol rs/ReadableColumn
+    Array
+    (read-column-by-label [v _]
+      (vec (.getArray v))) ; Convert the SQL array into a vector
+    (read-column-by-index [v _ _]
+      (vec (.getArray v)))) ; Convert the SQL array into a vector
   (jdbc/with-options
     (njc/->pool HikariDataSource {:jdbcUrl jdbc-url})
     jdbc/snake-kebab-opts))

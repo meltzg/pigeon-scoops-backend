@@ -8,7 +8,8 @@
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
             [ring.mock.request :as mock])
-  (:import (java.util UUID)))
+  (:import (java.util UUID)
+           (org.testcontainers.containers PostgreSQLContainer)))
 
 (def token (atom nil))
 (def test-user (atom nil))
@@ -54,18 +55,32 @@
           (f)
           port
           (do
-            (ig-repl/set-prep!
-              (fn []
-                (-> (if (env :ci-env)
-                      "resources/config.edn"
-                      "dev/resources/config.edn")
-                    slurp
-                    ig/read-string
-                    ig/expand
-                    (assoc-in [:server/jetty :port] port))))
-            (ig-repl/go)
-            (f)
-            (ig-repl/halt))
+            (let [postgres-container
+                  (doto (PostgreSQLContainer. "postgres:latest")      ;; Full reference to PostgreSQLContainer
+                    (.withDatabaseName "test_db")
+                    (.withUsername "user")
+                    (.withPassword "password")
+                    (.start))
+                  full-uri (str (.getJdbcUrl postgres-container)
+                                "&user=" (.getUsername postgres-container)
+                                "&password=" (.getPassword postgres-container))]
+              (ig-repl/set-prep!
+                (fn []
+                  (-> (if (env :ci-env)
+                        "resources/config.edn"
+                        "dev/resources/config.edn")
+                      slurp
+                      ig/read-string
+                      (assoc-in [:db/postgres :jdbc-url] full-uri)
+                      ig/expand
+                      (assoc-in [:server/jetty :port] port))))
+              (ig-repl/go)
+              (try
+                (f)
+                (catch Exception e
+                  (println "FATAL")))
+              (ig-repl/halt)
+              (.stop postgres-container)))
           :else
           (throw (RuntimeException. "No available port")))))
 
@@ -93,6 +108,7 @@
 
 (defn recipe-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
+    (println auth)
     (auth0/update-role! auth (:uid @test-user) :manage-recipes)
     (reset! token (get-test-token (conj auth @test-user)))
     (f)))
@@ -121,5 +137,13 @@
                        :password password
                        :uid      (:user_id create-response)})
     (reset! token (get-test-token (conj auth @test-user))))
+  (let [postgres-container
+        (doto (PostgreSQLContainer. "postgres:latest")      ;; Full reference to PostgreSQLContainer
+          (.withDatabaseName "test_db")
+          (.withUsername "test_user")
+          (.withPassword "test_password")
+          (.start))]
+    (println (.getJdbcUrl postgres-container))
+    (.stop postgres-container))
   (get-test-token (merge (:auth/auth0 state/system) {:username "repl-user@pigeon-scoops.com"
                                                      :password (:test-password (:auth/auth0 state/system))})))

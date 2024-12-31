@@ -7,6 +7,7 @@
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
             [reitit.ring.middleware.exception :as exception]
+            [reitit.ring.middleware.dev :as dev]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
             [reitit.swagger :as swagger]
@@ -14,13 +15,13 @@
 
 (def router-config
   {:validate  rs/validate
-   ;:reitit.middleware/transform dev/print-request-diffs
+   :reitit.middleware/transform dev/print-request-diffs
    :exception pretty/exception
    :data      {:coercion   coercion-spec/coercion
                :muuntaja   m/instance
                :middleware [swagger/swagger-feature
                             muuntaja/format-middleware
-                            exception/exception-middleware
+                            ;exception/exception-middleware
                             coercion/coerce-request-middleware
                             coercion/coerce-response-middleware]}})
 
