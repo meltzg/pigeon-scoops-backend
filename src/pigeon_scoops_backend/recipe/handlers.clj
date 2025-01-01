@@ -34,7 +34,7 @@
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           recipe (-> request :parameters :body)
-          successful? (recipe-db/update-recipe! db (assoc recipe :recipe-id recipe-id))]
+          successful? (recipe-db/update-recipe! db (assoc recipe :id recipe-id))]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "recipe-not-found"

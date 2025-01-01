@@ -108,7 +108,6 @@
 
 (defn recipe-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
-    (println auth)
     (auth0/update-role! auth (:uid @test-user) :manage-recipes)
     (reset! token (get-test-token (conj auth @test-user)))
     (f)))
@@ -143,7 +142,6 @@
           (.withUsername "test_user")
           (.withPassword "test_password")
           (.start))]
-    (println (.getJdbcUrl postgres-container))
     (.stop postgres-container))
   (get-test-token (merge (:auth/auth0 state/system) {:username "repl-user@pigeon-scoops.com"
                                                      :password (:test-password (:auth/auth0 state/system))})))

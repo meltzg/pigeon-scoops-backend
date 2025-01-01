@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS user_order;
 CREATE TABLE account
 (
     id      TEXT NOT NULL PRIMARY KEY,
-    name  TEXT,
+    name  TEXT NOT NULL,
     picture TEXT,
     UNIQUE (id)
 );
@@ -45,7 +45,6 @@ CREATE TABLE recipe
     instructions     TEXT[] NOT NULL, -- Array of instructions as text
     amount           REAL    NOT NULL,
     amount_unit      TEXT    NOT NULL,
-    amount_unit_type TEXT    NOT NULL,
     source           TEXT,
     "public"         BOOLEAN NOT NULL,
     picture          TEXT
@@ -59,7 +58,6 @@ CREATE TABLE ingredient
     ingredient_recipe_id  UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
     amount                REAL NOT NULL,
     amount_unit           TEXT NOT NULL,
-    amount_unit_type      TEXT NOT NULL,
     PRIMARY KEY (recipe_id, ingredient_grocery_id, ingredient_recipe_id), -- Composite primary key
     CHECK (
         (ingredient_grocery_id IS NOT NULL AND ingredient_recipe_id IS NULL) OR
@@ -82,12 +80,11 @@ CREATE TABLE user_order
 );
 
 -- Create 'flavor_amount' table
-CREATE TABLE order_amount
+CREATE TABLE order_item
 (
     order_id         UUID NOT NULL REFERENCES user_order (id) ON DELETE CASCADE,
     recipe_id        UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
     amount           REAL NOT NULL,
     amount_unit      TEXT NOT NULL,
-    amount_unit_type TEXT NOT NULL,
     PRIMARY KEY (order_id, recipe_id) -- Composite primary key
 );

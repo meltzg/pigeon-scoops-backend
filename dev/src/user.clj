@@ -61,7 +61,6 @@
   (jdbc/execute-one! db ["SELECT table_name FROM information_schema.tables"])
   (jdbc/execute-one! db ["select * from pg_stat_statements_info"])
   (sql/find-by-keys db :recipe {:public false})
-
   (let [auth (:auth/auth0 state/system)
         username "repl-user@pigeon-scoops.com"
         password (:test-password auth)
