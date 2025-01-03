@@ -8,7 +8,8 @@
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
             [ring.mock.request :as mock])
-  (:import (java.util UUID)))
+  (:import (java.util UUID)
+           (org.testcontainers.containers PostgreSQLContainer)))
 
 (def token (atom nil))
 (def test-user (atom nil))
@@ -54,18 +55,32 @@
           (f)
           port
           (do
-            (ig-repl/set-prep!
-              (fn []
-                (-> (if (env "CI_ENV")
-                      "resources/config.edn"
-                      "dev/resources/config.edn")
-                    slurp
-                    ig/read-string
-                    ig/expand
-                    (assoc-in [:server/jetty :port] port))))
-            (ig-repl/go)
-            (f)
-            (ig-repl/halt))
+            (let [postgres-container
+                  (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
+                    (.withDatabaseName "test_db")
+                    (.withUsername "user")
+                    (.withPassword "password")
+                    (.start))
+                  full-uri (str (.getJdbcUrl postgres-container)
+                                "&user=" (.getUsername postgres-container)
+                                "&password=" (.getPassword postgres-container))]
+              (ig-repl/set-prep!
+                (fn []
+                  (-> (if (env :ci-env)
+                        "resources/config.edn"
+                        "dev/resources/config.edn")
+                      slurp
+                      ig/read-string
+                      (assoc-in [:db/postgres :jdbc-url] full-uri)
+                      ig/expand
+                      (assoc-in [:server/jetty :port] port))))
+              (ig-repl/go)
+              (try
+                (f)
+                (catch Exception e
+                  (println "FATAL")))
+              (ig-repl/halt)
+              (.stop postgres-container)))
           :else
           (throw (RuntimeException. "No available port")))))
 
@@ -93,13 +108,13 @@
 
 (defn recipe-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
-    (auth0/update-role! auth (:uid @test-user) :manage-recipes)
+    (auth0/update-roles! auth (:uid @test-user) [:manage-recipes])
     (reset! token (get-test-token (conj auth @test-user)))
     (f)))
 
 (defn roles-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
-    (auth0/update-role! auth (:uid @test-user) :manage-roles)
+    (auth0/update-roles! auth (:uid @test-user) [:manage-roles])
     (reset! token (get-test-token (conj auth @test-user)))
     (f)))
 
@@ -111,8 +126,8 @@
 
 (comment
   (let [auth (:auth/auth0 state/system)
-        username "repl-user@pigeon-scoops.com"
-        password (:test-password auth)
+        username (str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com")
+        password (str (UUID/randomUUID))
         create-response (auth0/create-user! auth
                                             {:connection "Username-Password-Authentication"
                                              :email      username
@@ -120,6 +135,15 @@
     (reset! test-user {:username username
                        :password password
                        :uid      (:user_id create-response)})
+    (auth0/update-roles! auth
+                         (:uid @test-user)
+                         [:manage-groceries])
     (reset! token (get-test-token (conj auth @test-user))))
-  (get-test-token (merge (:auth/auth0 state/system) {:username "repl-user@pigeon-scoops.com"
-                                                     :password (:test-password (:auth/auth0 state/system))})))
+  (test-endpoint :delete "/v1/account" {:auth true})
+  (let [resp (test-endpoint :post "/v1/groceries" {:auth true :body {:name "orange" :department :department/produce}})
+        grocery-id (-> resp :body :grocery-id)]
+    (test-endpoint :post (str "/v1/groceries/" grocery-id "/units") {:auth true :body {:source "store"
+                                                                                       :unit-cost 3.3
+                                                                                       :unit-mass 420
+                                                                                       :unit-mass-type :mass/kg}})
+    (test-endpoint :get (str "/v1/groceries/" grocery-id) {:auth true})))

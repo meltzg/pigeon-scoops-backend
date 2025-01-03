@@ -5,8 +5,8 @@
 
 (defn create-account! [db]
   (fn [request]
-    (let [{:keys [sub name picture]} (:claims request)]
-      (account-db/create-account! db {:uid sub :name name :picture picture})
+    (let [{:keys [sub picture] :as claims} (:claims request)]
+      (account-db/create-account! db {:id sub :name (get claims "https://api.pigeon-scoops.com/email") :picture picture})
       (rr/status 201))))
 
 (defn delete-account! [auth db]
@@ -15,13 +15,14 @@
           delete-auth0-account! (auth0/delete-user! auth uid)]
       (if (= (:status delete-auth0-account!) 204)
         (do
-          (account-db/delete-account! db {:uid uid})
+          (account-db/delete-account! db {:id uid})
           (rr/status 204))
         (rr/not-found {:type    "user-not-found"
                        :message "User not found"
                        :data    (str "uid " uid)})))))
 
-(defn update-role-to-cook! [auth]
+(defn update-roles! [auth]
   (fn [request]
-    (let [uid (-> request :parameters :path :user-id)]
-      (auth0/update-role! auth uid :manage-recipes))))
+    (let [uid (-> request :parameters :path :user-id)
+          roles (-> request :parameters :body :roles)]
+      (auth0/update-roles! auth uid roles))))

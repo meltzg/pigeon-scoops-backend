@@ -11,8 +11,16 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env: # Environment variable for the entire job
+      CI_ENV: true
+
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
       - name: Install dependencies
         run: lein deps
       - name: Run tests
@@ -20,5 +28,4 @@ jobs:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
           MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-          JDBC_DATABASE_URL: ${{ secrets.JDBC_DATABASE_URL }}
         run: lein test
