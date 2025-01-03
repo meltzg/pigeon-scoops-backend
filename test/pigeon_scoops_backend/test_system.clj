@@ -56,7 +56,7 @@
           port
           (do
             (let [postgres-container
-                  (doto (PostgreSQLContainer. "postgres:latest")      ;; Full reference to PostgreSQLContainer
+                  (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
                     (.withDatabaseName "test_db")
                     (.withUsername "user")
                     (.withPassword "password")
@@ -108,13 +108,13 @@
 
 (defn recipe-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
-    (auth0/update-role! auth (:uid @test-user) :manage-recipes)
+    (auth0/update-roles! auth (:uid @test-user) [:manage-recipes])
     (reset! token (get-test-token (conj auth @test-user)))
     (f)))
 
 (defn roles-admin-fixture [f]
   (let [auth (:auth/auth0 state/system)]
-    (auth0/update-role! auth (:uid @test-user) :manage-roles)
+    (auth0/update-roles! auth (:uid @test-user) [:manage-roles])
     (reset! token (get-test-token (conj auth @test-user)))
     (f)))
 
@@ -126,8 +126,8 @@
 
 (comment
   (let [auth (:auth/auth0 state/system)
-        username "repl-user@pigeon-scoops.com"
-        password (:test-password auth)
+        username (str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com")
+        password (str (UUID/randomUUID))
         create-response (auth0/create-user! auth
                                             {:connection "Username-Password-Authentication"
                                              :email      username
@@ -135,13 +135,15 @@
     (reset! test-user {:username username
                        :password password
                        :uid      (:user_id create-response)})
+    (auth0/update-roles! auth
+                         (:uid @test-user)
+                         [:manage-groceries])
     (reset! token (get-test-token (conj auth @test-user))))
-  (let [postgres-container
-        (doto (PostgreSQLContainer. "postgres:latest")      ;; Full reference to PostgreSQLContainer
-          (.withDatabaseName "test_db")
-          (.withUsername "test_user")
-          (.withPassword "test_password")
-          (.start))]
-    (.stop postgres-container))
-  (get-test-token (merge (:auth/auth0 state/system) {:username "repl-user@pigeon-scoops.com"
-                                                     :password (:test-password (:auth/auth0 state/system))})))
+  (test-endpoint :delete "/v1/account" {:auth true})
+  (let [resp (test-endpoint :post "/v1/groceries" {:auth true :body {:name "orange" :department :department/produce}})
+        grocery-id (-> resp :body :grocery-id)]
+    (test-endpoint :post (str "/v1/groceries/" grocery-id "/units") {:auth true :body {:source "store"
+                                                                                       :unit-cost 3.3
+                                                                                       :unit-mass 420
+                                                                                       :unit-mass-type :mass/kg}})
+    (test-endpoint :get (str "/v1/groceries/" grocery-id) {:auth true})))

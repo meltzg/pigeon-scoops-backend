@@ -41,9 +41,9 @@
   (extend-protocol rs/ReadableColumn
     Array
     (read-column-by-label [v _]
-      (vec (.getArray v))) ; Convert the SQL array into a vector
+      (vec (.getArray v)))                                  ; Convert the SQL array into a vector
     (read-column-by-index [v _ _]
-      (vec (.getArray v)))) ; Convert the SQL array into a vector
+      (vec (.getArray v))))                                 ; Convert the SQL array into a vector
   (jdbc/with-options
     (njc/->pool HikariDataSource {:jdbcUrl jdbc-url})
     jdbc/snake-kebab-opts))

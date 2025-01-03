@@ -72,9 +72,9 @@
                        :password password
                        :uid      (:user_id create-response)})
     (reset! token (get-test-token (conj auth @test-user))))
-
+  (do (.stop @db-container)
+      (reset! db-container nil))
   (go)
-  (reset! db-container nil)
   (halt)
   (reset)
   (reset-all)

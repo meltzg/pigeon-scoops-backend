@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS user_order;
 CREATE TABLE account
 (
     id      TEXT NOT NULL PRIMARY KEY,
-    name  TEXT NOT NULL,
+    name    TEXT NOT NULL,
     picture TEXT,
     UNIQUE (id)
 );
@@ -25,6 +25,7 @@ CREATE TABLE grocery
 -- Create 'grocery_unit' table
 CREATE TABLE grocery_unit
 (
+    id               UUID NOT NULL PRIMARY KEY,
     grocery_id       UUID NOT NULL REFERENCES grocery (id) ON DELETE CASCADE,
     source           TEXT NOT NULL,
     unit_cost        REAL NOT NULL,
@@ -39,15 +40,15 @@ CREATE TABLE grocery_unit
 -- Create 'recipe' table
 CREATE TABLE recipe
 (
-    id               UUID    NOT NULL PRIMARY KEY,
-    user_id          TEXT    NOT NULL REFERENCES account (id) ON DELETE CASCADE,
-    name             TEXT    NOT NULL,
-    instructions     TEXT[] NOT NULL, -- Array of instructions as text
-    amount           REAL    NOT NULL,
-    amount_unit      TEXT    NOT NULL,
-    source           TEXT,
-    "public"         BOOLEAN NOT NULL,
-    picture          TEXT
+    id           UUID    NOT NULL PRIMARY KEY,
+    user_id      TEXT    NOT NULL REFERENCES account (id) ON DELETE CASCADE,
+    name         TEXT    NOT NULL,
+    instructions TEXT[] NOT NULL, -- Array of instructions as text
+    amount       REAL    NOT NULL,
+    amount_unit  TEXT    NOT NULL,
+    source       TEXT,
+    "public"     BOOLEAN NOT NULL,
+    picture      TEXT
 );
 
 -- Create 'ingredient' table
@@ -74,17 +75,18 @@ create table recipe_favorite
 -- Create 'order' table
 CREATE TABLE user_order
 (
-    id   UUID NOT NULL PRIMARY KEY,
-    note TEXT NOT NULL,
+    id      UUID NOT NULL PRIMARY KEY,
+    note    TEXT NOT NULL,
     user_id TEXT REFERENCES account (id)
 );
 
 -- Create 'flavor_amount' table
 CREATE TABLE order_item
 (
-    order_id         UUID NOT NULL REFERENCES user_order (id) ON DELETE CASCADE,
-    recipe_id        UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
-    amount           REAL NOT NULL,
-    amount_unit      TEXT NOT NULL,
+    order_id    UUID NOT NULL REFERENCES user_order (id) ON DELETE CASCADE,
+    recipe_id   UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
+    amount      REAL NOT NULL,
+    amount_unit TEXT NOT NULL,
+    status      TEXT NOT NULL,
     PRIMARY KEY (order_id, recipe_id) -- Composite primary key
 );

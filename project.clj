@@ -21,5 +21,5 @@
                        :resource-paths ["dev/resources"]
                        :dependencies   [[ring/ring-mock "0.4.0"]
                                         [integrant/repl "0.4.0"]
-                                        [org.testcontainers/postgresql  "1.20.4"]]}}
+                                        [org.testcontainers/postgresql "1.20.4"]]}}
   :uberjar-name "pigeon-scoops.jar")

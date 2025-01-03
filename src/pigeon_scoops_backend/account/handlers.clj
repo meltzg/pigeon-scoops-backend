@@ -21,7 +21,8 @@
                        :message "User not found"
                        :data    (str "uid " uid)})))))
 
-(defn update-role-to-cook! [auth]
+(defn update-roles! [auth]
   (fn [request]
-    (let [uid (-> request :parameters :path :user-id)]
-      (auth0/update-role! auth uid :manage-recipes))))
+    (let [uid (-> request :parameters :path :user-id)
+          roles (-> request :parameters :body :roles)]
+      (auth0/update-roles! auth uid roles))))

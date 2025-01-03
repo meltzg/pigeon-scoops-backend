@@ -17,35 +17,33 @@
                :middleware [[mw/wrap-manage-recipes]]
                :parameters {:body {:name         string?
                                    :instructions [string?]
-                                   :amount number?
-                                   :amount-unit (s/and keyword? (set (concat common/other-units
-                                                                             (keys mass/conversion-map)
-                                                                             (keys volume/conversion-map))))}}
+                                   :amount       number?
+                                   :amount-unit  (s/and keyword? (set (concat common/other-units
+                                                                              (keys mass/conversion-map)
+                                                                              (keys volume/conversion-map))))}}
                :responses  {201 {:body {:recipe-id uuid?}}}
                :summary    "Create recipe"}}]
-   ["/:recipe-id"
-    {:parameters {:path {:recipe-id uuid?}}}
-    [""
-     {:get    {:handler   (recipe/retrieve-recipe db)
-               :responses {200 {:body responses/recipe}}
-               :summary   "Retrieve recipe"}
-      :put    {:handler    (recipe/update-recipe! db)
-               :middleware [[mw/wrap-recipe-owner db]
-                            [mw/wrap-manage-recipes]]
-               :parameters {:body {:name         string?
-                                   :instructions [string?]
-                                   :amount number?
-                                   :amount-unit (s/and keyword? (set (concat common/other-units
-                                                                             (keys mass/conversion-map)
-                                                                             (keys volume/conversion-map))))
-                                   :public       boolean?}}
-               :responses  {204 {:body nil?}}
-               :summary    "Update recipe"}
-      :delete {:handler    (recipe/delete-recipe! db)
-               :middleware [[mw/wrap-recipe-owner db]
-                            [mw/wrap-manage-recipes]]
-               :response   {204 {:body nil?}}
-               :summary    "Delete recipe"}}]
+   ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
+    ["" {:get    {:handler   (recipe/retrieve-recipe db)
+                  :responses {200 {:body responses/recipe}}
+                  :summary   "Retrieve recipe"}
+         :put    {:handler    (recipe/update-recipe! db)
+                  :middleware [[mw/wrap-recipe-owner db]
+                               [mw/wrap-manage-recipes]]
+                  :parameters {:body {:name         string?
+                                      :instructions [string?]
+                                      :amount       number?
+                                      :amount-unit  (s/and keyword? (set (concat common/other-units
+                                                                                 (keys mass/conversion-map)
+                                                                                 (keys volume/conversion-map))))
+                                      :public       boolean?}}
+                  :responses  {204 {:body nil?}}
+                  :summary    "Update recipe"}
+         :delete {:handler    (recipe/delete-recipe! db)
+                  :middleware [[mw/wrap-recipe-owner db]
+                               [mw/wrap-manage-recipes]]
+                  :response   {204 {:body nil?}}
+                  :summary    "Delete recipe"}}]
     ["/favorite" {:post   {:handler   (recipe/favorite-recipe! db)
                            :responses {204 {:body nil?}}
                            :summary   "Favorite recipe"}

@@ -1,13 +1,9 @@
 (ns pigeon-scoops-backend.recipe.db
   (:require [next.jdbc :as jdbc]
-            [next.jdbc.sql :as sql])
+            [next.jdbc.sql :as sql]
+            [pigeon-scoops-backend.utils :refer [db-str->keyword
+                                                 keyword->db-str]])
   (:import (java.util UUID)))
-
-(defn db-str->keyword [recipe & keys]
-  (reduce (fn [acc k] (update acc k keyword)) recipe keys))
-
-(defn keyword->db-str [recipe & keys]
-  (reduce (fn [acc k] (update acc k #(subs (str %) 1))) recipe keys))
 
 (defn find-recipe-favorite-counts [db recipe-ids]
   (->> (next.jdbc/execute! db ["SELECT recipe_id, COUNT(*)
@@ -24,8 +20,8 @@
           public (sql/find-by-keys conn-opts :recipe {:public true})
           private (when uid (sql/find-by-keys conn-opts :recipe {:user-id uid
                                                                  :public  false}))
-          favorite-counts (find-recipe-favorite-counts db (concat (map :recipe/id public)
-                                                                  (map :recipe/id private)))]
+          favorite-counts (find-recipe-favorite-counts conn-opts (concat (map :recipe/id public)
+                                                                         (map :recipe/id private)))]
       (merge {:public (mapv #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
                                               :recipe/amount-unit)
                             public)}

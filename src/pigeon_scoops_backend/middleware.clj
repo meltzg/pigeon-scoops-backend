@@ -28,28 +28,24 @@
                                           :type    :authorization-required})
                             (rr/status 401))))))})
 
-(def wrap-manage-recipes
+(defn wrap-with-roles [& required-roles]
   {:name        ::manage-recipes
-   :description "Middleware to check if a user can manage recipes"
+   :description (str "Middleware to check if a user has any of" required-roles " roles")
    :wrap        (fn [handler]
                   (fn [request]
                     (let [roles (get-in request [:claims "https://api.pigeon-scoops.com/roles"])]
-                      (if (some #{"manage-recipes"} roles)
+                      (if (some (set required-roles) roles)
                         (handler request)
-                        (-> (rr/response {:message "Operation requires manage-recipes role"
+                        (-> (rr/response {:message (str "Operation requires any of " required-roles " roles")
                                           :data    (:uri request)
                                           :type    :authorization-required})
                             (rr/status 401))))))})
 
+(def wrap-manage-recipes
+  (wrap-with-roles "manage-recipes"))
+
 (def wrap-manage-roles
-  {:name        ::manage-roles
-   :description "Middleware to check if a user can manage user roles"
-   :wrap        (fn [handler]
-                  (fn [request]
-                    (let [roles (get-in request [:claims "https://api.pigeon-scoops.com/roles"])]
-                      (if (some #{"manage-roles"} roles)
-                        (handler request)
-                        (-> (rr/response {:message "Operation requires manage-roles role"
-                                          :data    (:uri request)
-                                          :type    :authorization-required})
-                            (rr/status 401))))))})
+  (wrap-with-roles "manage-roles"))
+
+(def wrap-manage-groceries
+  (wrap-with-roles "manage-groceries"))
