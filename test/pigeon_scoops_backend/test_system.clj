@@ -106,23 +106,13 @@
        (when manage-user?
          (test-endpoint :delete "/v1/account" {:auth true}))))))
 
-(defn recipe-admin-fixture [f]
-  (let [auth (:auth/auth0 state/system)]
-    (auth0/update-roles! auth (:uid @test-user) [:manage-recipes])
-    (reset! token (get-test-token (conj auth @test-user)))
-    (f)))
-
-(defn roles-admin-fixture [f]
-  (let [auth (:auth/auth0 state/system)]
-    (auth0/update-roles! auth (:uid @test-user) [:manage-roles])
-    (reset! token (get-test-token (conj auth @test-user)))
-    (f)))
-
-(defn token-fixture [f]
-  (let [auth (-> state/system :auth/auth0)]
-    (reset! token (get-test-token (conj auth @test-user)))
-    (f)
-    (reset! token nil)))
+(defn make-roles-fixture [& roles]
+  (fn [f]
+    (let [auth (:auth/auth0 state/system)]
+      (auth0/update-roles! auth (:uid @test-user) roles)
+      (reset! token (get-test-token (conj auth @test-user)))
+      (f)
+      (reset! token nil))))
 
 (comment
   (let [auth (:auth/auth0 state/system)
@@ -138,12 +128,30 @@
     (auth0/update-roles! auth
                          (:uid @test-user)
                          [:manage-groceries])
-    (reset! token (get-test-token (conj auth @test-user))))
+    (reset! token (get-test-token (conj auth @test-user)))
+    (spit "dev/resources/test-user.edn" @test-user))
+  (->> "dev/resources/test-user.edn"
+       (slurp)
+       (clojure.edn/read-string)
+       (reset! test-user)
+       (conj (:auth/auth0 state/system))
+       (get-test-token)
+       (reset! token))
   (test-endpoint :delete "/v1/account" {:auth true})
-  (let [resp (test-endpoint :post "/v1/groceries" {:auth true :body {:name "orange" :department :department/produce}})
-        grocery-id (-> resp :body :grocery-id)]
-    (test-endpoint :post (str "/v1/groceries/" grocery-id "/units") {:auth true :body {:source "store"
-                                                                                       :unit-cost 3.3
-                                                                                       :unit-mass 420
-                                                                                       :unit-mass-type :mass/kg}})
-    (test-endpoint :get (str "/v1/groceries/" grocery-id) {:auth true})))
+  (let [grocery-resp (test-endpoint :post "/v1/groceries" {:auth true :body {:name "orange" :department :department/produce}})
+        grocery-id (-> grocery-resp :body :grocery-id)
+        grocery-unit-resp (test-endpoint :post (str "/v1/groceries/" grocery-id "/units") {:auth true :body {:source         "store"
+                                                                                                             :unit-cost      3.3
+                                                                                                             :unit-mass      420
+                                                                                                             :unit-mass-type :mass/kg}})
+        grocery-unit-id (-> grocery-unit-resp :body :grocery-unit-id)]
+    (test-endpoint :put (str "/v1/groceries/" grocery-id "/units") {:auth true :body {:id               grocery-unit-id
+                                                                                      :source           "store"
+                                                                                      :unit-cost        3.3
+                                                                                      :unit-mass        420
+                                                                                      :unit-mass-type   :mass/kg
+                                                                                      :unit-common      1000
+                                                                                      :unit-common-type :common/unit}})
+    (test-endpoint :get (str "/v1/groceries/" grocery-id) {:auth true})
+    (test-endpoint :get "/v1/groceries" {:auth true})))
+

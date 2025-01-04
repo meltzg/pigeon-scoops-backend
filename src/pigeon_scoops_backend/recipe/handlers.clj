@@ -8,7 +8,7 @@
   (fn [request]
     (let [uid (-> request :claims :sub)
           recipes (recipe-db/find-all-recipes db uid)]
-      (rr/response recipes))))
+      (rr/response (update-vals recipes vec)))))
 
 (defn create-recipe! [db]
   (fn [request]

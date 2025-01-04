@@ -6,7 +6,7 @@
 
 (defn list-all-groceries [db]
   (fn [_]
-    (rr/response (grocery-db/find-all-groceries db))))
+    (rr/response (vec (grocery-db/find-all-groceries db)))))
 
 (defn create-grocery! [db]
   (fn [request]

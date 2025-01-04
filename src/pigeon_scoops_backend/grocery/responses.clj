@@ -28,4 +28,4 @@
   {:grocery/id             uuid?
    :grocery/name           string?
    :grocery/department     (s/and keyword? departments)
-   (ds/opt :grocery/units) (s/coll-of grocery-unit)})
+   (ds/opt :grocery/units) [grocery-unit]})

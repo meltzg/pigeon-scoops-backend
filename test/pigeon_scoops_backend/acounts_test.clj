@@ -3,7 +3,7 @@
             [pigeon-scoops-backend.test-system :as ts])
   (:import (java.net URLEncoder)))
 
-(use-fixtures :once ts/system-fixture (ts/make-account-fixture false) ts/roles-admin-fixture ts/token-fixture)
+(use-fixtures :once ts/system-fixture (ts/make-account-fixture false) (ts/make-roles-fixture :manage-roles))
 
 (deftest account-tests
   (testing "Create user account"

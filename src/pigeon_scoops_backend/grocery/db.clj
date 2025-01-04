@@ -23,13 +23,13 @@
       (when (seq grocery)
         (-> grocery
             (db-str->keyword :grocery/department)
-            (assoc :grocery/units units))))))
+            (assoc :grocery/units (vec units)))))))
 
 (defn insert-grocery! [db grocery]
   (sql/insert! db :grocery (keyword->db-str grocery :department)))
 
 (defn update-grocery! [db grocery]
-  (-> (sql/update! db :grocery (keyword->db-str grocery :department) (select-keys grocery :id))
+  (-> (sql/update! db :grocery (keyword->db-str grocery :department) (select-keys grocery [:id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -49,10 +49,11 @@
 (defn update-grocery-unit! [db unit]
   (-> unit
       (keyword->db-str
-        :grocery-unit/unit-common-type
-        :grocery-unit/unit-mass-type
-        :grocery-unit/unit-volume-type)
-      (sql/update! db :grocery-unit (select-keys unit [:id]))
+        :unit-common-type
+        :unit-mass-type
+        :unit-volume-type)
+      (#(sql/update! db :grocery-unit %
+                     (select-keys % [:id])))
       ::jdbc/update-count
       (pos?)))
 
@@ -60,4 +61,9 @@
   (-> (sql/delete! db :grocery-unit unit)
       ::jdbc/update-count
       (pos?)))
+
+(comment
+  (let [db (:db/postgres integrant.repl.state/system)]
+    (update-grocery-unit! db {:id #uuid"4996b7c0-758c-4f31-87d1-6de3d29d396d" :source "market basket"})))
+
 

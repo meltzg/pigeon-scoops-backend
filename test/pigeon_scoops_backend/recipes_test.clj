@@ -4,7 +4,7 @@
             [pigeon-scoops-backend.server :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
-(use-fixtures :once ts/system-fixture (ts/make-account-fixture) ts/recipe-admin-fixture ts/token-fixture)
+(use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes))
 
 (def recipe
   {:name         "a spicy meatball"

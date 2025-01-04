@@ -22,13 +22,13 @@
                                                                  :public  false}))
           favorite-counts (find-recipe-favorite-counts conn-opts (concat (map :recipe/id public)
                                                                          (map :recipe/id private)))]
-      (merge {:public (mapv #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                              :recipe/amount-unit)
-                            public)}
+      (merge {:public (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
+                                             :recipe/amount-unit)
+                           public)}
              (when private
-               {:private (mapv #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                                 :recipe/amount-unit)
-                               private)})))))
+               {:private (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
+                                                :recipe/amount-unit)
+                              private)})))))
 
 (defn find-recipe-by-id [db recipe-id]
   (with-open [conn (jdbc/get-connection db)]
