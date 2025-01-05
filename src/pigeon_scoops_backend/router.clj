@@ -1,12 +1,14 @@
 (ns pigeon-scoops-backend.router
   (:require [muuntaja.core :as m]
             [pigeon-scoops-backend.account.routes :as account]
+            [pigeon-scoops-backend.grocery.routes :as grocery]
             [pigeon-scoops-backend.recipe.routes :as recipe]
             [reitit.coercion.spec :as coercion-spec]
             [reitit.dev.pretty :as pretty]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
             [reitit.ring.middleware.exception :as exception]
+    ;[reitit.ring.middleware.dev :as dev]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
             [reitit.swagger :as swagger]
@@ -46,6 +48,7 @@
        ["/v1"
         {:swagger {:security [{:BearerAuth []}]}}
         (recipe/routes env)
+        (grocery/routes env)
         (account/routes env)]]
       router-config)
     (ring/routes

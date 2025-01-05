@@ -13,11 +13,13 @@
                  [clj-http "3.13.0"]
                  [ovotech/ring-jwt "2.3.0"]
                  [camel-snake-kebab "0.4.3"]
-                 [com.zaxxer/HikariCP "6.2.1"]]
+                 [com.zaxxer/HikariCP "6.2.1"]
+                 [org.flywaydb/flyway-database-postgresql "11.1.0"]]
   :plugins [[lein-ancient "0.7.0"]]
   :profiles {:uberjar {:aot :all}
              :dev     {:source-paths   ["dev/src"]
                        :resource-paths ["dev/resources"]
                        :dependencies   [[ring/ring-mock "0.4.0"]
-                                        [integrant/repl "0.4.0"]]}}
+                                        [integrant/repl "0.4.0"]
+                                        [org.testcontainers/postgresql "1.20.4"]]}}
   :uberjar-name "pigeon-scoops.jar")

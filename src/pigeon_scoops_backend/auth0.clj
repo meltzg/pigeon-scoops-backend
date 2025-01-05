@@ -2,6 +2,8 @@
   (:require [clj-http.client :as http]
             [muuntaja.core :as m]))
 
+(def roles #{:manage-roles :manage-recipes :manage-groceries})
+
 (defn get-management-token [{:keys [management-client-id management-client-secret]}]
   (->> {:content-type  :json
         :cookie-policy :standard
@@ -32,22 +34,21 @@
          (http/post (str "https://pigeon-scoops.us.auth0.com/api/v2/users"))
          (m/decode-response-body))))
 
-(defn get-role-id [token role-name]
+(defn get-role-ids [token role-names]
   (->> {:headers       {"Authorization" (str "Bearer " token)}
         :cookie-policy :standard
         :content-type  :json}
        (http/get "https://pigeon-scoops.us.auth0.com/api/v2/roles")
        (m/decode-response-body)
-       (filter #(= (:name %) role-name))
-       (first)
-       :id))
+       (filter #((set role-names) (:name %)))
+       (map :id)))
 
-(defn update-role! [auth uid role]
+(defn update-roles! [auth uid roles]
   (let [token (get-management-token auth)]
     (->> {:headers          {"Authorization" (str "Bearer " token)}
           :cookie-policy    :standard
           :content-type     :json
           :throw-exceptions false
           :body             (m/encode "application/json"
-                                      {:roles [(get-role-id token (name role))]})}
+                                      {:roles (get-role-ids token (map name roles))})}
          (http/post (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles")))))
