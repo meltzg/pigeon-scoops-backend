@@ -18,14 +18,14 @@
       (recipe-db/insert-recipe! db (assoc recipe :id recipe-id
                                                  :user-id uid))
       (rr/created (str responses/base-url "/recipes/" recipe-id)
-                  {:recipe-id recipe-id}))))
+                  {:id recipe-id}))))
 
 (defn retrieve-recipe [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           recipe (recipe-db/find-recipe-by-id db recipe-id)]
       (if recipe
-        (rr/response recipe)
+        (rr/response (update recipe :recipe/ingredients vec))
         (rr/not-found {:type    "recipe-not-found"
                        :message "Recipe not found"
                        :data    (str "recipe-id " recipe-id)})))))
@@ -73,11 +73,11 @@
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)
-          ingredient-id (str (UUID/randomUUID))]
+          ingredient-id (UUID/randomUUID)]
       (recipe-db/insert-ingredient! db (assoc ingredient :recipe-id recipe-id
-                                                         :ingredient-id ingredient-id))
+                                                         :id ingredient-id))
       (rr/created (str responses/base-url "/recipes/" recipe-id)
-                  {:ingredient-id ingredient-id}))))
+                  {:id ingredient-id}))))
 
 (defn update-ingredient! [db]
   (fn [request]
@@ -86,13 +86,14 @@
           successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)
-        (rr/bad-request (select-keys ingredient [:ingredient-id]))))))
+        (rr/bad-request (select-keys ingredient [:id]))))))
 
 (defn delete-ingredient! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)
-          successful? (recipe-db/delete-ingredient! db (assoc ingredient :recipe-id recipe-id))]
+          successful? (recipe-db/delete-ingredient! db (assoc (select-keys ingredient [:id])
+                                                         :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)
-        (rr/bad-request (select-keys ingredient [:ingredient-id]))))))
+        (rr/bad-request (select-keys ingredient [:id]))))))

@@ -4,7 +4,14 @@
             [pigeon-scoops-backend.server :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
-(use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes))
+(use-fixtures
+  :once
+  ts/system-fixture
+  (ts/make-account-fixture)
+  (ts/make-roles-fixture :manage-recipes :manage-groceries))
+
+(def grocery
+  {:name "orange" :department :department/produce})
 
 (def recipe
   {:name         "a spicy meatball"
@@ -16,13 +23,8 @@
   (assoc recipe :public true))
 
 (def ingredient
-  {:name    "sugar"
-   :sort    1
-   :amount  1
-   :measure "Tbsp"})
-
-(def updated-ingredient
-  (assoc ingredient :measure "tsp"))
+  {:amount      1
+   :amount-unit :volume/floz})
 
 (deftest recipes-list-test
   (testing "List recipes"
@@ -39,10 +41,12 @@
 
 (deftest recipes-crud-test
   (let [recipe-id (atom nil)
-        ingredient-id (atom nil)]
+        ingredient-id (atom nil)
+        {:keys [body]} (ts/test-endpoint :post "/v1/groceries" {:auth true :body grocery})
+        grocery-id (:id body)]
     (testing "create recipe"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})]
-        (reset! recipe-id (:recipe-id body))
+        (reset! recipe-id (:id body))
         (is (= status 201))))
     (testing "update recipe"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id) {:auth true :body updated-recipe})]
@@ -53,16 +57,26 @@
     (testing "unfavorite recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
         (is (= status 204))))
-    ;(testing "create ingredient"
-    ;  (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body ingredient})]
-    ;    (reset! ingredient-id (:ingredient-id body))
-    ;    (is (= status 201))))
-    ;(testing "update ingredient"
-    ;  (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body (assoc updated-ingredient :ingredient-id @ingredient-id)})]
-    ;    (is (= status 204))))
-    ;(testing "delete ingredient"
-    ;  (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body {:ingredient-id @ingredient-id}})]
-    ;    (is (= status 204))))
+    (testing "create ingredient from recipe"
+      (let [ingredient (assoc ingredient :ingredient-recipe-id @recipe-id)
+            {:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body ingredient})]
+        (reset! ingredient-id (:id body))
+        (is (= status 201))))
+    (testing "update ingredient"
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body (assoc ingredient
+                                                                                                                       :id @ingredient-id
+                                                                                                                       :amount 3000)})]
+        (is (= status 204))))
+    (testing "create ingredient from grocery"
+      (let [ingredient (assoc ingredient :ingredient-grocery-id grocery-id)
+            {:keys [status]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body ingredient})]
+        (is (= status 201))))
+    (testing "retrieve recipe"
+      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:auth true})]
+        (is (= status 200))))
+    (testing "delete ingredient"
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body {:id @ingredient-id}})]
+        (is (= status 204))))
     (testing "delete recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:auth true})]
         (is (= status 204))))))

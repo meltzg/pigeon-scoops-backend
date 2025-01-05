@@ -32,20 +32,20 @@
         grocery-unit-id (atom nil)]
     (testing "create grocery"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/groceries" {:auth true :body grocery})]
-        (reset! grocery-id (:grocery-id body))
+        (reset! grocery-id (:id body))
         (is (= status 201))))
     (testing "update grocery"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id) {:auth true :body updated-grocery})]
         (is (= status 204))))
     (testing "create grocery-unit"
       (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/groceries/" @grocery-id "/units") {:auth true :body grocery-unit})]
-        (reset! grocery-unit-id (:grocery-unit-id body))
+        (reset! grocery-unit-id (:id body))
         (is (= status 201))))
     (testing "update grocery-unit"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id "/units") {:auth true :body (assoc updated-grocery-unit :id @grocery-unit-id)})]
         (is (= status 204))))
     (testing "delete grocery-unit"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id "/units") {:auth true :body {:grocery-unit-id @grocery-unit-id}})]
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id "/units") {:auth true :body {:id @grocery-unit-id}})]
         (is (= status 204))))
     (testing "delete grocery"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id) {:auth true})]

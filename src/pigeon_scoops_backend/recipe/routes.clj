@@ -5,7 +5,8 @@
             [pigeon-scoops-backend.recipe.responses :as responses]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
-            [pigeon-scoops-backend.units.volume :as volume]))
+            [pigeon-scoops-backend.units.volume :as volume]
+            [spec-tools.data-spec :as ds]))
 
 (defn routes [{db :jdbc-url}]
   ["/recipes" {:swagger    {:tags ["recipes"]}
@@ -21,7 +22,7 @@
                                    :amount-unit  (s/and keyword? (set (concat common/other-units
                                                                               (keys mass/conversion-map)
                                                                               (keys volume/conversion-map))))}}
-               :responses  {201 {:body {:recipe-id uuid?}}}
+               :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
     ["" {:get    {:handler   (recipe/retrieve-recipe db)
@@ -54,23 +55,27 @@
                                   [mw/wrap-manage-recipes]]}
      ["" {:post   {:handler    (recipe/create-ingredient! db)
                    :middleware [[mw/wrap-recipe-owner db]]
-                   :parameters {:body {:sort    pos-int?
-                                       :name    string?
-                                       :amount  pos-int?
-                                       :measure string?}}
-                   :responses  {201 {:body {:ingredient-id string?}}}
+                   :parameters {:body {(ds/opt :ingredient-grocery-id) uuid?
+                                       (ds/opt :ingredient-recipe-id)  uuid?
+                                       :amount                         number?
+                                       :amount-unit                    (s/and keyword? (set (concat common/other-units
+                                                                                                    (keys mass/conversion-map)
+                                                                                                    (keys volume/conversion-map))))}}
+                   :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create ingredient"}
           :put    {:handler    (recipe/update-ingredient! db)
                    :middleware [[mw/wrap-recipe-owner db]]
-                   :parameters {:body {:ingredient-id string?
-                                       :sort          pos-int?
-                                       :name          string?
-                                       :amount        pos-int?
-                                       :measure       string?}}
+                   :parameters {:body {:id                             uuid?
+                                       (ds/opt :ingredient-grocery-id) uuid?
+                                       (ds/opt :ingredient-recipe-id)  uuid?
+                                       :amount                         number?
+                                       :amount-unit                    (s/and keyword? (set (concat common/other-units
+                                                                                                    (keys mass/conversion-map)
+                                                                                                    (keys volume/conversion-map))))}}
                    :responses  {204 {:body nil?}}
                    :summary    "Update ingredient"}
           :delete {:handler    (recipe/delete-ingredient! db)
                    :middleware [[mw/wrap-recipe-owner db]]
-                   :parameters {:body {:ingredient-id string?}}
+                   :parameters {:body {:id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete ingredient"}}]]]])

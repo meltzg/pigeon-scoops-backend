@@ -54,12 +54,12 @@ CREATE TABLE recipe
 -- Create 'ingredient' table
 CREATE TABLE ingredient
 (
+    id                    UUID NOT NULL PRIMARY KEY,
     recipe_id             UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
-    ingredient_grocery_id UUID NOT NULL REFERENCES grocery (id) ON DELETE CASCADE,
-    ingredient_recipe_id  UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
+    ingredient_grocery_id UUID REFERENCES grocery (id) ON DELETE CASCADE,
+    ingredient_recipe_id  UUID REFERENCES recipe (id) ON DELETE CASCADE,
     amount                REAL NOT NULL,
     amount_unit           TEXT NOT NULL,
-    PRIMARY KEY (recipe_id, ingredient_grocery_id, ingredient_recipe_id), -- Composite primary key
     CHECK (
         (ingredient_grocery_id IS NOT NULL AND ingredient_recipe_id IS NULL) OR
         (ingredient_grocery_id IS NULL AND ingredient_recipe_id IS NOT NULL)
@@ -70,23 +70,4 @@ create table recipe_favorite
 (
     recipe_id UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
     user_id   TEXT NOT NULL REFERENCES account (id) ON DELETE CASCADE
-);
-
--- Create 'order' table
-CREATE TABLE user_order
-(
-    id      UUID NOT NULL PRIMARY KEY,
-    note    TEXT NOT NULL,
-    user_id TEXT REFERENCES account (id)
-);
-
--- Create 'flavor_amount' table
-CREATE TABLE order_item
-(
-    order_id    UUID NOT NULL REFERENCES user_order (id) ON DELETE CASCADE,
-    recipe_id   UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
-    amount      REAL NOT NULL,
-    amount_unit TEXT NOT NULL,
-    status      TEXT NOT NULL,
-    PRIMARY KEY (order_id, recipe_id) -- Composite primary key
 );

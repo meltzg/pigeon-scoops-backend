@@ -40,7 +40,7 @@
         (-> recipe
             (db-str->keyword :recipe/amount-unit)
             (assoc
-              :recipe/ingredients ingredients
+              :recipe/ingredients (map #(db-str->keyword (into {} (remove (comp nil? val) %)) :ingredient/amount-unit) ingredients)
               :recipe/favorite-count favorite-count))))))
 
 (defn insert-recipe! [db recipe]
@@ -70,10 +70,10 @@
   (sql/delete! db :recipe-favorite data (:options db)))
 
 (defn insert-ingredient! [db ingredient]
-  (sql/insert! db, :ingredient ingredient))
+  (sql/insert! db, :ingredient (keyword->db-str ingredient :amount-unit)))
 
 (defn update-ingredient! [db ingredient]
-  (-> (sql/update! db :ingredient ingredient (select-keys ingredient [:id :ingredient-id]))
+  (-> (sql/update! db :ingredient (keyword->db-str ingredient :amount-unit) (select-keys ingredient [:id]))
       ::jdbc/update-count
       (pos?)))
 

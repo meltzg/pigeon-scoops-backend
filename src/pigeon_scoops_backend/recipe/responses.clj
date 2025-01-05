@@ -6,13 +6,16 @@
             [spec-tools.data-spec :as ds]))
 
 (def ingredient
-  {:ingredient/ingredient-id       string?
-   :ingredient/sort                int?
-   :ingredient/name                string?
-   :ingredient/amount              int?
-   :ingredient/measure             string?
-   (ds/opt :ingredient/grocery-id) uuid?
-   (ds/opt :ingredient/recipe-id)  uuid?})
+  {:ingredient/id                             uuid?
+   :ingredient/recipe-id                      uuid?
+   (ds/opt :ingredient/ingredient-grocery-id) uuid?
+   (ds/opt :ingredient/ingredient-recipe-id)  uuid?
+   :ingredient/amount                         number?
+   :ingredient/amount-unit                    (s/and keyword?
+                                                     (set (concat common/other-units
+                                                                  (keys mass/conversion-map)
+                                                                  (keys volume/conversion-map))))})
+
 
 (def recipe
   {:recipe/public                boolean?
@@ -21,9 +24,10 @@
    :recipe/name                  string?
    :recipe/user-id               string?
    :recipe/amount                number?
-   :recipe/amount-unit           (s/and keyword? (set (concat common/other-units
-                                                              (keys mass/conversion-map)
-                                                              (keys volume/conversion-map))))
+   :recipe/amount-unit           (s/and keyword?
+                                        (set (concat common/other-units
+                                                     (keys mass/conversion-map)
+                                                     (keys volume/conversion-map))))
    (ds/opt :recipe/instructions) [string?]
    (ds/opt :recipe/ingredients)  [ingredient]})
 

@@ -23,7 +23,7 @@
       (when (seq grocery)
         (-> grocery
             (db-str->keyword :grocery/department)
-            (assoc :grocery/units (vec units)))))))
+            (assoc :grocery/units units))))))
 
 (defn insert-grocery! [db grocery]
   (sql/insert! db :grocery (keyword->db-str grocery :department)))

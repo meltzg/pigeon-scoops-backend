@@ -18,7 +18,7 @@
                :middleware [[mw/wrap-manage-groceries]]
                :parameters {:body {:name       string?
                                    :department (s/and keyword? responses/departments)}}
-               :responses  {201 {:body {:grocery-id uuid?}}}}}]
+               :responses  {201 {:body {:id uuid?}}}}}]
    ["/:grocery-id" {:parameters {:path {:grocery-id uuid?}}}
     ["" {:get    {:handler   (grocery/retrieve-grocery db)
                   :responses {200 {:body responses/grocery}}
@@ -45,7 +45,7 @@
                                                                          (set (keys volume/conversion-map)))
                                        (ds/opt :unit-common)      number?
                                        (ds/opt :unit-common-type) (s/and keyword? common/other-units)}}
-                   :responses  {201 {:body {:grocery-unit-id uuid?}}}
+                   :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create grocery-unit"}
           :put    {:handler    (grocery/update-grocery-unit! db)
                    :parameters {:body {:id                        uuid?
@@ -62,6 +62,6 @@
                    :responses  {204 {:body nil?}}
                    :summary    "Update grocery-unit"}
           :delete {:handler    (grocery/delete-grocery-unit! db)
-                   :parameters {:body {:grocery-unit-id uuid?}}
+                   :parameters {:body {:id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete grocery-unit"}}]]]])
