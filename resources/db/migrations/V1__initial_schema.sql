@@ -3,7 +3,8 @@ DROP TABLE IF EXISTS ingredient;
 DROP TABLE IF EXISTS recipe;
 DROP TABLE IF EXISTS grocery_unit;
 DROP TABLE IF EXISTS grocery;
-DROP TABLE IF EXISTS user_order;
+DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS recipe_favorite;
 
 -- Create 'user' table
 CREATE TABLE account

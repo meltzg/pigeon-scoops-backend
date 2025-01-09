@@ -29,7 +29,7 @@
                   :responses {200 {:body responses/recipe}}
                   :summary   "Retrieve recipe"}
          :put    {:handler    (recipe/update-recipe! db)
-                  :middleware [[mw/wrap-recipe-owner db]
+                  :middleware [[(mw/wrap-owner :recipe-id :recipe) db]
                                [mw/wrap-manage-recipes]]
                   :parameters {:body {:name         string?
                                       :instructions [string?]
@@ -41,7 +41,7 @@
                   :responses  {204 {:body nil?}}
                   :summary    "Update recipe"}
          :delete {:handler    (recipe/delete-recipe! db)
-                  :middleware [[mw/wrap-recipe-owner db]
+                  :middleware [[(mw/wrap-owner :recipe-id :recipe) db]
                                [mw/wrap-manage-recipes]]
                   :response   {204 {:body nil?}}
                   :summary    "Delete recipe"}}]
@@ -51,10 +51,10 @@
                   :delete {:handler  (recipe/unfavorite-recipe! db)
                            :response {204 {:body nil?}}
                            :summary  "Unfavorite recipe"}}]
-    ["/ingredients" {:middleware [[mw/wrap-recipe-owner db]
+    ["/ingredients" {:middleware [[(mw/wrap-owner :recipe-id :recipe) db]
                                   [mw/wrap-manage-recipes]]}
      ["" {:post   {:handler    (recipe/create-ingredient! db)
-                   :middleware [[mw/wrap-recipe-owner db]]
+                   :middleware [[(mw/wrap-owner :recipe-id :recipe) db]]
                    :parameters {:body {(ds/opt :ingredient-grocery-id) uuid?
                                        (ds/opt :ingredient-recipe-id)  uuid?
                                        :amount                         number?
@@ -64,7 +64,7 @@
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create ingredient"}
           :put    {:handler    (recipe/update-ingredient! db)
-                   :middleware [[mw/wrap-recipe-owner db]]
+                   :middleware [[(mw/wrap-owner :recipe-id :recipe) db]]
                    :parameters {:body {:id                             uuid?
                                        (ds/opt :ingredient-grocery-id) uuid?
                                        (ds/opt :ingredient-recipe-id)  uuid?
@@ -75,7 +75,7 @@
                    :responses  {204 {:body nil?}}
                    :summary    "Update ingredient"}
           :delete {:handler    (recipe/delete-ingredient! db)
-                   :middleware [[mw/wrap-recipe-owner db]]
+                   :middleware [[(mw/wrap-owner :recipe-id :recipe) db]]
                    :parameters {:body {:id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete ingredient"}}]]]])

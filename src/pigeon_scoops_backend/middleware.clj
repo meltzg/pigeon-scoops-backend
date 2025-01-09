@@ -13,23 +13,23 @@
                                {:alg          :RS256
                                 :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
 
-(def wrap-recipe-owner
-  {:name        ::recipe-owner
+(defn wrap-owner [id-key table]
+  {:name        (keyword (str *ns*) (name table))
    :description "Middleware to check if a request user is a recipe owner"
    :wrap        (fn [handler db]
                   (fn [request]
                     (let [uid (-> request :claims :sub)
-                          recipe-id (-> request :parameters :path :recipe-id)
-                          recipe (recipe-db/find-recipe-by-id db recipe-id)]
+                          entity-id (-> request :parameters :path id-key)
+                          recipe (recipe-db/find-recipe-by-id db entity-id)]
                       (if (= (:recipe/user-id recipe) uid)
                         (handler request)
-                        (-> (rr/response {:message "Operation requires recipe ownership"
-                                          :data    (str "recipe-id " recipe-id)
+                        (-> (rr/response {:message (str "Operation requires " (name table) " ownership")
+                                          :data    (str "entity-id " entity-id)
                                           :type    :authorization-required})
                             (rr/status 401))))))})
 
 (defn wrap-with-roles [& required-roles]
-  {:name        ::manage-recipes
+  {:name        (keyword (str *ns*) "manage-recipes")
    :description (str "Middleware to check if a user has any of" required-roles " roles")
    :wrap        (fn [handler]
                   (fn [request]
@@ -49,3 +49,6 @@
 
 (def wrap-manage-groceries
   (wrap-with-roles "manage-groceries"))
+
+(def wrap-manage-orders
+  (wrap-with-roles "manage-orders"))
