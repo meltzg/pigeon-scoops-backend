@@ -66,7 +66,6 @@
   (.close ^HikariDataSource (:connectable config)))
 
 (defn -main
-  "I don't do a whole lot ... yet."
   [config-file & args]
   (let [config (-> config-file
                    slurp

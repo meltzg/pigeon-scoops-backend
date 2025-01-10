@@ -27,7 +27,7 @@
 (defn halt []
   (ig-repl/halt)
   (when @db-container
-    (.stop @db-container)))
+    (.stop ^PostgreSQLContainer @db-container)))
 (defn reset []
   (ig-repl/reset)
   (when @db-container
