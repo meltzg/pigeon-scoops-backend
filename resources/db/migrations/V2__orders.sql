@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS user_order;
 DROP TABLE IF EXISTS order_item;
 
 -- Create 'order' table
-CREATE TABLE "order"
+CREATE TABLE user_order
 (
     id      UUID NOT NULL PRIMARY KEY,
     note    TEXT NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE "order"
 CREATE TABLE order_item
 (
     id          UUID NOT NULL PRIMARY KEY,
-    order_id    UUID NOT NULL REFERENCES "order" (id) ON DELETE CASCADE,
+    order_id    UUID NOT NULL REFERENCES user_order (id) ON DELETE CASCADE,
     recipe_id   UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
     amount      REAL NOT NULL,
     amount_unit TEXT NOT NULL,

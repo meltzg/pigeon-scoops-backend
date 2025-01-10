@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.order.responses
+(ns pigeon-scoops-backend.user-order.responses
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
@@ -16,6 +16,7 @@
    :order-item/recipe-id            uuid?
    :order-item/order-id             uuid?
    :order-item/unit-cost            number?
+   :order-item/status               (s/and keyword? status)
    (ds/opt :order-item/amount)      number?
    (ds/opt :order-item/amount-unit) (s/and keyword?
                                            (set (concat common/other-units
@@ -23,8 +24,8 @@
                                                         (keys volume/conversion-map))))})
 
 (def order
-  {:order/id             uuid?
-   :order/note           string?
-   :order/user-id        string?
-   :order/status         (s/and keyword? status)
-   (ds/opt :order/units) [order-item]})
+  {:user-order/id             uuid?
+   :user-order/note           string?
+   :user-order/user-id        string?
+   :user-order/status         (s/and keyword? status)
+   (ds/opt :user-order/units) [order-item]})

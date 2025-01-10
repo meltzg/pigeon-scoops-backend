@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.order.handlers
+(ns pigeon-scoops-backend.user-order.handlers
   (:require [pigeon-scoops-backend.order.db :as order-db]
             [pigeon-scoops-backend.responses :as responses]
             [ring.util.response :as rr])
@@ -26,7 +26,7 @@
     (let [order-id (-> request :parameters :path :order-id)
           order (order-db/find-order-by-id db order-id)]
       (if order
-        (rr/response (update order :order/units vec))
+        (rr/response (update order :user-order/units vec))
         (rr/not-found {:type    "order-not-found"
                        :message "order not found"
                        :data    (str "order-id " order-id)})))))

@@ -1,7 +1,10 @@
 (ns user
   (:require [integrant.core :as ig]
-            [integrant.repl :as ig-repl])
-  (:import (org.testcontainers.containers PostgreSQLContainer)))
+            [integrant.repl :as ig-repl]
+            [integrant.repl.state :as state]
+            [next.jdbc.sql :as sql])
+  (:import (org.testcontainers.containers PostgreSQLContainer)
+           (java.util UUID)))
 
 (def db-container (atom nil))
 
@@ -23,15 +26,19 @@
 (def go ig-repl/go)
 (defn halt []
   (ig-repl/halt)
-  (.stop @db-container))
+  (when @db-container
+    (.stop @db-container)))
 (defn reset []
   (ig-repl/reset)
-  (.stop @db-container))
+  (when @db-container
+    (.stop @db-container)))
 (defn reset-all []
   (ig-repl/reset-all)
-  (.stop @db-container))
+  (when @db-container
+    (.stop @db-container)))
 
 (comment
+  (sql/insert! (:db/postgres state/system) :user-order {:id (UUID/randomUUID) :note "asdf" :user-id ""})
   (go)
   (halt)
   (reset)

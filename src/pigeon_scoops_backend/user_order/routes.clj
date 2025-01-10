@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.order.routes
+(ns pigeon-scoops-backend.user-order.routes
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.order.handlers :as order]
@@ -18,7 +18,7 @@
                :parameters {:body {:note string?}}
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:order-id" {:parameters {:path {:order-id uuid?}}
-                  :middleware [[(mw/wrap-owner :order-id :order) db]]}
+                  :middleware [[(mw/wrap-owner :order-id :user-order) db]]}
     ["" {:get    {:handler   (order/retrieve-order db)
                   :responses {200 {:body responses/order}}
                   :summary   "Retrieve order"}
