@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.user-order.handlers
-  (:require [pigeon-scoops-backend.order.db :as order-db]
+  (:require [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.responses :as responses]
             [ring.util.response :as rr])
   (:import (java.util UUID)))

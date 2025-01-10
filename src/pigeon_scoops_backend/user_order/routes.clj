@@ -1,8 +1,8 @@
 (ns pigeon-scoops-backend.user-order.routes
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.middleware :as mw]
-            [pigeon-scoops-backend.order.handlers :as order]
-            [pigeon-scoops-backend.order.responses :as responses]
+            [pigeon-scoops-backend.user-order.handlers :as order]
+            [pigeon-scoops-backend.user-order.responses :as responses]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
             [pigeon-scoops-backend.units.volume :as volume]))
