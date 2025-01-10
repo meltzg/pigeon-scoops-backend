@@ -40,7 +40,7 @@
   (sql/insert! db :order-item (keyword->db-str item :status)))
 
 (defn update-order-item! [db item]
-  (-> unit
+  (-> item
       (keyword->db-str :status)
       (#(sql/update! db :order-item %
                      (select-keys % [:id])))
@@ -48,6 +48,6 @@
       (pos?)))
 
 (defn delete-order-item! [db item]
-  (-> (sql/delete! db :order-item unit)
+  (-> (sql/delete! db :order-item item)
       ::jdbc/update-count
       (pos?)))

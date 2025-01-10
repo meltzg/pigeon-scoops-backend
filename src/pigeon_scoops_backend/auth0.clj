@@ -31,7 +31,7 @@
                                       {:connection connection
                                        :email      email
                                        :password   password})}
-         (http/post (str "https://pigeon-scoops.us.auth0.com/api/v2/users"))
+         (http/post "https://pigeon-scoops.us.auth0.com/api/v2/users")
          (m/decode-response-body))))
 
 (defn get-role-ids [token role-names]

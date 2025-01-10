@@ -38,13 +38,11 @@
       ::jdbc/update-count
       (pos?)))
 
-
 (defn insert-grocery-unit! [db unit]
   (sql/insert! db :grocery-unit (keyword->db-str unit
                                                  :unit-common-type
                                                  :unit-mass-type
                                                  :unit-volume-type)))
-
 
 (defn update-grocery-unit! [db unit]
   (-> unit
@@ -61,9 +59,3 @@
   (-> (sql/delete! db :grocery-unit unit)
       ::jdbc/update-count
       (pos?)))
-
-(comment
-  (let [db (:db/postgres integrant.repl.state/system)]
-    (update-grocery-unit! db {:id #uuid"4996b7c0-758c-4f31-87d1-6de3d29d396d" :source "market basket"})))
-
-
