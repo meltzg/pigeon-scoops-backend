@@ -39,15 +39,3 @@
                                           :data    (:uri request)
                                           :type    :authorization-required})
                             (rr/status 401))))))})
-
-(def wrap-manage-recipes
-  (wrap-with-roles :manage-recipes))
-
-(def wrap-manage-roles
-  (wrap-with-roles :manage-roles))
-
-(def wrap-manage-groceries
-  (wrap-with-roles :manage-groceries))
-
-(def wrap-manage-orders
-  (wrap-with-roles :manage-orders))

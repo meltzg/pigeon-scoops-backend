@@ -12,6 +12,9 @@
 (def wrap-recipe-owner
   (mw/wrap-owner :recipe-id :recipe recipe-db/find-recipe-by-id))
 
+(def wrap-manage-recipes
+  (mw/wrap-with-roles :manage-recipes))
+
 (defn routes [{db :jdbc-url}]
   ["/recipes" {:swagger    {:tags ["recipes"]}
                :middleware [[mw/wrap-auth0]]}
@@ -19,7 +22,7 @@
                :responses {200 {:body responses/recipes}}
                :summary   "list of recipes"}
         :post {:handler    (recipe/create-recipe! db)
-               :middleware [[mw/wrap-manage-recipes]]
+               :middleware [[wrap-manage-recipes]]
                :parameters {:body {:name         string?
                                    :instructions [string?]
                                    :amount       number?
@@ -34,7 +37,7 @@
                   :summary   "Retrieve recipe"}
          :put    {:handler    (recipe/update-recipe! db)
                   :middleware [[wrap-recipe-owner db]
-                               [mw/wrap-manage-recipes]]
+                               [wrap-manage-recipes]]
                   :parameters {:body {:name         string?
                                       :instructions [string?]
                                       :amount       number?
@@ -46,7 +49,7 @@
                   :summary    "Update recipe"}
          :delete {:handler    (recipe/delete-recipe! db)
                   :middleware [[wrap-recipe-owner db]
-                               [mw/wrap-manage-recipes]]
+                               [wrap-manage-recipes]]
                   :response   {204 {:body nil?}}
                   :summary    "Delete recipe"}}]
     ["/favorite" {:post   {:handler   (recipe/favorite-recipe! db)
@@ -56,7 +59,7 @@
                            :response {204 {:body nil?}}
                            :summary  "Unfavorite recipe"}}]
     ["/ingredients" {:middleware [[wrap-recipe-owner db]
-                                  [mw/wrap-manage-recipes]]}
+                                  [wrap-manage-recipes]]}
      ["" {:post   {:handler    (recipe/create-ingredient! db)
                    :middleware [[wrap-recipe-owner db]]
                    :parameters {:body {(ds/opt :ingredient-grocery-id) uuid?
