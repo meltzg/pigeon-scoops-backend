@@ -8,7 +8,7 @@
             [reitit.dev.pretty :as pretty]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
-    ;[reitit.ring.middleware.exception :as exception]
+            [reitit.ring.middleware.exception :as exception]
     ;[reitit.ring.middleware.dev :as dev]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
@@ -23,7 +23,7 @@
                :muuntaja   m/instance
                :middleware [swagger/swagger-feature
                             muuntaja/format-middleware
-                            ;exception/exception-middleware
+                            exception/exception-middleware
                             coercion/coerce-request-middleware
                             coercion/coerce-response-middleware]}})
 
