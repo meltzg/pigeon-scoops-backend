@@ -14,7 +14,7 @@
 
 (defn wrap-owner [id-key table find-by-id]
   {:name        (keyword (str *ns*) (name table))
-   :description "Middleware to check if a request user is a recipe owner"
+   :description (str "Middleware to check if a request user is an" table " owner")
    :wrap        (fn [handler db]
                   (fn [request]
                     (let [uid (-> request :claims :sub)
@@ -28,7 +28,7 @@
                             (rr/status 401))))))})
 
 (defn wrap-with-roles [& required-roles]
-  {:name        (keyword (str *ns*) "manage-recipes")
+  {:name        (keyword (str *ns*) (apply str required-roles))
    :description (str "Middleware to check if a user has any of" required-roles " roles")
    :wrap        (fn [handler]
                   (fn [request]
