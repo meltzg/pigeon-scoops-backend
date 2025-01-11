@@ -8,6 +8,9 @@
             [pigeon-scoops-backend.units.volume :as volume]
             [spec-tools.data-spec :as ds]))
 
+(def wrap-manage-groceries
+  (mw/wrap-with-roles :manage-groceries))
+
 (defn routes [{db :jdbc-url}]
   ["/groceries" {:swagger    {:tags ["groceries"]}
                  :middleware [[mw/wrap-auth0]]}
@@ -15,7 +18,7 @@
                :responses {200 {:body [responses/grocery]}}
                :summary   "list of groceries"}
         :post {:handler    (grocery/create-grocery! db)
-               :middleware [[mw/wrap-manage-groceries]]
+               :middleware [[wrap-manage-groceries]]
                :parameters {:body {:name       string?
                                    :department (s/and keyword? responses/departments)}}
                :responses  {201 {:body {:id uuid?}}}}}]
@@ -24,16 +27,16 @@
                   :responses {200 {:body responses/grocery}}
                   :summary   "Retrieve grocery"}
          :put    {:handler    (grocery/update-grocery! db)
-                  :middleware [[mw/wrap-manage-groceries]]
+                  :middleware [[wrap-manage-groceries]]
                   :parameters {:body {:name       string?
                                       :department (s/and keyword? responses/departments)}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update grocery"}
          :delete {:handler    (grocery/delete-grocery! db)
-                  :middleware [[mw/wrap-manage-groceries]]
+                  :middleware [[wrap-manage-groceries]]
                   :response   {204 {:body nil?}}
                   :summary    "Delete grocery"}}]
-    ["/units" {:middleware [[mw/wrap-manage-groceries]]}
+    ["/units" {:middleware [[wrap-manage-groceries]]}
      ["" {:post   {:handler    (grocery/create-grocery-unit! db)
                    :parameters {:body {:source                    string?
                                        :unit-cost                 number?

@@ -2,7 +2,7 @@
   (:require [clj-http.client :as http]
             [muuntaja.core :as m]))
 
-(def roles #{:manage-roles :manage-recipes :manage-groceries})
+(def roles #{:manage-roles :manage-recipes :manage-groceries :manage-orders})
 
 (defn get-management-token [{:keys [management-client-id management-client-secret]}]
   (->> {:content-type  :json
@@ -31,7 +31,7 @@
                                       {:connection connection
                                        :email      email
                                        :password   password})}
-         (http/post (str "https://pigeon-scoops.us.auth0.com/api/v2/users"))
+         (http/post "https://pigeon-scoops.us.auth0.com/api/v2/users")
          (m/decode-response-body))))
 
 (defn get-role-ids [token role-names]

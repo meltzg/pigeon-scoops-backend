@@ -3,7 +3,8 @@ DROP TABLE IF EXISTS ingredient;
 DROP TABLE IF EXISTS recipe;
 DROP TABLE IF EXISTS grocery_unit;
 DROP TABLE IF EXISTS grocery;
-DROP TABLE IF EXISTS user_order;
+DROP TABLE IF EXISTS account;
+DROP TABLE IF EXISTS recipe_favorite;
 
 -- Create 'user' table
 CREATE TABLE account
@@ -43,7 +44,7 @@ CREATE TABLE recipe
     id           UUID    NOT NULL PRIMARY KEY,
     user_id      TEXT    NOT NULL REFERENCES account (id) ON DELETE CASCADE,
     name         TEXT    NOT NULL,
-    instructions TEXT[] NOT NULL, -- Array of instructions as text
+    instructions TEXT[]  NOT NULL, -- Array of instructions as text
     amount       REAL    NOT NULL,
     amount_unit  TEXT    NOT NULL,
     source       TEXT,

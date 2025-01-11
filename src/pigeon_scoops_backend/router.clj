@@ -3,6 +3,7 @@
             [pigeon-scoops-backend.account.routes :as account]
             [pigeon-scoops-backend.grocery.routes :as grocery]
             [pigeon-scoops-backend.recipe.routes :as recipe]
+            [pigeon-scoops-backend.user-order.routes :as user-order]
             [reitit.coercion.spec :as coercion-spec]
             [reitit.dev.pretty :as pretty]
             [reitit.ring :as ring]
@@ -49,7 +50,8 @@
         {:swagger {:security [{:BearerAuth []}]}}
         (recipe/routes env)
         (grocery/routes env)
-        (account/routes env)]]
+        (account/routes env)
+        (user-order/routes env)]]
       router-config)
     (ring/routes
       (swagger-ui/create-swagger-ui-handler {:path "/"}))))
