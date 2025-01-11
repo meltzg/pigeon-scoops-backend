@@ -2,7 +2,7 @@
   (:require [clj-http.client :as http]
             [muuntaja.core :as m]))
 
-(def roles #{:manage-roles :manage-recipes :manage-groceries})
+(def roles #{:manage-roles :manage-recipes :manage-groceries :manage-orders})
 
 (defn get-management-token [{:keys [management-client-id management-client-secret]}]
   (->> {:content-type  :json

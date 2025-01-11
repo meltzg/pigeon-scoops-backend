@@ -1,11 +1,12 @@
 (ns pigeon-scoops-backend.user-order.routes
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.middleware :as mw]
-            [pigeon-scoops-backend.user-order.handlers :as order]
-            [pigeon-scoops-backend.user-order.responses :as responses]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
-            [pigeon-scoops-backend.units.volume :as volume]))
+            [pigeon-scoops-backend.units.volume :as volume]
+            [pigeon-scoops-backend.user-order.db :as order-db]
+            [pigeon-scoops-backend.user-order.handlers :as order]
+            [pigeon-scoops-backend.user-order.responses :as responses]))
 
 (defn routes [{db :jdbc-url}]
   ["/orders" {:swagger    {:tags ["orders"]}
@@ -18,7 +19,7 @@
                :parameters {:body {:note string?}}
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:order-id" {:parameters {:path {:order-id uuid?}}
-                  :middleware [[(mw/wrap-owner :order-id :user-order) db]]}
+                  :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id) db]]}
     ["" {:get    {:handler   (order/retrieve-order db)
                   :responses {200 {:body responses/order}}
                   :summary   "Retrieve order"}

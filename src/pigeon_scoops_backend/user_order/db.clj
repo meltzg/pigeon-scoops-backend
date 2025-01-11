@@ -6,7 +6,7 @@
 
 (defn find-all-order-items [db order-id]
   (map #(db-str->keyword (into {} (remove (comp nil? val) %))
-                         :order-item/status)
+                         :order-item/status :order-item/amount-unit)
        (sql/find-by-keys db :order-item {:order-id order-id})))
 
 (defn find-all-orders [db user-id]
@@ -37,11 +37,11 @@
       (pos?)))
 
 (defn insert-order-item! [db item]
-  (sql/insert! db :order-item (keyword->db-str item :status)))
+  (sql/insert! db :order-item (keyword->db-str item :status :amount-unit)))
 
 (defn update-order-item! [db item]
   (-> item
-      (keyword->db-str :status)
+      (keyword->db-str :status :amount-unit)
       (#(sql/update! db :order-item %
                      (select-keys % [:id])))
       ::jdbc/update-count

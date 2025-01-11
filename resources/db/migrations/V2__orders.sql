@@ -6,7 +6,7 @@ CREATE TABLE user_order
 (
     id      UUID NOT NULL PRIMARY KEY,
     note    TEXT NOT NULL,
-    user_id TEXT REFERENCES account (id),
+    user_id TEXT REFERENCES account (id) ON DELETE CASCADE,
     status  TEXT
 );
 

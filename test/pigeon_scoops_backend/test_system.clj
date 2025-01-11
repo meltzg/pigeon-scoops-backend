@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.test-system
   (:require [clj-http.client :as http]
+            [clojure.edn :as edn]
             [clojure.test :refer :all]
             [environ.core :refer [env]]
             [integrant.core :as ig]
@@ -127,14 +128,14 @@
                        :uid      (:user_id create-response)})
     (auth0/update-roles! auth
                          (:uid @test-user)
-                         [:manage-groceries :manage-recipes])
+                         [:manage-orders :manage-recipes :manage-groceries])
     (reset! token (get-test-token (conj auth @test-user)))
     (test-endpoint :post "/v1/account" {:auth true})
     (spit "dev/resources/test-user.edn" @test-user))
   (do
     (->> "dev/resources/test-user.edn"
          (slurp)
-         (clojure.edn/read-string)
+         (edn/read-string)
          (reset! test-user)
          (conj (:auth/auth0 state/system))
          (get-test-token)

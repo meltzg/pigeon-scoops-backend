@@ -1,6 +1,5 @@
 (ns pigeon-scoops-backend.middleware
-  (:require [pigeon-scoops-backend.recipe.db :as recipe-db]
-            [ring.middleware.jwt :as jwt]
+  (:require [ring.middleware.jwt :as jwt]
             [ring.util.response :as rr]))
 
 (def wrap-auth0
@@ -13,15 +12,15 @@
                                {:alg          :RS256
                                 :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
 
-(defn wrap-owner [id-key table]
+(defn wrap-owner [id-key table find-by-id]
   {:name        (keyword (str *ns*) (name table))
    :description "Middleware to check if a request user is a recipe owner"
    :wrap        (fn [handler db]
                   (fn [request]
                     (let [uid (-> request :claims :sub)
                           entity-id (-> request :parameters :path id-key)
-                          recipe (recipe-db/find-recipe-by-id db entity-id)]
-                      (if (= (:recipe/user-id recipe) uid)
+                          entity (find-by-id db entity-id)]
+                      (if (= ((keyword (name table) "user-id") entity) uid)
                         (handler request)
                         (-> (rr/response {:message (str "Operation requires " (name table) " ownership")
                                           :data    (str "entity-id " entity-id)
@@ -33,7 +32,7 @@
    :description (str "Middleware to check if a user has any of" required-roles " roles")
    :wrap        (fn [handler]
                   (fn [request]
-                    (let [roles (get-in request [:claims "https://api.pigeon-scoops.com/roles"])]
+                    (let [roles (map keyword (get-in request [:claims "https://api.pigeon-scoops.com/roles"]))]
                       (if (some (set required-roles) roles)
                         (handler request)
                         (-> (rr/response {:message (str "Operation requires any of " required-roles " roles")
@@ -42,13 +41,13 @@
                             (rr/status 401))))))})
 
 (def wrap-manage-recipes
-  (wrap-with-roles "manage-recipes"))
+  (wrap-with-roles :manage-recipes))
 
 (def wrap-manage-roles
-  (wrap-with-roles "manage-roles"))
+  (wrap-with-roles :manage-roles))
 
 (def wrap-manage-groceries
-  (wrap-with-roles "manage-groceries"))
+  (wrap-with-roles :manage-groceries))
 
 (def wrap-manage-orders
-  (wrap-with-roles "manage-orders"))
+  (wrap-with-roles :manage-orders))

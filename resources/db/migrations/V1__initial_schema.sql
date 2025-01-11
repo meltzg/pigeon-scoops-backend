@@ -44,7 +44,7 @@ CREATE TABLE recipe
     id           UUID    NOT NULL PRIMARY KEY,
     user_id      TEXT    NOT NULL REFERENCES account (id) ON DELETE CASCADE,
     name         TEXT    NOT NULL,
-    instructions TEXT[] NOT NULL, -- Array of instructions as text
+    instructions TEXT[]  NOT NULL, -- Array of instructions as text
     amount       REAL    NOT NULL,
     amount_unit  TEXT    NOT NULL,
     source       TEXT,

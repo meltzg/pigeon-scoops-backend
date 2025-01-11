@@ -3,8 +3,8 @@
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
             [next.jdbc.sql :as sql])
-  (:import (org.testcontainers.containers PostgreSQLContainer)
-           (java.util UUID)))
+  (:import (java.util UUID)
+           (org.testcontainers.containers PostgreSQLContainer)))
 
 (def db-container (atom nil))
 
@@ -27,7 +27,7 @@
 (defn halt []
   (ig-repl/halt)
   (when @db-container
-    (.stop ^PostgreSQLContainer @db-container)))
+    (.stop @db-container)))
 (defn reset []
   (ig-repl/reset)
   (when @db-container
@@ -42,5 +42,4 @@
   (go)
   (halt)
   (reset)
-  (reset-all)
-  (parse-postgres-uri))
+  (reset-all))
