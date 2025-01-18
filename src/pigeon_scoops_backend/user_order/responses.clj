@@ -28,4 +28,4 @@
    :user-order/note           string?
    :user-order/user-id        string?
    :user-order/status         (s/and keyword? status)
-   (ds/opt :user-order/units) [order-item]})
+   (ds/opt :user-order/items) [order-item]})
