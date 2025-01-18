@@ -8,9 +8,6 @@
             [pigeon-scoops-backend.units.volume :as volume]
             [spec-tools.data-spec :as ds]))
 
-(def wrap-manage-groceries
-  (mw/wrap-with-roles :manage-groceries))
-
 (defn routes [{db :jdbc-url}]
   ["/groceries" {:swagger    {:tags ["groceries"]}
                  :middleware [[mw/wrap-auth0]]}
@@ -18,7 +15,7 @@
                :responses {200 {:body [responses/grocery]}}
                :summary   "list of groceries"}
         :post {:handler    (grocery/create-grocery! db)
-               :middleware [[wrap-manage-groceries]]
+               :middleware [[(mw/wrap-with-permission :create/grocery)]]
                :parameters {:body {:name       string?
                                    :department (s/and keyword? responses/departments)}}
                :responses  {201 {:body {:id uuid?}}}}}]
@@ -27,16 +24,16 @@
                   :responses {200 {:body responses/grocery}}
                   :summary   "Retrieve grocery"}
          :put    {:handler    (grocery/update-grocery! db)
-                  :middleware [[wrap-manage-groceries]]
+                  :middleware [[(mw/wrap-with-permission :edit/grocery)]]
                   :parameters {:body {:name       string?
                                       :department (s/and keyword? responses/departments)}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update grocery"}
          :delete {:handler    (grocery/delete-grocery! db)
-                  :middleware [[wrap-manage-groceries]]
+                  :middleware [[(mw/wrap-with-permission :delete/grocery)]]
                   :response   {204 {:body nil?}}
                   :summary    "Delete grocery"}}]
-    ["/units" {:middleware [[wrap-manage-groceries]]}
+    ["/units" {:middleware [[(mw/wrap-with-permission :edit/grocery)]]}
      ["" {:post   {:handler    (grocery/create-grocery-unit! db)
                    :parameters {:body {:source                    string?
                                        :unit-cost                 number?

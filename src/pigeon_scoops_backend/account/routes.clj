@@ -4,8 +4,8 @@
             [pigeon-scoops-backend.auth0 :as auth0]
             [pigeon-scoops-backend.middleware :as mw]))
 
-(def wrap-manage-roles
-  (mw/wrap-with-roles :manage-roles))
+(def wrap-edit-roles
+  (mw/wrap-with-permission :edit/role))
 
 (defn routes [{:keys [auth] db :jdbc-url}]
   ["/account" {:swagger    {:tags ["account"]}
@@ -18,7 +18,7 @@
                  :summary   "Delete account"}}]
    ["/:user-id" {:parameters {:path {:user-id string?}}
                  :put        {:handler    (account/update-roles! auth)
-                              :middleware [[wrap-manage-roles]]
+                              :middleware [[wrap-edit-roles]]
                               :parameters {:body {:roles [(s/and keyword? auth0/roles)]}}
                               :responses  {204 {:body nil?}}
                               :summary    "Update user role to cook"}}]])

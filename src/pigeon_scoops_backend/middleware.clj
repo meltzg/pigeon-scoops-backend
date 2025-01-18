@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.middleware
-  (:require [ring.middleware.jwt :as jwt]
+  (:require [clojure.string :as str]
+            [ring.middleware.jwt :as jwt]
             [ring.util.response :as rr]))
 
 (def wrap-auth0
@@ -27,15 +28,19 @@
                                           :type    :authorization-required})
                             (rr/status 401))))))})
 
-(defn wrap-with-roles [& required-roles]
-  {:name        (keyword (str *ns*) (apply str required-roles))
-   :description (str "Middleware to check if a user has any of" required-roles " roles")
+(defn wrap-with-permission [permission]
+  {:name        (keyword (str *ns*) (str permission))
+   :description (str "Middleware to check if a user has the " permission " permission")
    :wrap        (fn [handler]
                   (fn [request]
-                    (let [roles (map keyword (get-in request [:claims "https://api.pigeon-scoops.com/roles"]))]
-                      (if (some (set required-roles) roles)
+                    (let [permissions (map #(keyword (str/replace % ":" "/"))
+                                           (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))]
+                      (if ((set permissions) permission)
                         (handler request)
-                        (-> (rr/response {:message (str "Operation requires any of " required-roles " roles")
+                        (-> (rr/response {:message (str "Operation requires " permission " permission")
                                           :data    (:uri request)
                                           :type    :authorization-required})
                             (rr/status 401))))))})
+
+
+
