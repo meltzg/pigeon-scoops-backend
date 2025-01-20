@@ -25,7 +25,8 @@
                                    :amount       number?
                                    :amount-unit  (s/and keyword? (set (concat common/other-units
                                                                               (keys mass/conversion-map)
-                                                                              (keys volume/conversion-map))))}}
+                                                                              (keys volume/conversion-map))))
+                                   :source       string?}}
                :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
@@ -41,6 +42,7 @@
                                       :amount-unit  (s/and keyword? (set (concat common/other-units
                                                                                  (keys mass/conversion-map)
                                                                                  (keys volume/conversion-map))))
+                                      :source       string?
                                       :public       boolean?}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update recipe"}

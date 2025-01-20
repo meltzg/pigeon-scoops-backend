@@ -28,6 +28,7 @@
                                         (set (concat common/other-units
                                                      (keys mass/conversion-map)
                                                      (keys volume/conversion-map))))
+   :recipe/source                string?
    (ds/opt :recipe/instructions) [string?]
    (ds/opt :recipe/ingredients)  [ingredient]})
 
