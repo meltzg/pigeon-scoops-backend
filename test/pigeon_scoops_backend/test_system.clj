@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.test-system
   (:require [clj-http.client :as http]
             [clojure.edn :as edn]
+            [clojure.string :as str]
             [clojure.test :refer :all]
             [environ.core :refer [env]]
             [integrant.core :as ig]
@@ -37,8 +38,10 @@
          auth (-> state/system :auth/auth0)
          response (app (-> (mock/request method uri)
                            (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-test-token (conj auth @test-user)))))
-                                   (:body opts) (mock/json-body (:body opts)))))]
-     (update response :body (partial m/decode "application/json")))))
+                                   (:body opts) (mock/json-body (:body opts)))))
+         response (update response :body (partial m/decode "application/json"))]
+     (println response)
+     response)))
 
 (defn port-available? [port]
   (try
@@ -140,4 +143,112 @@
          (conj (:auth/auth0 state/system))
          (get-test-token)
          (reset! token))
-    (test-endpoint :post "/v1/account" {:auth true})))
+    (test-endpoint :post "/v1/account" {:auth true}))
+  (let [grocery-map (->> "/home/meltzg/json_dumps/groceries.json"
+                         (slurp)
+                         (m/decode "application/json")
+                         (map #(vector (:type %) (-> (test-endpoint :post "/v1/groceries"
+                                                                    {:auth true
+                                                                     :body {:name       (:type %)
+                                                                            :department :department/grocery}})
+                                                     :body
+                                                     :id)))
+                         (into {}))
+        units (->> "/home/meltzg/json_dumps/grocery_units.json"
+                   (slurp)
+                   (m/decode "application/json")
+                   (map #(-> (test-endpoint :post (str "/v1/groceries/" (get grocery-map (:type %)) "/units")
+                                            {:auth true
+                                             :body (cond-> {:source    (:source %)
+                                                            :unit-cost (:unit_cost %)}
+                                                           (:unit_mass %) (merge {:unit-mass      (:unit_mass %)
+                                                                                  :unit-mass-type (keyword "mass" (:unit_mass_type %))})
+                                                           (:unit_volume %) (merge {:unit-volume      (:unit_volume %)
+                                                                                    :unit-volume-type (keyword "volume" (:unit_volume_type %))})
+                                                           (:unit_common %) (merge {:unit-common      (:unit_common %)
+                                                                                    :unit-common-type (keyword "common" (:unit_common_type %))}))})
+                             :body
+                             :id)))
+        recipe-map (->> "/home/meltzg/json_dumps/recipes.json"
+                        (slurp)
+                        (m/decode "application/json")
+                        (map #(vector (:id %) (-> (test-endpoint :post "/v1/recipes"
+                                                                 {:auth true
+                                                                  :body (merge (select-keys % [:name :instructions])
+                                                                               {:amount      (:amount %)
+                                                                                :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                      (:amount_unit %))
+                                                                                :source (or (:source %) "")})})
+                                                  :body
+                                                  :id)))
+                        (into {}))
+        ingredients (->> "/home/meltzg/json_dumps/ingredients.json"
+                         (slurp)
+                         (m/decode "application/json")
+                         (map #(-> (test-endpoint :post (str "/v1/recipes/" (get recipe-map (:recipe_id %)) "/ingredients")
+                                                  {:auth true
+                                                   :body {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
+                                                          :amount      (:amount %)
+                                                          :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                (:amount_unit %))}})
+                                   :body
+                                   :id)))
+        recipe-map (merge recipe-map
+                          (->> "/home/meltzg/json_dumps/flavors.json"
+                               (slurp)
+                               (m/decode "application/json")
+                               (map #(let [recipe-id (-> (test-endpoint :post "/v1/recipes"
+                                                                        {:auth true
+                                                                         :body (merge (select-keys % [:name :instructions])
+                                                                                      {:amount      (:amount %)
+                                                                                       :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                             (:amount_unit %))
+                                                                                       :source ""})})
+                                                         :body
+                                                         :id)]
+                                       (test-endpoint :post (str "/v1/recipes/" recipe-id "/ingredients")
+                                                      {:auth true
+                                                       :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                              :amount      (:amount %)
+                                                              :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                    (:amount_unit %))}})
+                                       [(:id %) recipe-id]))
+                               (into {})))
+        ingredients (concat ingredients
+                            (->> "/home/meltzg/json_dumps/mixins.json"
+                                 (slurp)
+                                 (m/decode "application/json")
+                                 (map #(-> (test-endpoint :post (str "/v1/recipes/" (get recipe-map (:flavor_id %)) "/ingredients")
+                                                          {:auth true
+                                                           :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                                  :amount      (:amount %)
+                                                                  :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                        (:amount_unit %))}})
+                                           :body
+                                           :id))))
+        order-map (->> "/home/meltzg/json_dumps/orders.json"
+                       (slurp)
+                       (m/decode "application/json")
+                       (map #(vector (:id %) (-> (test-endpoint :post "/v1/orders"
+                                                                {:auth true
+                                                                 :body (select-keys % [:note])})
+                                                 :body
+                                                 :id)))
+                       (into {}))
+        order-items (->> "/home/meltzg/json_dumps/flavor_amounts.json"
+                         (slurp)
+                         (m/decode "application/json")
+                         (map #(-> (test-endpoint :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
+                                                  {:auth true
+                                                   :body {:recipe-id (get recipe-map (:flavor_id %))
+                                                          :amount      (:amount %)
+                                                          :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                (:amount_unit %))}})
+                                   :body
+                                   :id)))]
+    {:grocery-map grocery-map
+     :grocery-units units
+     :recipe-map recipe-map
+     :ingredients ingredients
+     :order-map order-map
+     :order-items order-items}))

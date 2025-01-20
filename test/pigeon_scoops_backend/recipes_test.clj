@@ -17,6 +17,7 @@
   {:name         "a spicy meatball"
    :amount       3
    :amount-unit  :mass/lb
+   :source       "the book"
    :instructions ["make them"]})
 
 (def updated-recipe
