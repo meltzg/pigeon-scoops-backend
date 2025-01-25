@@ -178,7 +178,7 @@
                                                                                {:amount      (:amount %)
                                                                                 :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                                       (:amount_unit %))
-                                                                                :source (or (:source %) "")})})
+                                                                                :source      (or (:source %) "")})})
                                                   :body
                                                   :id)))
                         (into {}))
@@ -188,9 +188,9 @@
                          (map #(-> (test-endpoint :post (str "/v1/recipes/" (get recipe-map (:recipe_id %)) "/ingredients")
                                                   {:auth true
                                                    :body {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
-                                                          :amount      (:amount %)
-                                                          :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                (:amount_unit %))}})
+                                                          :amount                (:amount %)
+                                                          :amount-unit           (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                          (:amount_unit %))}})
                                    :body
                                    :id)))
         recipe-map (merge recipe-map
@@ -203,15 +203,15 @@
                                                                                       {:amount      (:amount %)
                                                                                        :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                                              (:amount_unit %))
-                                                                                       :source ""})})
+                                                                                       :source      ""})})
                                                          :body
                                                          :id)]
                                        (test-endpoint :post (str "/v1/recipes/" recipe-id "/ingredients")
                                                       {:auth true
                                                        :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                              :amount      (:amount %)
-                                                              :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                    (:amount_unit %))}})
+                                                              :amount               (:amount %)
+                                                              :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                             (:amount_unit %))}})
                                        [(:id %) recipe-id]))
                                (into {})))
         ingredients (concat ingredients
@@ -221,9 +221,9 @@
                                  (map #(-> (test-endpoint :post (str "/v1/recipes/" (get recipe-map (:flavor_id %)) "/ingredients")
                                                           {:auth true
                                                            :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                                  :amount      (:amount %)
-                                                                  :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                        (:amount_unit %))}})
+                                                                  :amount               (:amount %)
+                                                                  :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                 (:amount_unit %))}})
                                            :body
                                            :id))))
         order-map (->> "/home/meltzg/json_dumps/orders.json"
@@ -240,15 +240,15 @@
                          (m/decode "application/json")
                          (map #(-> (test-endpoint :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
                                                   {:auth true
-                                                   :body {:recipe-id (get recipe-map (:flavor_id %))
+                                                   :body {:recipe-id   (get recipe-map (:flavor_id %))
                                                           :amount      (:amount %)
                                                           :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                 (:amount_unit %))}})
                                    :body
                                    :id)))]
-    {:grocery-map grocery-map
+    {:grocery-map   grocery-map
      :grocery-units units
-     :recipe-map recipe-map
-     :ingredients ingredients
-     :order-map order-map
-     :order-items order-items}))
+     :recipe-map    recipe-map
+     :ingredients   ingredients
+     :order-map     order-map
+     :order-items   order-items}))
