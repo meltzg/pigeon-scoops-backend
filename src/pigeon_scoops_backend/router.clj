@@ -13,7 +13,8 @@
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
             [reitit.swagger :as swagger]
-            [reitit.swagger-ui :as swagger-ui]))
+            [reitit.swagger-ui :as swagger-ui]
+            [ring.middleware.cors :refer [wrap-cors]]))
 
 (def router-config
   {:validate  rs/validate
@@ -47,7 +48,11 @@
     (ring/router
       [swagger-docs
        ["/v1"
-        {:swagger {:security [{:BearerAuth []}]}}
+        {:swagger    {:security [{:BearerAuth []}]}
+         :middleware [[wrap-cors
+                       :access-control-allow-origin [#"http://localhost:3000"
+                                                     #"https://pigeon-scoops.com"]
+                       :access-control-allow-methods [:get :post :put :delete]]]}
         (recipe/routes env)
         (grocery/routes env)
         (account/routes env)
