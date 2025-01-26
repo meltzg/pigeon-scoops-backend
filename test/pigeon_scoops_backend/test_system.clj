@@ -135,6 +135,7 @@
     (reset! token (get-test-token (conj auth @test-user)))
     (test-endpoint :post "/v1/account" {:auth true})
     (spit "dev/resources/test-user.edn" @test-user))
+  (test-endpoint :get "/v1/constants" {:auth true})
   (do
     (->> "dev/resources/test-user.edn"
          (slurp)
