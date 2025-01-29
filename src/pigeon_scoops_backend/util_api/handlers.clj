@@ -8,8 +8,8 @@
 
 (defn get-constants []
   (fn [_]
-    (rr/response {:constants/unit-types  (concat common/other-units
-                                                 (keys mass/conversion-map)
-                                                 (keys volume/conversion-map))
-                  :constants/departments departments
-                  :constants/roles       roles})))
+    (rr/response {:constants/unit-types  (vec (concat common/other-units
+                                                      (keys mass/conversion-map)
+                                                      (keys volume/conversion-map)))
+                  :constants/departments (vec departments)
+                  :constants/roles       (vec roles)})))
