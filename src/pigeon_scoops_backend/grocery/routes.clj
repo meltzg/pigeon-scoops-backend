@@ -12,6 +12,7 @@
   ["/groceries" {:swagger    {:tags ["groceries"]}
                  :middleware [[mw/wrap-auth0]]}
    ["" {:get  {:handler   (grocery/list-all-groceries db)
+               :middleware [[(mw/wrap-with-permission :view/grocery)]]
                :responses {200 {:body [responses/grocery]}}
                :summary   "list of groceries"}
         :post {:handler    (grocery/create-grocery! db)
@@ -21,6 +22,7 @@
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:grocery-id" {:parameters {:path {:grocery-id uuid?}}}
     ["" {:get    {:handler   (grocery/retrieve-grocery db)
+                  :middleware [[(mw/wrap-with-permission :view/grocery)]]
                   :responses {200 {:body responses/grocery}}
                   :summary   "Retrieve grocery"}
          :put    {:handler    (grocery/update-grocery! db)
