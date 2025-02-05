@@ -15,7 +15,8 @@
             [reitit.ring.spec :as rs]
             [reitit.swagger :as swagger]
             [reitit.swagger-ui :as swagger-ui]
-            [ring.middleware.cors :refer [wrap-cors]]))
+            [ring.middleware.cors :refer [wrap-cors]]
+            [ring.middleware.params :refer [wrap-params]]))
 
 (def router-config
   {:validate  rs/validate
@@ -26,6 +27,7 @@
                :middleware [swagger/swagger-feature
                             muuntaja/format-middleware
                             exception/exception-middleware
+                            wrap-params
                             coercion/coerce-request-middleware
                             coercion/coerce-response-middleware]}})
 

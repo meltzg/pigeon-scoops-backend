@@ -11,20 +11,20 @@
 (defn routes [{db :jdbc-url}]
   ["/groceries" {:swagger    {:tags ["groceries"]}
                  :middleware [[mw/wrap-auth0]]}
-   ["" {:get  {:handler   (grocery/list-all-groceries db)
+   ["" {:get  {:handler    (grocery/list-all-groceries db)
                :middleware [[(mw/wrap-with-permission :view/grocery)]]
-               :responses {200 {:body [responses/grocery]}}
-               :summary   "list of groceries"}
+               :responses  {200 {:body [responses/grocery]}}
+               :summary    "list of groceries"}
         :post {:handler    (grocery/create-grocery! db)
                :middleware [[(mw/wrap-with-permission :create/grocery)]]
                :parameters {:body {:name       string?
                                    :department (s/and keyword? responses/departments)}}
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:grocery-id" {:parameters {:path {:grocery-id uuid?}}}
-    ["" {:get    {:handler   (grocery/retrieve-grocery db)
+    ["" {:get    {:handler    (grocery/retrieve-grocery db)
                   :middleware [[(mw/wrap-with-permission :view/grocery)]]
-                  :responses {200 {:body responses/grocery}}
-                  :summary   "Retrieve grocery"}
+                  :responses  {200 {:body responses/grocery}}
+                  :summary    "Retrieve grocery"}
          :put    {:handler    (grocery/update-grocery! db)
                   :middleware [[(mw/wrap-with-permission :edit/grocery)]]
                   :parameters {:body {:name       string?

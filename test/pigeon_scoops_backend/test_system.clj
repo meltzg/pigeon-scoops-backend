@@ -145,6 +145,7 @@
          (get-test-token)
          (reset! token))
     (test-endpoint :post "/v1/account" {:auth true}))
+  @token
   (let [grocery-map (->> "/home/meltzg/json_dumps/groceries.json"
                          (slurp)
                          (m/decode "application/json")
