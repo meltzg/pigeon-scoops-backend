@@ -30,9 +30,13 @@
                :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
-    ["" {:get    {:handler   (recipe/retrieve-recipe db)
-                  :responses {200 {:body responses/recipe}}
-                  :summary   "Retrieve recipe"}
+    ["" {:get    {:handler    (recipe/retrieve-recipe db)
+                  :parameters {:query {(ds/opt :amount)      number?
+                                       (ds/opt :amount-unit) (s/and keyword? (set (concat common/other-units
+                                                                                          (keys mass/conversion-map)
+                                                                                          (keys volume/conversion-map))))}}
+                  :responses  {200 {:body responses/recipe}}
+                  :summary    "Retrieve recipe"}
          :put    {:handler    (recipe/update-recipe! db)
                   :middleware [[wrap-recipe-owner db]
                                [(mw/wrap-with-permission :edit/recipe)]]
