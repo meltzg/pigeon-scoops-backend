@@ -220,7 +220,16 @@
     (.stop @db-container)))
 
 (comment
-  (sql/query (:db/postgres state/system) ["select * from recipe"])
+  (sql/query (:db/postgres state/system) ["SELECT ingredient.*, recipe.name, grocery.name
+                                           FROM ingredient
+                                           LEFT JOIN recipe ON ingredient.ingredient_recipe_id = recipe.id
+                                           LEFT JOIN grocery ON ingredient.ingredient_grocery_id = grocery.id
+                                           WHERE ingredient.recipe_id = (?);"
+                                          #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
+  (sql/query (:db/postgres state/system) ["SELECT *
+                                           FROM ingredient
+                                           WHERE recipe_id = (?);"
+                                          #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
   @token
   (init-app)
   (go)

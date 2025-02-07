@@ -1,18 +1,20 @@
 (ns pigeon-scoops-backend.recipe.db
-  (:require [next.jdbc :as jdbc]
+  (:require [honey.sql :as hsql]
+            [honey.sql.helpers :as h]
+            [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 keyword->db-str]])
-  (:import (java.util UUID)))
+                                                 keyword->db-str]]))
 
 (defn find-recipe-favorite-counts [db recipe-ids]
-  (->> (next.jdbc/execute! db ["SELECT recipe_id, COUNT(*)
-                                FROM recipe_favorite
-                                WHERE recipe_id = ANY (?)
-                                GROUP BY recipe_id"
-                               (into-array UUID recipe-ids)])
-       (map (comp vec vals))
-       (into {})))
+  (when (seq recipe-ids)
+    (->> (sql/query db (-> (h/select :recipe-id :%count.*)
+                           (h/from :recipe-favorite)
+                           (h/where [:in :recipe-id recipe-ids])
+                           (h/group-by :recipe-id)
+                           (hsql/format)))
+         (map (comp vec vals))
+         (into {}))))
 
 (defn find-all-recipes [db uid]
   (with-open [conn (jdbc/get-connection db)]
@@ -34,7 +36,12 @@
   (with-open [conn (jdbc/get-connection db)]
     (let [conn-opts (jdbc/with-options conn (:options db))
           [recipe] (sql/find-by-keys conn-opts :recipe {:id recipe-id})
-          ingredients (sql/find-by-keys conn-opts :ingredient {:recipe-id recipe-id})
+          ingredients (sql/query conn-opts (-> (h/select :ingredient/* :recipe/name :grocery/name)
+                                               (h/from :ingredient)
+                                               (h/left-join :recipe [:= :ingredient/ingredient-recipe-id :recipe/id])
+                                               (h/left-join :grocery [:= :ingredient/ingredient-grocery-id :grocery/id])
+                                               (h/where [:= :ingredient/recipe-id recipe-id])
+                                               (hsql/format)))
           favorite-count (count (sql/find-by-keys conn-opts :recipe-favorite {:recipe-id recipe-id}))]
       (when (seq recipe)
         (-> recipe
@@ -81,3 +88,10 @@
   (-> (sql/delete! db :ingredient ingredient)
       ::jdbc/update-count
       (pos?)))
+
+(comment
+  (-> (h/select :recipe-id :%count.*)
+      (h/from :recipe-favorite)
+      (h/where [:in :recipe-id (into-array [1 2 3])])
+      (h/group-by :recipe-id)
+      (hsql/format)))

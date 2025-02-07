@@ -15,7 +15,8 @@
                  [camel-snake-kebab "0.4.3"]
                  [com.zaxxer/HikariCP "6.2.1"]
                  [org.flywaydb/flyway-database-postgresql "11.2.0"]
-                 [ring-cors "0.1.13"]]
+                 [ring-cors "0.1.13"]
+                 [com.github.seancorfield/honeysql "2.6.1270"]]
   :plugins [[lein-ancient "0.7.0"]]
   :profiles {:uberjar {:aot :all}
              :dev     {:source-paths   ["dev/src"]
