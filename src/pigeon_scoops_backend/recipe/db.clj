@@ -7,12 +7,14 @@
                                                  keyword->db-str]]))
 
 (defn find-recipe-favorite-counts [db recipe-ids]
-  (->> (next.jdbc/execute! db (-> (h/select :recipe-id :%count.*)
-                                  (h/from :recipe-favorite)
-                                  (h/where [:in :recipe-id recipe-ids])
-                                  (hsql/format)))
-       (map (comp vec vals))
-       (into {})))
+  (when (seq recipe-ids)
+    (->> (sql/query db (-> (h/select :recipe-id :%count.*)
+                           (h/from :recipe-favorite)
+                           (h/where [:in :recipe-id recipe-ids])
+                           (h/group-by :recipe-id)
+                           (hsql/format)))
+         (map (comp vec vals))
+         (into {}))))
 
 (defn find-all-recipes [db uid]
   (with-open [conn (jdbc/get-connection db)]
@@ -90,5 +92,6 @@
 (comment
   (-> (h/select :recipe-id :%count.*)
       (h/from :recipe-favorite)
-      (h/where [:in :recipe-id [1 2 3]])
+      (h/where [:in :recipe-id (into-array [1 2 3])])
+      (h/group-by :recipe-id)
       (hsql/format)))

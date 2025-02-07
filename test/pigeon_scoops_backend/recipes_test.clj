@@ -29,6 +29,7 @@
 
 (deftest recipes-list-test
   (testing "List recipes"
+    (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
     (testing "with auth -- public and private"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/recipes" {:auth true})]
         (is (= 200 status))
