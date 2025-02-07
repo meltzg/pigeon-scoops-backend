@@ -8,6 +8,8 @@
 (def ingredient
   {:ingredient/id                             uuid?
    :ingredient/recipe-id                      uuid?
+   (ds/opt :recipe/name)                      string?
+   (ds/opt :grocery/name)                     string?
    (ds/opt :ingredient/ingredient-grocery-id) uuid?
    (ds/opt :ingredient/ingredient-recipe-id)  uuid?
    :ingredient/amount                         number?

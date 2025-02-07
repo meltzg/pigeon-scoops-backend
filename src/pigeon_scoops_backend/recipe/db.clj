@@ -34,7 +34,12 @@
   (with-open [conn (jdbc/get-connection db)]
     (let [conn-opts (jdbc/with-options conn (:options db))
           [recipe] (sql/find-by-keys conn-opts :recipe {:id recipe-id})
-          ingredients (sql/find-by-keys conn-opts :ingredient {:recipe-id recipe-id})
+          ingredients (sql/query conn-opts ["SELECT ingredient.*, recipe.name, grocery.name
+                                             FROM ingredient
+                                             LEFT JOIN recipe ON ingredient.ingredient_recipe_id = recipe.id
+                                             LEFT JOIN grocery ON ingredient.ingredient_grocery_id = grocery.id
+                                             WHERE ingredient.recipe_id = (?);"
+                                            recipe-id])
           favorite-count (count (sql/find-by-keys conn-opts :recipe-favorite {:recipe-id recipe-id}))]
       (when (seq recipe)
         (-> recipe
