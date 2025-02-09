@@ -15,7 +15,6 @@
   {:order-item/id                   uuid?
    :order-item/recipe-id            uuid?
    :order-item/order-id             uuid?
-   :order-item/unit-cost            number?
    :order-item/status               (s/and keyword? status)
    (ds/opt :order-item/amount)      number?
    (ds/opt :order-item/amount-unit) (s/and keyword?
