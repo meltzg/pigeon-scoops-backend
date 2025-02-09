@@ -1,7 +1,5 @@
 (ns pigeon-scoops-backend.test-system
   (:require [clj-http.client :as http]
-            [clojure.edn :as edn]
-            [clojure.string :as str]
             [clojure.test :refer :all]
             [environ.core :refer [env]]
             [integrant.core :as ig]
