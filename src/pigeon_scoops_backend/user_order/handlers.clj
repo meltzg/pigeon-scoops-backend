@@ -26,7 +26,7 @@
     (let [order-id (-> request :parameters :path :order-id)
           order (order-db/find-order-by-id db order-id)]
       (if order
-        (rr/response (update order :user-order/units vec))
+        (rr/response (update order :user-order/items vec))
         (rr/not-found {:type    "order-not-found"
                        :message "order not found"
                        :data    (str "order-id " order-id)})))))
