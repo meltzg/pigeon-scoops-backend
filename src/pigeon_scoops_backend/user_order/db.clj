@@ -1,5 +1,7 @@
 (ns pigeon-scoops-backend.user-order.db
-  (:require [next.jdbc :as jdbc]
+  (:require [honey.sql :as hsql]
+            [honey.sql.helpers :as h]
+            [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
                                                  keyword->db-str]]))
@@ -7,7 +9,11 @@
 (defn find-all-order-items [db order-id]
   (map #(db-str->keyword (into {} (remove (comp nil? val) %))
                          :order-item/status :order-item/amount-unit)
-       (sql/find-by-keys db :order-item {:order-id order-id})))
+       (sql/query db (-> (h/select :order-item/* :recipe/name)
+                         (h/from :order-item)
+                         (h/left-join :recipe [:= :order-item/recipe-id :recipe/id])
+                         (h/where [:= :order-item/order-id order-id])
+                         (hsql/format)))))
 
 (defn find-all-orders [db user-id]
   (map #(db-str->keyword % :user-order/amount-unit :user-order/status)
