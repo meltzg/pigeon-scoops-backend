@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.middleware
   (:require [clojure.string :as str]
+            [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.jwt :as jwt]
             [ring.util.response :as rr]))
 
@@ -12,6 +13,17 @@
                     {:issuers {"https://pigeon-scoops.us.auth0.com/"
                                {:alg          :RS256
                                 :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
+
+(def wrap-cors-configured
+  {:name        ::cors-configured
+   :description "Middleware for CORS preconfigured for this app"
+   :wrap        (fn [handler]
+                  (wrap-cors
+                    handler
+                    :access-control-allow-origin [#"http://localhost:3000"
+                                                  #"https://pigeon-scoops.com"]
+                    :access-control-allow-methods [:get :post :put :delete]))})
+
 
 (defn wrap-owner [id-key table find-by-id]
   {:name        (keyword (str *ns*) (name table))
