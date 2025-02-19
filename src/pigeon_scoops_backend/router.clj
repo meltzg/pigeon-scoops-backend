@@ -2,6 +2,7 @@
   (:require [muuntaja.core :as m]
             [pigeon-scoops-backend.account.routes :as account]
             [pigeon-scoops-backend.grocery.routes :as grocery]
+            [pigeon-scoops-backend.middleware :refer [wrap-cors-configured]]
             [pigeon-scoops-backend.recipe.routes :as recipe]
             [pigeon-scoops-backend.user-order.routes :as user-order]
             [pigeon-scoops-backend.util-api.routes :as util-api]
@@ -9,13 +10,12 @@
             [reitit.dev.pretty :as pretty]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
-            [reitit.ring.middleware.exception :as exception]
     ;[reitit.ring.middleware.dev :as dev]
+            [reitit.ring.middleware.exception :as exception]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
             [reitit.swagger :as swagger]
             [reitit.swagger-ui :as swagger-ui]
-            [ring.middleware.cors :refer [wrap-cors]]
             [ring.middleware.params :refer [wrap-params]]))
 
 (def router-config
@@ -24,7 +24,8 @@
    :exception pretty/exception
    :data      {:coercion   coercion-spec/coercion
                :muuntaja   m/instance
-               :middleware [swagger/swagger-feature
+               :middleware [wrap-cors-configured
+                            swagger/swagger-feature
                             muuntaja/format-middleware
                             exception/exception-middleware
                             wrap-params
@@ -51,11 +52,7 @@
     (ring/router
       [swagger-docs
        ["/v1"
-        {:swagger    {:security [{:BearerAuth []}]}
-         :middleware [[wrap-cors
-                       :access-control-allow-origin [#"http://localhost:3000"
-                                                     #"https://pigeon-scoops.com"]
-                       :access-control-allow-methods [:get :post :put :delete]]]}
+        {:swagger {:security [{:BearerAuth []}]}}
         (recipe/routes env)
         (grocery/routes env)
         (account/routes env)
