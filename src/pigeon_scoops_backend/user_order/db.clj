@@ -15,9 +15,14 @@
                          (h/where [:= :order-item/order-id order-id])
                          (hsql/format)))))
 
-(defn find-all-orders [db user-id]
-  (map #(db-str->keyword % :user-order/amount-unit :user-order/status)
-       (sql/find-by-keys db :user-order {:user-id user-id})))
+(defn find-all-orders
+  ([db user-id]
+   (find-all-orders db user-id false))
+  ([db user-id include-deleted?]
+   (map #(db-str->keyword % :user-order/amount-unit :user-order/status)
+        (sql/find-by-keys db :user-order (merge {:user-id user-id}
+                                                (when-not include-deleted?
+                                                  {:deleted false}))))))
 
 (defn find-order-by-id [db order-id]
   (with-open [conn (jdbc/get-connection db)]
@@ -38,7 +43,7 @@
       (pos?)))
 
 (defn delete-order! [db order-id]
-  (-> (sql/delete! db :user-order {:id order-id})
+  (-> (sql/update! db :user-order {:deleted true} {:id order-id})
       ::jdbc/update-count
       (pos?)))
 
