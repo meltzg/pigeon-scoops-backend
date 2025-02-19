@@ -42,7 +42,6 @@
                            (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-token (conj auth @test-user)))))
                                    (:body opts) (mock/json-body (:body opts)))))
          response (update response :body (partial m/decode "application/json"))]
-     (println response)
      response)))
 
 (defn make-test-user []
@@ -193,6 +192,7 @@
 (ig-repl/set-prep!
   (fn []
     (when-not @db-container
+      (println "resetting db")
       (reset! db-container (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
                              (.withDatabaseName "test_db")
                              (.withUsername "user")
@@ -205,19 +205,17 @@
                                                 "&user=" (.getUsername @db-container)
                                                 "&password=" (.getPassword @db-container))))))
 
-(def go ig-repl/go)
+(defn go []
+  (ig-repl/go)
+  (init-app))
 (defn halt []
-  (ig-repl/halt)
-  (when @db-container
-    (.stop @db-container)))
+  (ig-repl/halt))
 (defn reset []
   (ig-repl/reset)
-  (when @db-container
-    (.stop @db-container)))
+  (init-app))
 (defn reset-all []
   (ig-repl/reset-all)
-  (when @db-container
-    (.stop @db-container)))
+  (init-app))
 
 (comment
   (sql/query (:db/postgres state/system) ["SELECT ingredient.*, recipe.name, grocery.name
