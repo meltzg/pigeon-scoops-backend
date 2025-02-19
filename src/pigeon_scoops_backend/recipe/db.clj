@@ -16,21 +16,26 @@
          (map (comp vec vals))
          (into {}))))
 
-(defn find-all-recipes [db uid]
-  (with-open [conn (jdbc/get-connection db)]
-    (let [conn-opts (jdbc/with-options conn (:options db))
-          public (sql/find-by-keys conn-opts :recipe {:public true})
-          private (when uid (sql/find-by-keys conn-opts :recipe {:user-id uid
-                                                                 :public  false}))
-          favorite-counts (find-recipe-favorite-counts conn-opts (concat (map :recipe/id public)
-                                                                         (map :recipe/id private)))]
-      (merge {:public (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                             :recipe/amount-unit)
-                           public)}
-             (when private
-               {:private (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                                :recipe/amount-unit)
-                              private)})))))
+(defn find-all-recipes
+  ([db uid]
+   (find-all-recipes db uid false))
+  ([db uid include-deleted?]
+   (with-open [conn (jdbc/get-connection db)]
+     (let [conn-opts (jdbc/with-options conn (:options db))
+           condition (when-not include-deleted? {:deleted false})
+           public (sql/find-by-keys conn-opts :recipe (merge condition {:public true}))
+           private (when uid (sql/find-by-keys conn-opts :recipe (merge condition {:user-id uid
+                                                                                   :public  false})))
+           favorite-counts (find-recipe-favorite-counts conn-opts (concat (map :recipe/id public)
+                                                                          (map :recipe/id private)))]
+       (merge {:public (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
+                                              :recipe/amount-unit)
+                            public)}
+              (when private
+                {:private (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
+                                                 :recipe/amount-unit)
+                               private)}))))))
+
 
 (defn find-recipe-by-id [db recipe-id]
   (with-open [conn (jdbc/get-connection db)]
@@ -65,7 +70,7 @@
       (pos?)))
 
 (defn delete-recipe! [db recipe-id]
-  (-> (sql/delete! db :recipe {:id recipe-id})
+  (-> (sql/update! db :recipe {:deleted true} {:id recipe-id})
       ::jdbc/update-count
       (pos?)))
 

@@ -11,9 +11,14 @@
                          :grocery-unit/unit-volume-type)
        (sql/find-by-keys db :grocery-unit {:grocery-id grocery-id})))
 
-(defn find-all-groceries [db]
-  (map #(db-str->keyword % :grocery/department)
-       (sql/find-by-keys db :grocery :all)))
+(defn find-all-groceries
+  ([db]
+   (find-all-groceries db false))
+  ([db include-deleted?]
+   (map #(db-str->keyword % :grocery/department)
+        (sql/find-by-keys db :grocery (if include-deleted?
+                                        :all
+                                        {:deleted false})))))
 
 (defn find-grocery-by-id [db grocery-id]
   (with-open [conn (jdbc/get-connection db)]
@@ -34,7 +39,7 @@
       (pos?)))
 
 (defn delete-grocery! [db grocery-id]
-  (-> (sql/delete! db :grocery {:id grocery-id})
+  (-> (sql/update! db :grocery {:deleted true} {:id grocery-id})
       ::jdbc/update-count
       (pos?)))
 
