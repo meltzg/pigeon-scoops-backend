@@ -110,11 +110,20 @@
 (defn update-ingredient! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
-          ingredient (-> request :parameters :body)
-          successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
-      (if successful?
-        (rr/status 204)
-        (rr/bad-request (select-keys ingredient [:id]))))))
+          ingredient (-> request :parameters :body)]
+      (if (-> ingredient
+             (select-keys [:ingredient-recipe-id :ingredient-grocery-id])
+             (vals)
+             ((partial remove nil?))
+             (count)
+             (not= 1))
+            (rr/bad-request {:type    "invalid-type"
+                             :message "Ingredient must be either a grocery or recipe ingredient, exclusive"
+                             :data    ingredient})
+            (let [successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
+              (if successful?
+                (rr/status 204)
+                (rr/bad-request (select-keys ingredient [:id]))))))))
 
 (defn delete-ingredient! [db]
   (fn [request]

@@ -85,7 +85,14 @@
   (sql/insert! db, :ingredient (keyword->db-str ingredient :amount-unit)))
 
 (defn update-ingredient! [db ingredient]
-  (-> (sql/update! db :ingredient (keyword->db-str ingredient :amount-unit) (select-keys ingredient [:id]))
+  (-> (sql/update! db :ingredient (keyword->db-str
+                                    (cond-> ingredient
+                                            (some? (:ingredient-grocery-id ingredient))
+                                            (assoc :ingredient-recipe-id nil)
+                                            (some? (:ingredient-recipe-id ingredient))
+                                            (assoc :ingredient-grocery-id nil))
+                                    :amount-unit)
+                   (select-keys ingredient [:id]))
       ::jdbc/update-count
       (pos?)))
 
