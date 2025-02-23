@@ -12,6 +12,9 @@
 (def wrap-recipe-owner
   (mw/wrap-owner :recipe-id :recipe recipe-db/find-recipe-by-id))
 
+(def wrap-recipe-public-access-owner
+  (mw/wrap-owner :recipe-id :recipe/public :recipe recipe-db/find-recipe-by-id))
+
 (defn routes [{db :jdbc-url}]
   ["/recipes" {:swagger    {:tags ["recipes"]}
                :middleware [[mw/wrap-auth0]]}
@@ -31,6 +34,7 @@
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
     ["" {:get    {:handler    (recipe/retrieve-recipe db)
+                  :middleware [[wrap-recipe-public-access-owner db]]
                   :parameters {:query {(ds/opt :amount)      number?
                                        (ds/opt :amount-unit) (s/and keyword? (set (concat common/other-units
                                                                                           (keys mass/conversion-map)
