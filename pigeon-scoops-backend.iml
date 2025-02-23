@@ -22,6 +22,8 @@
     <orderEntry type="library" name="Leiningen: borkdude/dynaload:0.3.5" level="project" />
     <orderEntry type="library" name="Leiningen: borkdude/edamame:1.4.27" level="project" />
     <orderEntry type="library" name="Leiningen: camel-snake-kebab:0.4.3" level="project" />
+    <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-classic:1.5.6" level="project" />
+    <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-core:1.5.6" level="project" />
     <orderEntry type="library" name="Leiningen: cheshire:5.10.0" level="project" />
     <orderEntry type="library" name="Leiningen: clj-http:3.13.0" level="project" />
     <orderEntry type="library" name="Leiningen: clj-stacktrace:0.2.8" level="project" />
@@ -99,6 +101,8 @@
     <orderEntry type="library" name="Leiningen: org.apache.httpcomponents/httpcore-nio:4.4.15" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.httpcomponents/httpcore:4.4.16" level="project" />
     <orderEntry type="library" name="Leiningen: org.apache.httpcomponents/httpmime:4.5.14" level="project" />
+    <orderEntry type="library" name="Leiningen: org.apache.logging.log4j/log4j-api:2.23.1" level="project" />
+    <orderEntry type="library" name="Leiningen: org.apache.logging.log4j/log4j-to-slf4j:2.23.1" level="project" />
     <orderEntry type="library" name="Leiningen: org.checkerframework/checker-qual:3.48.3" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/clojure:1.12.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.rrb-vector:0.2.0" level="project" />
@@ -138,7 +142,11 @@
     <orderEntry type="library" name="Leiningen: org.ring-clojure/ring-jakarta-servlet:1.13.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.ring-clojure/ring-websocket-protocols:1.13.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.rnorth.duct-tape/duct-tape:1.0.8" level="project" />
-    <orderEntry type="library" name="Leiningen: org.slf4j/slf4j-api:1.7.36" level="project" />
+    <orderEntry type="library" name="Leiningen: org.slf4j/jcl-over-slf4j:2.0.13" level="project" />
+    <orderEntry type="library" name="Leiningen: org.slf4j/jul-to-slf4j:2.0.13" level="project" />
+    <orderEntry type="library" name="Leiningen: org.slf4j/log4j-over-slf4j:2.0.13" level="project" />
+    <orderEntry type="library" name="Leiningen: org.slf4j/osgi-over-slf4j:2.0.13" level="project" />
+    <orderEntry type="library" name="Leiningen: org.slf4j/slf4j-api:2.0.13" level="project" />
     <orderEntry type="library" name="Leiningen: org.testcontainers/database-commons:1.20.4" level="project" />
     <orderEntry type="library" name="Leiningen: org.testcontainers/jdbc:1.20.4" level="project" />
     <orderEntry type="library" name="Leiningen: org.testcontainers/postgresql:1.20.4" level="project" />
