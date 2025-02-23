@@ -72,9 +72,10 @@
         (is (= status 204))))
     (testing "switching from recipe to grocery ingredient"
       (let [ingredient (-> ingredient
-                           (assoc :ingredient-grocery-id grocery-id)
+                           (assoc :ingredient-grocery-id grocery-id
+                                  :id @ingredient-id)
                            (dissoc :ingredient-recipe-id))
-            {:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body (assoc ingredient :id @ingredient-id)})]
+            {:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body ingredient})]
         (is (= status 204))))
     (testing "create ingredient from grocery"
       (let [ingredient (assoc ingredient :ingredient-grocery-id grocery-id)
