@@ -29,7 +29,6 @@
   ([id-key table find-by-id]
    (wrap-owner id-key nil table find-by-id))
   ([id-key public-key table find-by-id]
-   (println id-key public-key table find-by-id)
    {:name        (keyword (str *ns*) (str (name table)
                                           (when public-key
                                             (str "-" (name public-key)))))
