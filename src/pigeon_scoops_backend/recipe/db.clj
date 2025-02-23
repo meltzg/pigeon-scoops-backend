@@ -3,6 +3,7 @@
             [honey.sql.helpers :as h]
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
+            [pigeon-scoops-backend.recipe.utils :as utils]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
                                                  keyword->db-str]]))
 
@@ -101,9 +102,22 @@
       ::jdbc/update-count
       (pos?)))
 
-(comment
-  (-> (h/select :recipe-id :%count.*)
-      (h/from :recipe-favorite)
-      (h/where [:in :recipe-id (into-array [1 2 3])])
-      (h/group-by :recipe-id)
-      (hsql/format)))
+(defn generate-bom [db {:recipe/keys [id amount amount-unit]}]
+  (loop [curr-recipe-ingredients [{:ingredient/ingredient-recipe-id id
+                                   :ingredient/amount               amount
+                                   :ingredient/amount-unit          amount-unit}]
+         curr-grocery-ingredients []]
+    (if-not (seq curr-recipe-ingredients)
+      curr-grocery-ingredients
+      (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
+            {:keys [recipe-ingredients grocery-ingredients]}
+            (->> (utils/scale-recipe
+                   (find-recipe-by-id db ingredient-recipe-id)
+                   amount
+                   amount-unit)
+                 :recipe/ingredients
+                 (group-by #(if (some? (:ingredient/ingredient-recipe-id %))
+                              :recipe-ingredients
+                              :grocery-ingredients)))]
+        (recur (concat (rest curr-recipe-ingredients) recipe-ingredients)
+                 (concat curr-grocery-ingredients grocery-ingredients))))))
