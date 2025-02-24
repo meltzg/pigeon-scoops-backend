@@ -84,6 +84,12 @@
     (testing "retrieve recipe"
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:auth true})]
         (is (= status 200))))
+    (testing "retrieve scaled"
+      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:auth true :params {:amount 5 :amount-unit "mass/g"}})]
+        (is (= status 200))))
+    (testing "retrieve bom"
+      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id "/bom") {:auth true :params {:amount 5 :amount-unit "mass/g"}})]
+        (is (= status 200))))
     (testing "delete ingredient"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body {:id @ingredient-id}})]
         (is (= status 204))))

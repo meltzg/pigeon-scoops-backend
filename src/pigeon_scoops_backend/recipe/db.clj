@@ -120,4 +120,4 @@
                               :recipe-ingredients
                               :grocery-ingredients)))]
         (recur (concat (rest curr-recipe-ingredients) recipe-ingredients)
-                 (concat curr-grocery-ingredients grocery-ingredients))))))
+               (concat curr-grocery-ingredients grocery-ingredients))))))

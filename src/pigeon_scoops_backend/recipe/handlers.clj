@@ -1,7 +1,7 @@
 (ns pigeon-scoops-backend.recipe.handlers
   (:require [pigeon-scoops-backend.recipe.db :as recipe-db]
-            [pigeon-scoops-backend.responses :as responses]
             [pigeon-scoops-backend.recipe.utils :as utils]
+            [pigeon-scoops-backend.responses :as responses]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
@@ -101,18 +101,18 @@
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)]
       (if (-> ingredient
-             (select-keys [:ingredient-recipe-id :ingredient-grocery-id])
-             (vals)
-             ((partial remove nil?))
-             (count)
-             (not= 1))
-            (rr/bad-request {:type    "invalid-type"
-                             :message "Ingredient must be either a grocery or recipe ingredient, exclusive"
-                             :data    ingredient})
-            (let [successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
-              (if successful?
-                (rr/status 204)
-                (rr/bad-request (select-keys ingredient [:id]))))))))
+              (select-keys [:ingredient-recipe-id :ingredient-grocery-id])
+              (vals)
+              ((partial remove nil?))
+              (count)
+              (not= 1))
+        (rr/bad-request {:type    "invalid-type"
+                         :message "Ingredient must be either a grocery or recipe ingredient, exclusive"
+                         :data    ingredient})
+        (let [successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
+          (if successful?
+            (rr/status 204)
+            (rr/bad-request (select-keys ingredient [:id]))))))))
 
 (defn delete-ingredient! [db]
   (fn [request]
@@ -123,3 +123,14 @@
       (if successful?
         (rr/status 204)
         (rr/bad-request (select-keys ingredient [:id]))))))
+
+(defn retrieve-recipe-bom [db]
+  (fn [request]
+    (let [recipe-id (-> request :parameters :path :recipe-id)
+          {:keys [amount amount-unit]} (-> request
+                                           :parameters
+                                           :query)
+          bom (recipe-db/generate-bom db {:recipe/id          recipe-id
+                                          :recipe/amount      amount
+                                          :recipe/amount-unit amount-unit})]
+      (rr/response (vec bom)))))
