@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.recipes-test
+(ns pigeon-scoops-backend.recipe.integration-test
   (:require [clojure.test :refer :all]
             [integrant.repl.state]
             [pigeon-scoops-backend.server :refer :all]

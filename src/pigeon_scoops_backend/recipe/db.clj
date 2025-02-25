@@ -108,7 +108,7 @@
                                    :ingredient/amount-unit          amount-unit}]
          curr-grocery-ingredients []]
     (if-not (seq curr-recipe-ingredients)
-      curr-grocery-ingredients
+      (utils/combine-ingredients curr-grocery-ingredients)
       (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
             {:keys [recipe-ingredients grocery-ingredients]}
             (->> (utils/scale-recipe
