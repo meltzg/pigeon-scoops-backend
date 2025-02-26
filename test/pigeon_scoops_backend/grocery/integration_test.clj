@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.groceries-test
+(ns pigeon-scoops-backend.grocery.integration-test
   (:require [clojure.test :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
