@@ -2,7 +2,7 @@
   (:require [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 ensure-connection
+                                                 with-connection
                                                  keyword->db-str]]))
 
 (defn find-all-grocery-units [db grocery-id]
@@ -22,7 +22,7 @@
                                         {:deleted false})))))
 
 (defn find-grocery-by-id [db grocery-id]
-  (ensure-connection
+  (with-connection
     db
     (fn [conn-opts]
       (let [[grocery] (sql/find-by-keys conn-opts :grocery {:id grocery-id})

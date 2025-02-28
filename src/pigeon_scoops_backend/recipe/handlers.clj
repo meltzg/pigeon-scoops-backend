@@ -1,8 +1,10 @@
 (ns pigeon-scoops-backend.recipe.handlers
-  (:require [pigeon-scoops-backend.recipe.db :as recipe-db]
+  (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id]]
+            [pigeon-scoops-backend.grocery.utils :refer [grocery-for-amount]]
+            [pigeon-scoops-backend.recipe.db :as recipe-db]
             [pigeon-scoops-backend.recipe.utils :as utils]
             [pigeon-scoops-backend.responses :as responses]
-            [pigeon-scoops-backend.utils :refer [ensure-connection]]
+            [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
@@ -127,7 +129,7 @@
 
 (defn retrieve-recipe-bom [db]
   (fn [request]
-    (ensure-connection
+    (with-connection
       db
       (fn [conn-opts]
         (let [recipe-id (-> request :parameters :path :recipe-id)
@@ -136,5 +138,12 @@
                                                :query)
               ingredient-bom (recipe-db/ingredient-bom conn-opts {:recipe/id          recipe-id
                                                                   :recipe/amount      amount
-                                                                  :recipe/amount-unit amount-unit})]
-          (rr/response (vec ingredient-bom)))))))
+                                                                  :recipe/amount-unit amount-unit})
+              grocery-bom (map #(update (grocery-for-amount
+                                          (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
+                                          (:ingredient/amount %)
+                                          (:ingredient/amount-unit %))
+                                        :grocery/units
+                                        vec)
+                               ingredient-bom)]
+          (rr/response (vec grocery-bom)))))))

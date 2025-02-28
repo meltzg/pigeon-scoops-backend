@@ -5,7 +5,7 @@
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.recipe.utils :as utils]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 ensure-connection
+                                                 with-connection
                                                  keyword->db-str]]))
 
 (defn find-recipe-favorite-counts [db recipe-ids]
@@ -22,7 +22,7 @@
   ([db uid]
    (find-all-recipes db uid false))
   ([db uid include-deleted?]
-   (ensure-connection
+   (with-connection
      db
      (fn [conn-opts]
        (let [condition (when-not include-deleted? {:deleted false})
@@ -41,7 +41,7 @@
 
 
 (defn find-recipe-by-id [db recipe-id]
-  (ensure-connection
+  (with-connection
     db
     (fn [conn-opts]
       (let [[recipe] (sql/find-by-keys conn-opts :recipe {:id recipe-id})
@@ -106,21 +106,24 @@
       (pos?)))
 
 (defn ingredient-bom [db {:recipe/keys [id amount amount-unit]}]
-  (loop [curr-recipe-ingredients [{:ingredient/ingredient-recipe-id id
-                                   :ingredient/amount               amount
-                                   :ingredient/amount-unit          amount-unit}]
-         curr-grocery-ingredients []]
-    (if-not (seq curr-recipe-ingredients)
-      (utils/combine-ingredients curr-grocery-ingredients)
-      (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
-            {:keys [recipe-ingredients grocery-ingredients]}
-            (->> (utils/scale-recipe
-                   (find-recipe-by-id db ingredient-recipe-id)
-                   amount
-                   amount-unit)
-                 :recipe/ingredients
-                 (group-by #(if (some? (:ingredient/ingredient-recipe-id %))
-                              :recipe-ingredients
-                              :grocery-ingredients)))]
-        (recur (concat (rest curr-recipe-ingredients) recipe-ingredients)
-               (concat curr-grocery-ingredients grocery-ingredients))))))
+  (with-connection
+    db
+    (fn [conn-opts]
+      (loop [curr-recipe-ingredients [{:ingredient/ingredient-recipe-id id
+                                       :ingredient/amount               amount
+                                       :ingredient/amount-unit          amount-unit}]
+             curr-grocery-ingredients []]
+        (if-not (seq curr-recipe-ingredients)
+          (utils/combine-ingredients curr-grocery-ingredients)
+          (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
+                {:keys [recipe-ingredients grocery-ingredients]}
+                (->> (utils/scale-recipe
+                       (find-recipe-by-id conn-opts ingredient-recipe-id)
+                       amount
+                       amount-unit)
+                     :recipe/ingredients
+                     (group-by #(if (some? (:ingredient/ingredient-recipe-id %))
+                                  :recipe-ingredients
+                                  :grocery-ingredients)))]
+            (recur (concat (rest curr-recipe-ingredients) recipe-ingredients)
+                   (concat curr-grocery-ingredients grocery-ingredients))))))))

@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.recipe.routes
   (:require [clojure.spec.alpha :as s]
+            [pigeon-scoops-backend.grocery.responses :as grocery-responses]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.recipe.db :as recipe-db]
             [pigeon-scoops-backend.recipe.handlers :as recipe]
@@ -65,7 +66,7 @@
                                         :amount-unit (s/and keyword? (set (concat common/other-units
                                                                                   (keys mass/conversion-map)
                                                                                   (keys volume/conversion-map))))}}
-                   :responses  {200 {:body [responses/ingredient]}}
+                   :responses  {200 {:body [grocery-responses/grocery]}}
                    :summary    "Retrieve recipe bom"}}]
     ["/favorite" {:post   {:handler   (recipe/favorite-recipe! db)
                            :responses {204 {:body nil?}}

@@ -4,7 +4,7 @@
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 ensure-connection
+                                                 with-connection
                                                  keyword->db-str]]))
 
 (defn find-all-order-items [db order-id]
@@ -26,7 +26,7 @@
                                                   {:deleted false}))))))
 
 (defn find-order-by-id [db order-id]
-  (ensure-connection
+  (with-connection
     db (fn [conn-opts]
          (let [[order] (sql/find-by-keys conn-opts :user-order {:id order-id})
                items (find-all-order-items conn-opts order-id)]

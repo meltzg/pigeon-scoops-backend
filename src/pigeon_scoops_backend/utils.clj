@@ -14,7 +14,7 @@
               acc))
           entity keys))
 
-(defn ensure-connection [db f]
+(defn with-connection [db f]
   (try
     (with-open [conn (jdbc/get-connection db)]
       (let [conn-opts (jdbc/with-options conn (:options db))]
