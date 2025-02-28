@@ -39,21 +39,23 @@
 (defn grocery-for-amount [grocery amount amount-unit]
   (let [[amount-key unit-key] (get-unit-keys amount-unit)
         units (units-for-amount (:grocery/units grocery) amount amount-unit)
-        [total-amount total-unit] (apply (partial common/reduce-amounts +)
-                                         (mapcat #(-> %
-                                                      (select-keys [:grocery-unit/quantity amount-key unit-key])
-                                                      ((fn [unit]
-                                                         [(* (:grocery-unit/quantity unit)
-                                                             (amount-key unit))
-                                                          (unit-key unit)])))
+        [total-amount total-unit] (when (seq units)
+                                    (apply (partial common/reduce-amounts +)
+                                           (mapcat #(-> %
+                                                        (select-keys [:grocery-unit/quantity amount-key unit-key])
+                                                        ((fn [unit]
+                                                           [(* (:grocery-unit/quantity unit)
+                                                               (amount-key unit))
+                                                            (unit-key unit)])))
 
 
-                                                 units))
-        waste-ratio (->> [amount amount-unit
-                          total-amount total-unit]
-                         (apply (partial common/reduce-amounts /))
-                         (first)
-                         (- 1))]
+                                                   units)))
+        waste-ratio (when (seq units)
+                      (->> [amount amount-unit
+                            total-amount total-unit]
+                           (apply (partial common/reduce-amounts /))
+                           (first)
+                           (- 1)))]
 
     (assoc grocery :grocery/units units
                    :grocery/required-amount amount
@@ -63,5 +65,5 @@
                    :grocery/waste-ratio waste-ratio)))
 
 (comment
-  (grocery-for-amount {:grocery/units [{:grocery-unit/unit-mass 5 :grocery-unit/unit-mass-type :mass/kg}
-                                       {:grocery-unit/unit-mass 100 :grocery-unit/unit-mass-type :mass/g}]} 6199 :mass/g))
+  (grocery-for-amount {:grocery/units [{:grocery-unit/unit-mass 1 :grocery-unit/unit-mass-type :mass/kg}
+                                       {:grocery-unit/unit-mass 250 :grocery-unit/unit-mass-type :mass/g}]} 2.4 :mass/kg))
