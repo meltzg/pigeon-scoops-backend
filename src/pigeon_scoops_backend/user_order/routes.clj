@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.user-order.routes
   (:require [clojure.spec.alpha :as s]
+            [pigeon-scoops-backend.grocery.responses :as grocery-responses]
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
@@ -33,6 +34,9 @@
                   :middleware [[(mw/wrap-with-permission :delete/order)]]
                   :response   {204 {:body nil?}}
                   :summary    "Delete order"}}]
+    ["/bom" {:get {:handler   (order/retrieve-order-bom db)
+                   :responses {200 {:body [grocery-responses/grocery]}}
+                   :summary   "Retrieve order bom"}}]
     ["/items" {:middleware [[(mw/wrap-with-permission :edit/order)]]}
      ["" {:post   {:handler    (order/create-order-item! db)
                    :parameters {:body {:recipe-id   uuid?

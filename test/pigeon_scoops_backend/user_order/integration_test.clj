@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.user-orders-test
+(ns pigeon-scoops-backend.user-order.integration-test
   (:require [clojure.test :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
@@ -53,6 +53,10 @@
                                                                    :id @order-item-id
                                                                    :recipe-id recipe-id)})]
         (is (= status 204))))
+    (testing "retrieve order bom"
+      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/orders/" @order-id "/bom")
+                                               {:auth true})]
+        (is (= status 200))))
     (testing "delete order-item"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items") {:auth true :body {:id @order-item-id}})]
         (is (= status 204))))
