@@ -5,6 +5,7 @@
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.recipe.utils :as utils]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
+                                                 ensure-connection
                                                  keyword->db-str]]))
 
 (defn find-recipe-favorite-counts [db recipe-ids]
@@ -39,22 +40,23 @@
 
 
 (defn find-recipe-by-id [db recipe-id]
-  (with-open [conn (jdbc/get-connection db)]
-    (let [conn-opts (jdbc/with-options conn (:options db))
-          [recipe] (sql/find-by-keys conn-opts :recipe {:id recipe-id})
-          ingredients (sql/query conn-opts (-> (h/select :ingredient/* :recipe/name :grocery/name)
-                                               (h/from :ingredient)
-                                               (h/left-join :recipe [:= :ingredient/ingredient-recipe-id :recipe/id])
-                                               (h/left-join :grocery [:= :ingredient/ingredient-grocery-id :grocery/id])
-                                               (h/where [:= :ingredient/recipe-id recipe-id])
-                                               (hsql/format)))
-          favorite-count (count (sql/find-by-keys conn-opts :recipe-favorite {:recipe-id recipe-id}))]
-      (when (seq recipe)
-        (-> recipe
-            (db-str->keyword :recipe/amount-unit)
-            (assoc
-              :recipe/ingredients (map #(db-str->keyword (into {} (remove (comp nil? val) %)) :ingredient/amount-unit) ingredients)
-              :recipe/favorite-count favorite-count))))))
+  (ensure-connection
+    db
+    (fn [conn-opts]
+      (let [[recipe] (sql/find-by-keys conn-opts :recipe {:id recipe-id})
+            ingredients (sql/query conn-opts (-> (h/select :ingredient/* :recipe/name :grocery/name)
+                                                 (h/from :ingredient)
+                                                 (h/left-join :recipe [:= :ingredient/ingredient-recipe-id :recipe/id])
+                                                 (h/left-join :grocery [:= :ingredient/ingredient-grocery-id :grocery/id])
+                                                 (h/where [:= :ingredient/recipe-id recipe-id])
+                                                 (hsql/format)))
+            favorite-count (count (sql/find-by-keys conn-opts :recipe-favorite {:recipe-id recipe-id}))]
+        (when (seq recipe)
+          (-> recipe
+              (db-str->keyword :recipe/amount-unit)
+              (assoc
+                :recipe/ingredients (map #(db-str->keyword (into {} (remove (comp nil? val) %)) :ingredient/amount-unit) ingredients)
+                :recipe/favorite-count favorite-count)))))))
 
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (-> recipe
@@ -102,7 +104,7 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn generate-bom [db {:recipe/keys [id amount amount-unit]}]
+(defn ingredient-bom [db {:recipe/keys [id amount amount-unit]}]
   (loop [curr-recipe-ingredients [{:ingredient/ingredient-recipe-id id
                                    :ingredient/amount               amount
                                    :ingredient/amount-unit          amount-unit}]

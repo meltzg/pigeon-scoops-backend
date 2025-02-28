@@ -65,10 +65,11 @@
         (reset! ingredient-id (:id body))
         (is (= status 201))))
     (testing "update ingredient"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body (assoc ingredient
-                                                                                                                       :id @ingredient-id
-                                                                                                                       :amount 3000
-                                                                                                                       :ingredient-recipe-id @recipe-id)})]
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients")
+                                               {:auth true :body (assoc ingredient
+                                                                   :id @ingredient-id
+                                                                   :amount 3000
+                                                                   :ingredient-recipe-id @recipe-id)})]
         (is (= status 204))))
     (testing "switching from recipe to grocery ingredient"
       (let [ingredient (-> ingredient

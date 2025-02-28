@@ -38,7 +38,7 @@
                            (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-test-token (conj auth @test-user)))))
                                    (:body opts) (mock/json-body (:body opts)))))
          response (update response :body (partial m/decode "application/json"))]
-     (println response)
+     (println method uri opts response)
      response)))
 
 (defn port-available? [port]

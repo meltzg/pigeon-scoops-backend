@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.recipe.handlers
-  (:require [pigeon-scoops-backend.recipe.db :as recipe-db]
+  (:require [next.jdbc :as jdbc]
+            [pigeon-scoops-backend.recipe.db :as recipe-db]
             [pigeon-scoops-backend.recipe.utils :as utils]
             [pigeon-scoops-backend.responses :as responses]
             [ring.util.response :as rr])
@@ -126,11 +127,13 @@
 
 (defn retrieve-recipe-bom [db]
   (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
-          {:keys [amount amount-unit]} (-> request
-                                           :parameters
-                                           :query)
-          bom (recipe-db/generate-bom db {:recipe/id          recipe-id
-                                          :recipe/amount      amount
-                                          :recipe/amount-unit amount-unit})]
-      (rr/response (vec bom)))))
+    (with-open [conn (jdbc/get-connection db)]
+      (let [conn-opts (jdbc/with-options conn (:options db))
+            recipe-id (-> request :parameters :path :recipe-id)
+            {:keys [amount amount-unit]} (-> request
+                                             :parameters
+                                             :query)
+            ingredient-bom (recipe-db/ingredient-bom conn-opts {:recipe/id        recipe-id
+                                                                :recipe/amount      amount
+                                                                :recipe/amount-unit amount-unit})]
+        (rr/response (vec ingredient-bom))))))
