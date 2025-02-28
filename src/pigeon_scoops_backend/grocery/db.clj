@@ -2,6 +2,7 @@
   (:require [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
+                                                 ensure-connection
                                                  keyword->db-str]]))
 
 (defn find-all-grocery-units [db grocery-id]
@@ -21,14 +22,15 @@
                                         {:deleted false})))))
 
 (defn find-grocery-by-id [db grocery-id]
-  (with-open [conn (jdbc/get-connection db)]
-    (let [conn-opts (jdbc/with-options conn (:options db))
-          [grocery] (sql/find-by-keys conn-opts :grocery {:id grocery-id})
-          units (find-all-grocery-units conn-opts grocery-id)]
-      (when (seq grocery)
-        (-> grocery
-            (db-str->keyword :grocery/department)
-            (assoc :grocery/units units))))))
+  (ensure-connection
+    db
+    (fn [conn-opts]
+      (let [[grocery] (sql/find-by-keys conn-opts :grocery {:id grocery-id})
+            units (find-all-grocery-units conn-opts grocery-id)]
+        (when (seq grocery)
+          (-> grocery
+              (db-str->keyword :grocery/department)
+              (assoc :grocery/units units)))))))
 
 (defn insert-grocery! [db grocery]
   (sql/insert! db :grocery (keyword->db-str grocery :department)))

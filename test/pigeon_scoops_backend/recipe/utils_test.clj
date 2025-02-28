@@ -9,12 +9,12 @@
    :recipe/amount-unit  :volume/qt
    :recipe/source       "the book"
    :recipe/instructions ["make them"]
-   :recipe/ingredients [{:ingredient/id "foo"
-                         :ingredient/amount 3
-                         :ingredient/amount-unit :mass/kg}
-                        {:ingredient/id "bar"
-                         :ingredient/amount 2
-                         :ingredient/amount-unit :common/unit}]})
+   :recipe/ingredients  [{:ingredient/id          "foo"
+                          :ingredient/amount      3
+                          :ingredient/amount-unit :mass/kg}
+                         {:ingredient/id          "bar"
+                          :ingredient/amount      2
+                          :ingredient/amount-unit :common/unit}]})
 
 
 (deftest scale-recipe-test
@@ -26,58 +26,58 @@
                            :recipe/amount-unit  :volume/qt
                            :recipe/source       "the book"
                            :recipe/instructions ["make them"]
-                           :recipe/ingredients [{:ingredient/id "foo"
-                                                 :ingredient/amount 9.0
-                                                 :ingredient/amount-unit :mass/kg}
-                                                {:ingredient/id "bar"
-                                                 :ingredient/amount 6.0
-                                                 :ingredient/amount-unit :common/unit}]}
+                           :recipe/ingredients  [{:ingredient/id          "foo"
+                                                  :ingredient/amount      9.0
+                                                  :ingredient/amount-unit :mass/kg}
+                                                 {:ingredient/id          "bar"
+                                                  :ingredient/amount      6.0
+                                                  :ingredient/amount-unit :common/unit}]}
       recipe 0.5 :volume/qt {:recipe/name         "a spicy meatball"
                              :recipe/amount       0.5
                              :recipe/amount-unit  :volume/qt
                              :recipe/source       "the book"
                              :recipe/instructions ["make them"]
-                             :recipe/ingredients [{:ingredient/id "foo"
-                                                   :ingredient/amount 1.5
-                                                   :ingredient/amount-unit :mass/kg}
-                                                  {:ingredient/id "bar"
-                                                   :ingredient/amount 1.0
-                                                   :ingredient/amount-unit :common/unit}]}
+                             :recipe/ingredients  [{:ingredient/id          "foo"
+                                                    :ingredient/amount      1.5
+                                                    :ingredient/amount-unit :mass/kg}
+                                                   {:ingredient/id          "bar"
+                                                    :ingredient/amount      1.0
+                                                    :ingredient/amount-unit :common/unit}]}
       recipe 4 :volume/c {:recipe/name         "a spicy meatball"
                           :recipe/amount       4
                           :recipe/amount-unit  :volume/c
                           :recipe/source       "the book"
                           :recipe/instructions ["make them"]
-                          :recipe/ingredients [{:ingredient/id "foo"
-                                                :ingredient/amount 3.0
-                                                :ingredient/amount-unit :mass/kg}
-                                               {:ingredient/id "bar"
-                                                :ingredient/amount 2.0
-                                                :ingredient/amount-unit :common/unit}]})))
+                          :recipe/ingredients  [{:ingredient/id          "foo"
+                                                 :ingredient/amount      3.0
+                                                 :ingredient/amount-unit :mass/kg}
+                                                {:ingredient/id          "bar"
+                                                 :ingredient/amount      2.0
+                                                 :ingredient/amount-unit :common/unit}]})))
 
 (deftest combine-ingredients-test
   (testing "A list of ingredients can be combined by ingredient and unit class"
     (is (= (utils/combine-ingredients [{:ingredient/ingredient-recipe-id "good stuff"
-                                        :ingredient/amount 1
-                                        :ingredient/amount-unit :mass/kg}
+                                        :ingredient/amount               1
+                                        :ingredient/amount-unit          :mass/kg}
                                        {:ingredient/ingredient-recipe-id "good stuff"
-                                        :ingredient/amount 2.2
-                                        :ingredient/amount-unit :mass/lb}
+                                        :ingredient/amount               2.2
+                                        :ingredient/amount-unit          :mass/lb}
                                        {:ingredient/ingredient-recipe-id "good stuff"
-                                        :ingredient/amount 2
-                                        :ingredient/amount-unit :volume/gal}
+                                        :ingredient/amount               2
+                                        :ingredient/amount-unit          :volume/gal}
                                        {:ingredient/ingredient-recipe-id "other stuff"
-                                        :ingredient/amount 3
-                                        :ingredient/amount-unit :mass/kg}
+                                        :ingredient/amount               3
+                                        :ingredient/amount-unit          :mass/kg}
                                        {:ingredient/ingredient-recipe-id "other stuff"
-                                        :ingredient/amount 3
-                                        :ingredient/amount-unit :mass/kg}])
+                                        :ingredient/amount               3
+                                        :ingredient/amount-unit          :mass/kg}])
            [{:ingredient/ingredient-recipe-id "good stuff"
-             :ingredient/amount 1.9979024
-             :ingredient/amount-unit :mass/kg}
+             :ingredient/amount               1.9979024
+             :ingredient/amount-unit          :mass/kg}
             {:ingredient/ingredient-recipe-id "good stuff"
-             :ingredient/amount 2
-             :ingredient/amount-unit :volume/gal}
+             :ingredient/amount               2
+             :ingredient/amount-unit          :volume/gal}
             {:ingredient/ingredient-recipe-id "other stuff"
-             :ingredient/amount 6
-             :ingredient/amount-unit :mass/kg}]))))
+             :ingredient/amount               6
+             :ingredient/amount-unit          :mass/kg}]))))

@@ -31,17 +31,17 @@
 
 (comment
   (combine-ingredients [{:ingredient/ingredient-recipe-id "good stuff"
-                         :ingredient/amount 1
-                         :ingredient/amount-unit :mass/kg}
+                         :ingredient/amount               1
+                         :ingredient/amount-unit          :mass/kg}
                         {:ingredient/ingredient-recipe-id "good stuff"
-                         :ingredient/amount 2.2
-                         :ingredient/amount-unit :mass/lb}
+                         :ingredient/amount               2.2
+                         :ingredient/amount-unit          :mass/lb}
                         {:ingredient/ingredient-recipe-id "good stuff"
-                         :ingredient/amount 2
-                         :ingredient/amount-unit :volume/gal}
+                         :ingredient/amount               2
+                         :ingredient/amount-unit          :volume/gal}
                         {:ingredient/ingredient-recipe-id "other stuff"
-                         :ingredient/amount 3
-                         :ingredient/amount-unit :mass/kg}
+                         :ingredient/amount               3
+                         :ingredient/amount-unit          :mass/kg}
                         {:ingredient/ingredient-recipe-id "other stuff"
-                         :ingredient/amount 3
-                         :ingredient/amount-unit :mass/kg}]))
+                         :ingredient/amount               3
+                         :ingredient/amount-unit          :mass/kg}]))
