@@ -1,7 +1,10 @@
 (ns pigeon-scoops-backend.recipe.handlers
-  (:require [pigeon-scoops-backend.recipe.db :as recipe-db]
+  (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id]]
+            [pigeon-scoops-backend.grocery.utils :refer [grocery-for-amount]]
+            [pigeon-scoops-backend.recipe.db :as recipe-db]
+            [pigeon-scoops-backend.recipe.utils :as utils]
             [pigeon-scoops-backend.responses :as responses]
-            [pigeon-scoops-backend.units.common :as common]
+            [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
@@ -28,10 +31,7 @@
                                            :parameters
                                            :query)
           recipe (recipe-db/find-recipe-by-id db recipe-id)
-          scale-factor (common/scale-factor (:recipe/amount recipe)
-                                            (:recipe/amount-unit recipe)
-                                            amount
-                                            amount-unit)]
+          scaled-recipe (utils/scale-recipe recipe amount amount-unit)]
       (cond (not= (nil? amount) (nil? amount-unit))
             (rr/bad-request {:type    "invalid-amount"
                              :message "Both amount and amount-unit must be specified or nil"
@@ -41,20 +41,12 @@
                            :message "Recipe not found"
                            :data    (str "recipe-id " recipe-id)})
             (and (every? some? [amount amount-unit])
-                 (nil? scale-factor))
+                 (nil? scaled-recipe))
             (rr/bad-request {:type    "invalid-amount"
                              :message "Recipe cannot be converted to requested amount unit"
                              :data    (merge (select-keys recipe [:recipe/amount-unit]) {:amount-unit amount-unit})})
             :else
-            (rr/response (update (if scale-factor
-                                   (-> recipe
-                                       (assoc :recipe/amount amount
-                                              :recipe/amount-unit amount-unit)
-                                       (update :recipe/ingredients
-                                               #(map (fn [i]
-                                                       (update i :ingredient/amount * scale-factor))
-                                                     %)))
-                                   recipe)
+            (rr/response (update (or scaled-recipe recipe)
                                  :recipe/ingredients vec))))))
 
 
@@ -112,18 +104,18 @@
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)]
       (if (-> ingredient
-             (select-keys [:ingredient-recipe-id :ingredient-grocery-id])
-             (vals)
-             ((partial remove nil?))
-             (count)
-             (not= 1))
-            (rr/bad-request {:type    "invalid-type"
-                             :message "Ingredient must be either a grocery or recipe ingredient, exclusive"
-                             :data    ingredient})
-            (let [successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
-              (if successful?
-                (rr/status 204)
-                (rr/bad-request (select-keys ingredient [:id]))))))))
+              (select-keys [:ingredient-recipe-id :ingredient-grocery-id])
+              (vals)
+              ((partial remove nil?))
+              (count)
+              (not= 1))
+        (rr/bad-request {:type    "invalid-type"
+                         :message "Ingredient must be either a grocery or recipe ingredient, exclusive"
+                         :data    ingredient})
+        (let [successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
+          (if successful?
+            (rr/status 204)
+            (rr/bad-request (select-keys ingredient [:id]))))))))
 
 (defn delete-ingredient! [db]
   (fn [request]
@@ -134,3 +126,24 @@
       (if successful?
         (rr/status 204)
         (rr/bad-request (select-keys ingredient [:id]))))))
+
+(defn retrieve-recipe-bom [db]
+  (fn [request]
+    (with-connection
+      db
+      (fn [conn-opts]
+        (let [recipe-id (-> request :parameters :path :recipe-id)
+              {:keys [amount amount-unit]} (-> request
+                                               :parameters
+                                               :query)
+              ingredient-bom (recipe-db/ingredient-bom conn-opts {:recipe/id          recipe-id
+                                                                  :recipe/amount      amount
+                                                                  :recipe/amount-unit amount-unit})
+              grocery-bom (map #(update (grocery-for-amount
+                                          (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
+                                          (:ingredient/amount %)
+                                          (:ingredient/amount-unit %))
+                                        :grocery/units
+                                        vec)
+                               ingredient-bom)]
+          (rr/response (vec grocery-bom)))))))

@@ -4,7 +4,8 @@
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 keyword->db-str]]))
+                                                 keyword->db-str
+                                                 with-connection]]))
 
 (defn find-all-order-items [db order-id]
   (map #(db-str->keyword (into {} (remove (comp nil? val) %))
@@ -25,14 +26,14 @@
                                                   {:deleted false}))))))
 
 (defn find-order-by-id [db order-id]
-  (with-open [conn (jdbc/get-connection db)]
-    (let [conn-opts (jdbc/with-options conn (:options db))
-          [order] (sql/find-by-keys conn-opts :user-order {:id order-id})
-          items (find-all-order-items conn-opts order-id)]
-      (when (seq order)
-        (-> order
-            (db-str->keyword :user-order/amount-unit :user-order/status)
-            (assoc :user-order/items items))))))
+  (with-connection
+    db (fn [conn-opts]
+         (let [[order] (sql/find-by-keys conn-opts :user-order {:id order-id})
+               items (find-all-order-items conn-opts order-id)]
+           (when (seq order)
+             (-> order
+                 (db-str->keyword :user-order/amount-unit :user-order/status)
+                 (assoc :user-order/items items)))))))
 
 (defn insert-order! [db order]
   (sql/insert! db :user-order (keyword->db-str order :amount-unit :status)))

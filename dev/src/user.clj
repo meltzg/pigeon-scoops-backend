@@ -229,6 +229,7 @@
                                            WHERE recipe_id = (?);"
                                           #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
   @token
+  (load-test-user)
   (init-app)
   (go)
   (halt)

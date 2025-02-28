@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.recipes-test
+(ns pigeon-scoops-backend.recipe.integration-test
   (:require [clojure.test :refer :all]
             [integrant.repl.state]
             [pigeon-scoops-backend.server :refer :all]
@@ -65,10 +65,11 @@
         (reset! ingredient-id (:id body))
         (is (= status 201))))
     (testing "update ingredient"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body (assoc ingredient
-                                                                                                                       :id @ingredient-id
-                                                                                                                       :amount 3000
-                                                                                                                       :ingredient-recipe-id @recipe-id)})]
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients")
+                                               {:auth true :body (assoc ingredient
+                                                                   :id @ingredient-id
+                                                                   :amount 3000
+                                                                   :ingredient-recipe-id @recipe-id)})]
         (is (= status 204))))
     (testing "switching from recipe to grocery ingredient"
       (let [ingredient (-> ingredient
@@ -83,6 +84,12 @@
         (is (= status 201))))
     (testing "retrieve recipe"
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:auth true})]
+        (is (= status 200))))
+    (testing "retrieve scaled"
+      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id) {:auth true :params {:amount 5 :amount-unit "mass/g"}})]
+        (is (= status 200))))
+    (testing "retrieve bom"
+      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id "/bom") {:auth true :params {:amount 5 :amount-unit "mass/g"}})]
         (is (= status 200))))
     (testing "delete ingredient"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body {:id @ingredient-id}})]
