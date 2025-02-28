@@ -24,8 +24,8 @@
                             remaining-amount amount]
                        (let [unit (get-optimal-unit units remaining-amount amount-unit)
                              remaining-amount (if unit
-                                                (first (common/add-amounts remaining-amount amount-unit
-                                                                           (- (amount-key unit)) (unit-key unit)))
+                                                (first (common/reduce-amounts - remaining-amount amount-unit
+                                                                              (amount-key unit) (unit-key unit)))
                                                 remaining-amount)]
                          (cond (nil? unit) needed-units
                                (<= remaining-amount 0) (conj needed-units unit)
@@ -39,7 +39,7 @@
 (defn grocery-for-amount [grocery amount amount-unit]
   (let [[amount-key unit-key] (get-unit-keys amount-unit)
         units (units-for-amount (:grocery/units grocery) amount amount-unit)
-        [total-amount total-unit] (apply common/add-amounts
+        [total-amount total-unit] (apply (partial common/reduce-amounts +)
                                          (mapcat #(-> %
                                                       (select-keys [:grocery-unit/quantity amount-key unit-key])
                                                       ((fn [unit]

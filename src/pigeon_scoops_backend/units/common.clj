@@ -43,10 +43,10 @@
     :else
     amount))
 
-(defn add-amounts [amount amount-unit & am-uns]
+(defn reduce-amounts [f amount amount-unit & am-uns]
   (let [amounts (partition 2 (concat [amount amount-unit] am-uns))]
     (reduce (fn [[acc-amnt acc-unit] [amnt unit]]
-              [(+ acc-amnt (convert amnt unit acc-unit))
+              [(f acc-amnt (convert amnt unit acc-unit))
                acc-unit])
             amounts)))
 

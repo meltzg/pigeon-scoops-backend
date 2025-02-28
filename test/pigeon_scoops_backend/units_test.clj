@@ -79,10 +79,10 @@
       :volume/c "volume"
       :mass/g "mass")))
 
-(deftest add-amounts-test
-  (testing "can add amounts together"
+(deftest reduce-amounts-test
+  (testing "can reduce comparable amounts"
     (are [amounts expected]
-      (= (apply units/add-amounts amounts) expected)
+      (= (apply (partial units/reduce-amounts +) amounts) expected)
       [1 :volume/pt 3 :volume/c] [2.5 :volume/pt]
       [1 :volume/pt 3 :volume/c 2 :volume/qt 4] [6.5 :volume/pt])))
 
