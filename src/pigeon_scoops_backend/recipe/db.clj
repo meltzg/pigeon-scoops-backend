@@ -5,8 +5,8 @@
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.recipe.utils :as utils]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 with-connection
-                                                 keyword->db-str]]))
+                                                 keyword->db-str
+                                                 with-connection]]))
 
 (defn find-recipe-favorite-counts [db recipe-ids]
   (when (seq recipe-ids)

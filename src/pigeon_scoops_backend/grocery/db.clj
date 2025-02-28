@@ -2,8 +2,8 @@
   (:require [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 with-connection
-                                                 keyword->db-str]]))
+                                                 keyword->db-str
+                                                 with-connection]]))
 
 (defn find-all-grocery-units [db grocery-id]
   (map #(db-str->keyword (into {} (remove (comp nil? val) %))
