@@ -48,13 +48,20 @@
                                                           (unit-key unit)])))
 
 
-                                                 units))]
+                                                 units))
+        waste-ratio (->> [amount amount-unit
+                          total-amount total-unit]
+                         (apply (partial common/reduce-amounts /))
+                         (first)
+                         (- 1))]
+
     (assoc grocery :grocery/units units
                    :grocery/required-amount amount
                    :grocery/required-unit amount-unit
                    :grocery/purchase-amount total-amount
-                   :grocery/purchase-unit total-unit)))
+                   :grocery/purchase-unit total-unit
+                   :grocery/waste-ratio waste-ratio)))
 
 (comment
   (grocery-for-amount {:grocery/units [{:grocery-unit/unit-mass 5 :grocery-unit/unit-mass-type :mass/kg}
-                                       {:grocery-unit/unit-mass 5 :grocery-unit/unit-mass-type :mass/g}]} 5100 :mass/g))
+                                       {:grocery-unit/unit-mass 100 :grocery-unit/unit-mass-type :mass/g}]} 6199 :mass/g))
