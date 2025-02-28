@@ -22,10 +22,10 @@
                    :grocery-unit/unit-cost 0.05}
       100 :volume/gal nil)))
 
-(deftest get-quantized-units-test
+(deftest units-for-amount-test
   (testing "given a set of units and a needed amount, we can get a list of the necessary units and their quantities"
     (are [amount amount-unit expected]
-      (= (map #(select-keys % (keys (first expected))) (utils/get-quantized-units units amount amount-unit))
+      (= (map #(select-keys % (keys (first expected))) (utils/units-for-amount units amount amount-unit))
          expected)
       5105 :mass/g [{:grocery-unit/unit-mass 5
                      :grocery-unit/unit-mass-type :mass/kg
