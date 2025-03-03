@@ -9,6 +9,9 @@
   (testing "Create user account"
     (let [{:keys [status]} (ts/test-endpoint :post "/v1/account" {:auth true})]
       (is (= status 201))))
+  (testing "Create duplicate user no-op"
+    (let [{:keys [status]} (ts/test-endpoint :post "/v1/account" {:auth true})]
+      (is (= status 204))))
   (testing "Update user role"
     (let [{:keys [status] :as resp} (ts/test-endpoint :put (str "/v1/account/" (URLEncoder/encode ^String (:uid @ts/test-user) "UTF-8"))
                                                       {:auth true
