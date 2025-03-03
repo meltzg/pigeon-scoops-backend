@@ -1,6 +1,6 @@
-(ns pigeon-scoops-backend.recipe.utils-test
+(ns pigeon-scoops-backend.recipe.transforms-test
   (:require [clojure.test :refer :all]
-            [pigeon-scoops-backend.recipe.utils :as utils]))
+            [pigeon-scoops-backend.recipe.transforms :as transforms]))
 
 
 (def recipe
@@ -20,7 +20,7 @@
 (deftest scale-recipe-test
   (testing "A recipe can be scaled up and down"
     (are [recipe amount amount-unit expected]
-      (= (utils/scale-recipe recipe amount amount-unit) expected)
+      (= (transforms/scale-recipe recipe amount amount-unit) expected)
       recipe 3 :volume/qt {:recipe/name         "a spicy meatball"
                            :recipe/amount       3
                            :recipe/amount-unit  :volume/qt
@@ -57,21 +57,21 @@
 
 (deftest combine-ingredients-test
   (testing "A list of ingredients can be combined by ingredient and unit class"
-    (is (= (utils/combine-ingredients [{:ingredient/ingredient-recipe-id "good stuff"
-                                        :ingredient/amount               1
-                                        :ingredient/amount-unit          :mass/kg}
-                                       {:ingredient/ingredient-recipe-id "good stuff"
-                                        :ingredient/amount               2.2
-                                        :ingredient/amount-unit          :mass/lb}
-                                       {:ingredient/ingredient-recipe-id "good stuff"
-                                        :ingredient/amount               2
-                                        :ingredient/amount-unit          :volume/gal}
-                                       {:ingredient/ingredient-recipe-id "other stuff"
-                                        :ingredient/amount               3
-                                        :ingredient/amount-unit          :mass/kg}
-                                       {:ingredient/ingredient-recipe-id "other stuff"
-                                        :ingredient/amount               3
-                                        :ingredient/amount-unit          :mass/kg}])
+    (is (= (transforms/combine-ingredients [{:ingredient/ingredient-recipe-id "good stuff"
+                                             :ingredient/amount               1
+                                             :ingredient/amount-unit          :mass/kg}
+                                            {:ingredient/ingredient-recipe-id "good stuff"
+                                             :ingredient/amount               2.2
+                                             :ingredient/amount-unit          :mass/lb}
+                                            {:ingredient/ingredient-recipe-id "good stuff"
+                                             :ingredient/amount               2
+                                             :ingredient/amount-unit          :volume/gal}
+                                            {:ingredient/ingredient-recipe-id "other stuff"
+                                             :ingredient/amount               3
+                                             :ingredient/amount-unit          :mass/kg}
+                                            {:ingredient/ingredient-recipe-id "other stuff"
+                                             :ingredient/amount               3
+                                             :ingredient/amount-unit          :mass/kg}])
            [{:ingredient/ingredient-recipe-id "good stuff"
              :ingredient/amount               1.9979024
              :ingredient/amount-unit          :mass/kg}

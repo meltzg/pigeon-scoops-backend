@@ -1,8 +1,8 @@
 (ns pigeon-scoops-backend.user-order.handlers
   (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id]]
-            [pigeon-scoops-backend.grocery.utils :refer [grocery-for-amount]]
+            [pigeon-scoops-backend.grocery.transforms :refer [grocery-for-amount]]
             [pigeon-scoops-backend.recipe.db :refer [ingredient-bom]]
-            [pigeon-scoops-backend.recipe.utils :refer [combine-ingredients]]
+            [pigeon-scoops-backend.recipe.transforms :refer [combine-ingredients]]
             [pigeon-scoops-backend.responses :as responses]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.utils :refer [with-connection]]
