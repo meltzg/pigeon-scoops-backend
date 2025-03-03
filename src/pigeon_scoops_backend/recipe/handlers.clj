@@ -59,7 +59,6 @@
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           recipe (-> request :parameters :body)
-          _ (println "UPDATED RECIPE" recipe)
           successful? (recipe-db/update-recipe! db (assoc recipe :id recipe-id))]
       (if successful?
         (rr/status 204)
