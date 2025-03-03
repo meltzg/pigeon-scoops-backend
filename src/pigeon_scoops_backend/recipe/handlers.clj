@@ -1,8 +1,8 @@
 (ns pigeon-scoops-backend.recipe.handlers
   (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id]]
-            [pigeon-scoops-backend.grocery.utils :refer [grocery-for-amount]]
+            [pigeon-scoops-backend.grocery.transforms :refer [grocery-for-amount]]
             [pigeon-scoops-backend.recipe.db :as recipe-db]
-            [pigeon-scoops-backend.recipe.utils :as utils]
+            [pigeon-scoops-backend.recipe.transforms :as transforms]
             [pigeon-scoops-backend.responses :as responses]
             [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr])
@@ -11,8 +11,10 @@
 (defn list-all-recipes [db]
   (fn [request]
     (let [uid (-> request :claims :sub)
-          recipes (recipe-db/find-all-recipes db uid)]
-      (rr/response (update-vals recipes vec)))))
+          recipes (-> (recipe-db/find-all-recipes db uid)
+                      (update-vals #(map (partial transforms/anonymize-mystery-recipe uid) %))
+                      (update-vals vec))]
+      (rr/response recipes))))
 
 (defn create-recipe! [db]
   (fn [request]
@@ -30,8 +32,11 @@
           {:keys [amount amount-unit]} (-> request
                                            :parameters
                                            :query)
-          recipe (recipe-db/find-recipe-by-id db recipe-id)
-          scaled-recipe (utils/scale-recipe recipe amount amount-unit)]
+          uid (-> request :claims :sub)
+          recipe (transforms/anonymize-mystery-recipe
+                   uid
+                   (recipe-db/find-recipe-by-id db recipe-id))
+          scaled-recipe (transforms/scale-recipe recipe amount amount-unit)]
       (cond (not= (nil? amount) (nil? amount-unit))
             (rr/bad-request {:type    "invalid-amount"
                              :message "Both amount and amount-unit must be specified or nil"
@@ -54,6 +59,7 @@
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           recipe (-> request :parameters :body)
+          _ (println "UPDATED RECIPE" recipe)
           successful? (recipe-db/update-recipe! db (assoc recipe :id recipe-id))]
       (if successful?
         (rr/status 204)

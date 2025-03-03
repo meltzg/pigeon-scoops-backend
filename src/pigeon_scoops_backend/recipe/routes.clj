@@ -24,13 +24,16 @@
                :summary   "list of recipes"}
         :post {:handler    (recipe/create-recipe! db)
                :middleware [[(mw/wrap-with-permission :create/recipe)]]
-               :parameters {:body {:name         string?
-                                   :instructions [string?]
-                                   :amount       number?
-                                   :amount-unit  (s/and keyword? (set (concat common/other-units
-                                                                              (keys mass/conversion-map)
-                                                                              (keys volume/conversion-map))))
-                                   :source       string?}}
+               :parameters {:body {:name                         string?
+                                   (ds/opt :is-mystery)          boolean?
+                                   (ds/opt :description)         string?
+                                   (ds/opt :mystery-description) string?
+                                   :instructions                 [string?]
+                                   :amount                       number?
+                                   :amount-unit                  (s/and keyword? (set (concat common/other-units
+                                                                                              (keys mass/conversion-map)
+                                                                                              (keys volume/conversion-map))))
+                                   :source                       string?}}
                :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
@@ -45,14 +48,17 @@
          :put    {:handler    (recipe/update-recipe! db)
                   :middleware [[wrap-recipe-owner db]
                                [(mw/wrap-with-permission :edit/recipe)]]
-                  :parameters {:body {:name         string?
-                                      :instructions [string?]
-                                      :amount       number?
-                                      :amount-unit  (s/and keyword? (set (concat common/other-units
-                                                                                 (keys mass/conversion-map)
-                                                                                 (keys volume/conversion-map))))
-                                      :source       string?
-                                      :public       boolean?}}
+                  :parameters {:body {:name                         string?
+                                      (ds/opt :is-mystery)          boolean?
+                                      (ds/opt :description)         string?
+                                      (ds/opt :mystery-description) string?
+                                      :instructions                 [string?]
+                                      :amount                       number?
+                                      :amount-unit                  (s/and keyword? (set (concat common/other-units
+                                                                                                 (keys mass/conversion-map)
+                                                                                                 (keys volume/conversion-map))))
+                                      :source                       string?
+                                      :public                       boolean?}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update recipe"}
          :delete {:handler    (recipe/delete-recipe! db)

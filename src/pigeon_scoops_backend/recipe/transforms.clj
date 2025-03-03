@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.recipe.utils
+(ns pigeon-scoops-backend.recipe.transforms
   (:require [pigeon-scoops-backend.units.common :as common]))
 
 (defn scale-recipe [recipe amount amount-unit]
@@ -28,6 +28,14 @@
                                   (let [scaled-amount (common/convert amount amount-unit sink-amount-unit)]
                                     (update acc :ingredient/amount + scaled-amount)))))
         (vals ?)))
+
+(defn anonymize-mystery-recipe [user-id recipe]
+  (if (and (:recipe/is-mystery recipe) (not= (:recipe/user-id recipe) user-id))
+    (-> recipe
+        (assoc :recipe/name "?????"
+               :recipe/description "?????")
+        (dissoc :recipe/instructions :recipe/ingredients))
+    recipe))
 
 (comment
   (combine-ingredients [{:ingredient/ingredient-recipe-id "good stuff"

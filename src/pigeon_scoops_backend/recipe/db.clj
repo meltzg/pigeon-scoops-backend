@@ -3,7 +3,7 @@
             [honey.sql.helpers :as h]
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
-            [pigeon-scoops-backend.recipe.utils :as utils]
+            [pigeon-scoops-backend.recipe.transforms :as transforms]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
                                                  keyword->db-str
                                                  with-connection]]))
@@ -114,10 +114,10 @@
                                        :ingredient/amount-unit          amount-unit}]
              curr-grocery-ingredients []]
         (if-not (seq curr-recipe-ingredients)
-          (utils/combine-ingredients curr-grocery-ingredients)
+          (transforms/combine-ingredients curr-grocery-ingredients)
           (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
                 {:keys [recipe-ingredients grocery-ingredients]}
-                (->> (utils/scale-recipe
+                (->> (transforms/scale-recipe
                        (find-recipe-by-id conn-opts ingredient-recipe-id)
                        amount
                        amount-unit)
