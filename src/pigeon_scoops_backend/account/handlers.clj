@@ -5,9 +5,13 @@
 
 (defn create-account! [db]
   (fn [request]
-    (let [{:keys [sub picture] :as claims} (:claims request)]
-      (account-db/create-account! db {:id sub :name (get claims "https://api.pigeon-scoops.com/email") :picture picture})
-      (rr/status 201))))
+    (let [{:keys [sub picture] :as claims} (:claims request)
+          existing-account (account-db/find-account-by-id db sub)]
+      (if existing-account
+        (rr/status 204)
+        (do
+          (account-db/create-account! db {:id sub :name (get claims "https://api.pigeon-scoops.com/email") :picture picture})
+          (rr/status 201))))))
 
 (defn delete-account! [auth db]
   (fn [request]

@@ -6,3 +6,6 @@
 
 (defn delete-account! [db account]
   (sql/delete! db :account account))
+
+(defn find-account-by-id [db account-id]
+  (first (sql/find-by-keys db :account {:id account-id})))
