@@ -58,8 +58,8 @@
 (deftest combine-ingredients-test
   (testing "A list of ingredients can be combined by ingredient and unit class"
     (is (= (transforms/combine-ingredients [{:ingredient/ingredient-recipe-id "good stuff"
-                                             :ingredient/amount                    1
-                                             :ingredient/amount-unit               :mass/kg}
+                                             :ingredient/amount               1
+                                             :ingredient/amount-unit          :mass/kg}
                                             {:ingredient/ingredient-recipe-id "good stuff"
                                              :ingredient/amount               2.2
                                              :ingredient/amount-unit          :mass/lb}
