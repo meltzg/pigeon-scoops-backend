@@ -2,6 +2,7 @@
   (:require [muuntaja.core :as m]
             [pigeon-scoops-backend.account.routes :as account]
             [pigeon-scoops-backend.grocery.routes :as grocery]
+            [pigeon-scoops-backend.menu.routes :as menu]
             [pigeon-scoops-backend.recipe.routes :as recipe]
             [pigeon-scoops-backend.user-order.routes :as user-order]
             [pigeon-scoops-backend.util-api.routes :as util-api]
@@ -56,11 +57,12 @@
       [swagger-docs
        ["/v1"
         {:swagger {:security [{:BearerAuth []}]}}
-        (recipe/routes env)
         (grocery/routes env)
-        (account/routes env)
+        (recipe/routes env)
+        (menu/routes env)
         (user-order/routes env)
-        (util-api/routes)]]
+        (util-api/routes)
+        (account/routes env)]]
       router-config)
     (ring/routes
       (swagger-ui/create-swagger-ui-handler {:path "/"}))))
