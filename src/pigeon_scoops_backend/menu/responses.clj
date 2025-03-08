@@ -20,7 +20,8 @@
 (def menu
   {:menu/id            uuid?
    :menu/name          string?
-   :menu/repeats?      boolean?
+   :menu/repeats       boolean?
+   :menu/active        boolean?
    :menu/duration      number?
    :menu/duration-type keyword?
    :menu/end-time      string?

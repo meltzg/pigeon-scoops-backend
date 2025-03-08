@@ -16,7 +16,7 @@
         :post {:handler    (menu/create-menu! db)
                :middleware [[(mw/wrap-with-permission :create/menu)]]
                :parameters {:body {:name          string?
-                                   :repeats?      boolean?
+                                   :repeats       boolean?
                                    :duration      number?
                                    :duration-type (s/and keyword?
                                                          responses/durations)}}
@@ -28,7 +28,7 @@
          :put    {:handler    (menu/update-menu! db)
                   :middleware [[(mw/wrap-with-permission :edit/menu)]]
                   :parameters {:body {:name          string?
-                                      :repeats?      boolean?
+                                      :repeats       boolean?
                                       :duration      number?
                                       :duration-type (s/and keyword?
                                                             responses/durations)}}
