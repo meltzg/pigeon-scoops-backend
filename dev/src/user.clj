@@ -10,7 +10,8 @@
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.auth0 :as auth0]
             [ring.mock.request :as mock])
-  (:import (java.util UUID)
+  (:import (java.sql Timestamp)
+           (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
 (def user-config "dev/resources/test-user.edn")
@@ -228,6 +229,13 @@
                                            FROM ingredient
                                            WHERE recipe_id = (?);"
                                           #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
+  (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
+                                                  :name          "food"
+                                                  :duration      4
+                                                  :duration-type "day"
+                                                  :end-time      (Timestamp/from (java.time.Instant/now))})
+  (sql/find-by-keys (:db/postgres state/system) :menu :all)
+  (Timestamp/from nil)
   @token
   (load-test-user)
   (init-app)

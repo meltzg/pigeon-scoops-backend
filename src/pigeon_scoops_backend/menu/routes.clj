@@ -17,6 +17,7 @@
                :middleware [[(mw/wrap-with-permission :create/menu)]]
                :parameters {:body {:name          string?
                                    :repeats       boolean?
+                                   :active        boolean?
                                    :duration      number?
                                    :duration-type (s/and keyword?
                                                          responses/durations)}}
@@ -29,6 +30,7 @@
                   :middleware [[(mw/wrap-with-permission :edit/menu)]]
                   :parameters {:body {:name          string?
                                       :repeats       boolean?
+                                      :active        boolean?
                                       :duration      number?
                                       :duration-type (s/and keyword?
                                                             responses/durations)}}
