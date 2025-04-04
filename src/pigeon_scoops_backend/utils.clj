@@ -19,6 +19,6 @@
     (with-open [conn (jdbc/get-connection db)]
       (let [conn-opts (jdbc/with-options conn (:options db))]
         (f conn-opts)))
-    (catch IllegalArgumentException e
+    (catch IllegalArgumentException _
       (f db))))
 
