@@ -42,7 +42,7 @@
 (defn delete-menu! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
-          successful? (menu-db/delete-menu! db menu-id)]
+          successful? (menu-db/delete-menu! db {:id menu-id})]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "menu-not-found"

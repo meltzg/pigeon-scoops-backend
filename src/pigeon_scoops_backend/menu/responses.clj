@@ -1,4 +1,5 @@
-(ns pigeon-scoops-backend.menu.responses)
+(ns pigeon-scoops-backend.menu.responses
+  (:require [spec-tools.data-spec :as ds]))
 
 (def durations
   #{:duration/day
@@ -18,11 +19,11 @@
    :menu-item/sizes     [menu-item-size]})
 
 (def menu
-  {:menu/id            uuid?
-   :menu/name          string?
-   :menu/repeats       boolean?
-   :menu/active        boolean?
-   :menu/duration      number?
-   :menu/duration-type keyword?
-   :menu/end-time      string?
-   :menu/items         [menu-item]})
+  {:menu/id                uuid?
+   :menu/name              string?
+   :menu/repeats           boolean?
+   :menu/active            boolean?
+   :menu/duration          number?
+   :menu/duration-type     keyword?
+   :menu/items             [menu-item]
+   (ds/opt :menu/end-time) inst?})

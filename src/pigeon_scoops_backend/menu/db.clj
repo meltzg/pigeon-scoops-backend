@@ -31,18 +31,21 @@
              (map #(assoc % :menu-item/sizes (get menu-item-sizes (:menu-item/id %))))
              (group-by :menu-item/id))))))
 
-(defn find-all-menus [db include-inactive?]
-  (with-connection
-    db
-    (fn [conn-opts]
-      (let [menus (sql/find-by-keys
-                    conn-opts
-                    :menu
-                    (if include-inactive? :all {:active true}))
-            menu-items (when menus (apply (partial find-menu-items conn-opts) (map :menu/id menus)))]
-        (->> menus
-             (map #(assoc % :menu/items (get menu-items (:menu/id %))))
-             (map #(update % :menu/duration-type db-str->keyword)))))))
+(defn find-all-menus
+  ([db]
+   (find-all-menus db false))
+  ([db include-inactive?]
+   (with-connection
+     db
+     (fn [conn-opts]
+       (let [menus (sql/find-by-keys
+                     conn-opts
+                     :menu
+                     (if include-inactive? :all {:active true}))
+             menu-items (when (seq menus) (apply (partial find-menu-items conn-opts) (map :menu/id menus)))]
+         (->> menus
+              (map #(assoc % :menu/items (get menu-items (:menu/id %))))
+              (map #(update % :menu/duration-type db-str->keyword))))))))
 
 
 (defn insert-menu! [db menu]

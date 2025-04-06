@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.utils
-  (:require [next.jdbc :as jdbc]))
+  (:require [next.jdbc :as jdbc])
+  (:import (java.time Duration ZonedDateTime)))
 
 (defn db-str->keyword [entity & keys]
   (reduce (fn [acc k] (if (contains? entity k)
@@ -22,3 +23,9 @@
     (catch IllegalArgumentException _
       (f db))))
 
+(defn end-time [duration duration-type]
+  (let [now (ZonedDateTime/now)]
+    (case duration-type
+      :duration/day (.plus now (Duration/ofDays duration))
+      :duration/week (.plusWeeks now duration)
+      :duration/month (.plusMonths now duration))))
