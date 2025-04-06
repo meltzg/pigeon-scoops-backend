@@ -26,5 +26,3 @@
    :menu/duration-type keyword?
    :menu/end-time      string?
    :menu/items         [menu-item]})
-
-
