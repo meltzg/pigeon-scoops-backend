@@ -56,7 +56,7 @@
           menu-item-id (UUID/randomUUID)]
       (menu-db/insert-menu-item! db (assoc menu-item :menu-id menu-id
                                                      :id menu-item-id))
-      (rr/created (str responses/base-url "/groceries/" menu-id)
+      (rr/created (str responses/base-url "/menus/" menu-id)
                   {:id menu-item-id}))))
 
 (defn update-menu-item! [db]
@@ -80,21 +80,32 @@
 (defn create-menu-item-size! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
-          menu-item-size (-> request :parameters :body)
+          {:keys [menu-item-id] :as menu-item-size} (-> request :parameters :body)
+          menu-item (menu-db/find-menu-item-by-id db menu-item-id)
           menu-item-size-id (UUID/randomUUID)]
-      (menu-db/insert-menu-item-size! db (assoc menu-item-size :menu-id menu-id
-                                                               :id menu-item-size-id))
-      (rr/created (str responses/base-url "/groceries/" menu-id)
-                  {:id menu-item-size-id}))))
+      (if (= menu-id (:menu-item/menu-id menu-item))
+        (do (menu-db/insert-menu-item-size! db (assoc menu-item-size :id menu-item-size-id))
+            (rr/created (str responses/base-url "/menus/" menu-id)
+                        {:id menu-item-size-id}))
+        (rr/bad-request {:type    "menu-mismatch"
+                         :message (str "menu-item does not belong to provided menu")
+                         :data    (str "menu-id " menu-id)})))))
 
 (defn update-menu-item-size! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
-          menu-item-size (-> request :parameters :body)
-          successful? (menu-db/update-menu-item-size! db (assoc menu-item-size :menu-id menu-id))]
-      (if successful?
+          {:keys [menu-item-id] :as menu-item-size} (-> request :parameters :body)
+          menu-item (menu-db/find-menu-item-by-id db menu-item-id)]
+      (cond
+        (not= menu-id (:menu-item/id menu-item))
+        (rr/bad-request {:type    "menu-mismatch"
+                         :message (str "menu-item does not belong to provided menu")
+                         :data    (str "menu-id " menu-id)})
+        (menu-db/update-menu-item-size! db menu-item-size)
         (rr/status 204)
+        :else
         (rr/bad-request (select-keys menu-item-size [:id]))))))
+
 
 (defn delete-menu-item-size! [db]
   (fn [request]

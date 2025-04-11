@@ -31,6 +31,13 @@
              (map #(assoc % :menu-item/sizes (get menu-item-sizes (:menu-item/id %))))
              (group-by :menu-item/id))))))
 
+(defn find-menu-item-by-id [db menu-item-id]
+  (with-connection
+    db
+    (fn [conn-opts]
+      (when-let [item (sql/find-by-keys conn-opts :menu-item {:id menu-item-id})]
+        (assoc item :menu-item/sizes (sql/find-by-keys conn-opts :menu-item-size {:menu-item-id menu-item-id}))))))
+
 (defn find-all-menus
   ([db]
    (find-all-menus db false))

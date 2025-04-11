@@ -27,6 +27,7 @@
 (deftest menus-crud-test
   (let [menu-id (atom nil)
         menu-item-id (atom nil)
+        menu-item-size-id (atom nil)
         recipe-ids (map #(get-in % [:body :id]) (repeatedly 2 #(ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})))]
     (testing "create menu"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})]
@@ -47,6 +48,21 @@
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/menus/" @menu-id "/items")
                                                {:auth true :body {:id        @menu-item-id
                                                                   :recipe-id (second recipe-ids)}})]
+        (is (= status 204))))
+    (testing "create menu item size"
+      (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/menus/" @menu-id "/sizes")
+                                                    {:auth true :body {:menu-item-id @menu-item-id
+                                                                       :amount       4
+                                                                       :amount-unit  :mass/lb}})]
+        (reset! menu-item-size-id (:id body))
+        (is (= status 201))))
+    (testing "update menu item size"
+      (let [{:keys [status body]} (ts/test-endpoint :put (str "/v1/menus/" @menu-id "/sizes")
+                                                    {:auth true :body {:id           @menu-item-size-id
+                                                                       :menu-item-id @menu-item-id
+                                                                       :amount       3
+                                                                       :amount-unit  :volume/gal}})]
+        (reset! menu-item-size-id (:id body))
         (is (= status 204))))
     (testing "delete menu"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id) {:auth true})]
