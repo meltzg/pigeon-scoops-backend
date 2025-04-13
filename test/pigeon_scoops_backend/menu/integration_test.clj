@@ -57,12 +57,33 @@
         (reset! menu-item-size-id (:id body))
         (is (= status 201))))
     (testing "update menu item size"
-      (let [{:keys [status body]} (ts/test-endpoint :put (str "/v1/menus/" @menu-id "/sizes")
-                                                    {:auth true :body {:id           @menu-item-size-id
-                                                                       :menu-item-id @menu-item-id
-                                                                       :amount       3
-                                                                       :amount-unit  :volume/gal}})]
-        (reset! menu-item-size-id (:id body))
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/menus/" @menu-id "/sizes")
+                                               {:auth true :body {:id           @menu-item-size-id
+                                                                  :menu-item-id @menu-item-id
+                                                                  :amount       3
+                                                                  :amount-unit  :volume/gal}})]
+        (is (= status 204))))
+    (testing "retrieve full menu"
+      (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
+                                               {:auth true})]
+        (is (= status 200))))
+    (let [{:keys [body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})
+          other-menu-id (:id body)]
+      (testing "cannot delete menu item size without matching menu id"
+        (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" other-menu-id "/sizes") {:auth true
+                                                                                                    :body {:id @menu-item-size-id}})]
+          (is (= status 400))))
+      (testing "cannot delete menu item without matching menu id"
+        (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" other-menu-id "/items") {:auth true
+                                                                                                    :body {:id @menu-item-id}})]
+          (is (= status 400)))))
+    (testing "delete menu item size"
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/sizes") {:auth true
+                                                                                             :body {:id @menu-item-size-id}})]
+        (is (= status 204))))
+    (testing "delete menu item"
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/items") {:auth true
+                                                                                             :body {:id @menu-item-id}})]
         (is (= status 204))))
     (testing "delete menu"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id) {:auth true})]

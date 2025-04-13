@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.middleware
   (:require [clojure.string :as str]
+            [pigeon-scoops-backend.utils :refer [doall-deep remove-nil-keys]]
             [ring.middleware.jwt :as jwt]
             [ring.util.response :as rr]))
 
@@ -12,6 +13,15 @@
                     {:issuers {"https://pigeon-scoops.us.auth0.com/"
                                {:alg          :RS256
                                 :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
+
+(def wrap-remove-nil-keys
+  {:name        ::remove-nil-keys
+   :description "Middleware to recursively remove keys with nil values from response body"
+   :wrap        (fn [handler]
+                  (fn [request]
+                    (-> request
+                        (handler)
+                        (update :body (comp doall-deep remove-nil-keys)))))})
 
 
 (defn wrap-owner

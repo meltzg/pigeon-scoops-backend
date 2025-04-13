@@ -3,6 +3,7 @@
             [pigeon-scoops-backend.account.routes :as account]
             [pigeon-scoops-backend.grocery.routes :as grocery]
             [pigeon-scoops-backend.menu.routes :as menu]
+            [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.recipe.routes :as recipe]
             [pigeon-scoops-backend.user-order.routes :as user-order]
             [pigeon-scoops-backend.util-api.routes :as util-api]
@@ -10,6 +11,7 @@
             [reitit.dev.pretty :as pretty]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
+            [reitit.ring.middleware.exception :as exception]
     ;[reitit.ring.middleware.dev :as dev]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
@@ -30,10 +32,11 @@
                              :access-control-allow-methods [:get :post :put :delete]]
                             swagger/swagger-feature
                             muuntaja/format-middleware
-                            ;exception/exception-middleware
+                            exception/exception-middleware
                             wrap-params
                             coercion/coerce-request-middleware
-                            coercion/coerce-response-middleware]}})
+                            coercion/coerce-response-middleware
+                            mw/wrap-remove-nil-keys]}})
 
 (def swagger-docs
   ["/swagger.json"

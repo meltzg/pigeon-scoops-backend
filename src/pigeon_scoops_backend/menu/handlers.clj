@@ -84,7 +84,7 @@
           menu-item (menu-db/find-menu-item-by-id db menu-item-id)
           menu-item-size-id (UUID/randomUUID)]
       (if (= menu-id (:menu-item/menu-id menu-item))
-        (do (menu-db/insert-menu-item-size! db (assoc menu-item-size :id menu-item-size-id))
+        (do (menu-db/insert-menu-item-size! db (assoc menu-item-size :id menu-item-size-id :menu-id menu-id))
             (rr/created (str responses/base-url "/menus/" menu-id)
                         {:id menu-item-size-id}))
         (rr/bad-request {:type    "menu-mismatch"
@@ -97,11 +97,11 @@
           {:keys [menu-item-id] :as menu-item-size} (-> request :parameters :body)
           menu-item (menu-db/find-menu-item-by-id db menu-item-id)]
       (cond
-        (not= menu-id (:menu-item/id menu-item))
+        (not= menu-id (:menu-item/menu-id menu-item))
         (rr/bad-request {:type    "menu-mismatch"
                          :message (str "menu-item does not belong to provided menu")
                          :data    (str "menu-id " menu-id)})
-        (menu-db/update-menu-item-size! db menu-item-size)
+        (menu-db/update-menu-item-size! db (assoc menu-item-size :menu-id menu-id))
         (rr/status 204)
         :else
         (rr/bad-request (select-keys menu-item-size [:id]))))))

@@ -24,6 +24,7 @@ CREATE TABLE menu_item
 CREATE TABLE menu_item_size
 (
     id           UUID NOT NULL PRIMARY KEY,
+    menu_id   UUID NOT NULL REFERENCES menu (id) ON DELETE CASCADE,
     menu_item_id UUID NOT NULL REFERENCES menu_item (id) ON DELETE CASCADE,
     amount       REAL NOT NULL,
     amount_unit  TEXT NOT NULL

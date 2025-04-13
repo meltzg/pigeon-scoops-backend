@@ -10,7 +10,7 @@
   {:menu-item-size/id           uuid?
    :menu-item-size/menu-item-id uuid?
    :menu-item-size/amount       number?
-   :menu-item-size/amount-unit  number?})
+   :menu-item-size/amount-unit  keyword?})
 
 (def menu-item
   {:menu-item/id        uuid?

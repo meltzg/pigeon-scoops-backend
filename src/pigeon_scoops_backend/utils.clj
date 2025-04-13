@@ -29,3 +29,32 @@
       :duration/day (.plus now (Duration/ofDays duration))
       :duration/week (.plusWeeks now duration)
       :duration/month (.plusMonths now duration))))
+
+(defn remove-nil-keys [value]
+  (cond (map? value)
+        (update-vals
+          (->> value
+               (remove (comp nil? val))
+               (into {}))
+          remove-nil-keys)
+        (coll? value)
+        (map remove-nil-keys value)
+        :else
+        value))
+
+(defn doall-deep [value]
+  (cond (map? value)
+        (update-vals value doall-deep)
+        (or (coll? value) (seq? value))
+        (mapv doall-deep value)
+        :else
+        value))
+
+(comment
+  (doall-deep (remove-nil-keys [{:foo  1
+                                 :bar  nil
+                                 :fizz [1 2 3]
+                                 :buzz [{:bazz nil :asdf 4}]
+                                 :cram {:data nil}}
+                                {}])))
+
