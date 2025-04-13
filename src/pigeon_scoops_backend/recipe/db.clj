@@ -56,7 +56,7 @@
           (-> recipe
               (db-str->keyword :recipe/amount-unit)
               (assoc
-                :recipe/ingredients (map #(db-str->keyword (into {} (remove (comp nil? val) %)) :ingredient/amount-unit) ingredients)
+                :recipe/ingredients (map #(db-str->keyword % :ingredient/amount-unit) ingredients)
                 :recipe/favorite-count favorite-count)))))))
 
 (defn insert-recipe! [db recipe]

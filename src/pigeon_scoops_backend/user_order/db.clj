@@ -8,7 +8,7 @@
                                                  with-connection]]))
 
 (defn find-all-order-items [db order-id]
-  (map #(db-str->keyword (into {} (remove (comp nil? val) %))
+  (map #(db-str->keyword %
                          :order-item/status :order-item/amount-unit)
        (sql/query db (-> (h/select :order-item/* :recipe/name)
                          (h/from :order-item)
