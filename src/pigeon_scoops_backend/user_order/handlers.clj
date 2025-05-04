@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.user-order.handlers
   (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id]]
             [pigeon-scoops-backend.grocery.transforms :refer [grocery-for-amount]]
+            [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.recipe.db :refer [ingredient-bom]]
             [pigeon-scoops-backend.recipe.transforms :refer [combine-ingredients]]
             [pigeon-scoops-backend.responses :as responses]
@@ -8,6 +9,14 @@
             [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
+
+(defn- recipe-in-active-menu? [db recipe-id]
+  (let [active-menus (menu-db/find-all-menus db)]
+    (some (fn [menu]
+            (some (fn [menu-item]
+                    (= (:menu-item/recipe-id menu-item) recipe-id))
+                  (:menu/items menu)))
+          active-menus)))
 
 (defn list-all-orders [db]
   (fn [request]
@@ -60,23 +69,32 @@
 (defn create-order-item! [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
-          order-item (-> request :parameters :body)
+          {:keys [recipe-id] :as order-item} (-> request :parameters :body)
           order-item-id (UUID/randomUUID)]
-      (order-db/insert-order-item! db (assoc order-item
-                                        :order-id order-id
-                                        :id order-item-id
-                                        :status :status/draft))
-      (rr/created (str responses/base-url "/orders/" order-id)
-                  {:id order-item-id}))))
+      (if (recipe-in-active-menu? db recipe-id)
+        (do
+          (order-db/insert-order-item! db (assoc order-item
+                                            :order-id order-id
+                                            :id order-item-id
+                                            :status :status/draft))
+          (rr/created (str responses/base-url "/orders/" order-id)
+                      {:id order-item-id}))
+        (rr/bad-request {:type    "recipe-not-in-active-menu"
+                         :message "recipe is not in an active menu"
+                         :data    (str "recipe-id " recipe-id)})))))
 
 (defn update-order-item! [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
-          order-item (-> request :parameters :body)
-          successful? (order-db/update-order-item! db (assoc order-item :order-id order-id))]
-      (if successful?
-        (rr/status 204)
-        (rr/bad-request (select-keys order-item [:id]))))))
+          {:keys [recipe-id] :as order-item} (-> request :parameters :body)]
+      (if (recipe-in-active-menu? db recipe-id)
+        (let [successful? (order-db/update-order-item! db (assoc order-item :order-id order-id))]
+          (if successful?
+            (rr/status 204)
+            (rr/bad-request (select-keys order-item [:id]))))
+        (rr/bad-request {:type    "recipe-not-in-active-menu"
+                         :message "recipe is not in an active menu"
+                         :data    (str "recipe-id " recipe-id)})))))
 
 (defn delete-order-item! [db]
   (fn [request]

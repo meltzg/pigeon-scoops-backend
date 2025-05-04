@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
-(use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes :manage-orders))
+(use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes :manage-orders :manage-menus))
 
 (def order
   {:note "my order"})
@@ -24,6 +24,13 @@
    :source       "the book"
    :instructions ["make them"]})
 
+(def menu
+  {:name          "test menu"
+   :repeats       true
+   :active        true
+   :duration      3
+   :duration-type :duration/month})
+
 (deftest orders-list-test
   (testing "List orders"
     (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:auth true})]
@@ -33,8 +40,20 @@
 (deftest orders-crud-test
   (let [order-id (atom nil)
         order-item-id (atom nil)
+        menu-id (atom nil)
         {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
-        recipe-id (:id body)]
+        recipe-id (:id body)
+        {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
+        other-recipe-id (:id body)]
+    ;; Create an active menu and add the recipe to it
+    (testing "create active menu"
+      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})]
+        (reset! menu-id (:id body))
+        (is (= status 201))))
+    (testing "create menu-item"
+      (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/menus/" @menu-id "/items")
+                                               {:auth true :body {:recipe-id recipe-id}})]
+        (is (= status 201))))
     (testing "create order"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/orders" {:auth true :body order})]
         (reset! order-id (:id body))
@@ -47,6 +66,10 @@
                                                     {:auth true :body (assoc order-item :recipe-id recipe-id)})]
         (reset! order-item-id (:id body))
         (is (= status 201))))
+    (testing "cannot create order-item for recipe not in an active menu"
+      (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
+                                               {:auth true :body (assoc order-item :recipe-id other-recipe-id)})]
+        (is (= status 400))))
     (testing "update order-item"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc updated-order-item
