@@ -1,6 +1,5 @@
 (ns pigeon-scoops-backend.grocery.responses
-  (:require [clojure.spec.alpha :as s]
-            [spec-tools.data-spec :as ds]))
+  (:require [spec-tools.data-spec :as ds]))
 
 (def departments
   #{:department/dairy
@@ -25,8 +24,8 @@
    :grocery/name                     string?
    :grocery/department               keyword?
    (ds/opt :grocery/units)           [grocery-unit]
-   (ds/opt :grocery/required-amount) (s/nilable number?)
-   (ds/opt :grocery/required-unit)   (s/nilable keyword?)
-   (ds/opt :grocery/purchase-amount) (s/nilable number?)
-   (ds/opt :grocery/purchase-unit)   (s/nilable keyword?)
-   (ds/opt :grocery/waste-ratio)     (s/nilable number?)})
+   (ds/opt :grocery/required-amount) number?
+   (ds/opt :grocery/required-unit)   keyword?
+   (ds/opt :grocery/purchase-amount) number?
+   (ds/opt :grocery/purchase-unit)   keyword?
+   (ds/opt :grocery/waste-ratio)     number?})

@@ -10,7 +10,8 @@
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.auth0 :as auth0]
             [ring.mock.request :as mock])
-  (:import (java.util UUID)
+  (:import (java.sql Timestamp)
+           (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
 (def user-config "dev/resources/test-user.edn")
@@ -57,7 +58,7 @@
                        :uid      (:user_id create-response)})
     (auth0/update-roles! auth
                          (:uid @test-user)
-                         [:manage-orders :manage-recipes :manage-groceries])
+                         [:manage-orders :manage-recipes :manage-groceries :manage-menus])
     (reset! token (get-token (conj auth @test-user)))
     (test-endpoint :post "/v1/account" {:auth true})
     (spit user-config @test-user)))
@@ -228,8 +229,41 @@
                                            FROM ingredient
                                            WHERE recipe_id = (?);"
                                           #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
+  (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
+                                                  :name          "food"
+                                                  :duration      4
+                                                  :duration-type "day"
+                                                  :end-time      (Timestamp/from (java.time.Instant/now))})
+  (sql/find-by-keys (:db/postgres state/system) :menu :all)
   @token
+  (make-test-user)
   (load-test-user)
+  (let [recipe-id (-> (test-endpoint :get "/v1/recipes" {:auth true})
+                      :body
+                      :private
+                      (first)
+                      (:recipe/id))
+        menu-id (-> (test-endpoint :post "/v1/menus" {:auth true
+                                                      :body {:name          "foobar"
+                                                             :repeats       false
+                                                             :active        true
+                                                             :duration      4
+                                                             :duration-type :duration/day}})
+                    :body
+                    :id)
+        menu-item-id (-> (test-endpoint
+                           :post
+                           (str "/v1/menus/" menu-id "/items")
+                           {:auth true
+                            :body {:recipe-id recipe-id}})
+                         :body
+                         :id)
+        menu (-> (test-endpoint :get (str "/v1/menus") {:auth true})
+                 :body
+                 :id)]
+
+
+    [recipe-id menu-id menu-item-id menu])
   (init-app)
   (go)
   (halt)

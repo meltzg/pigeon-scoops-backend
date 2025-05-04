@@ -6,7 +6,7 @@
                                                  with-connection]]))
 
 (defn find-all-grocery-units [db grocery-id]
-  (map #(db-str->keyword (into {} (remove (comp nil? val) %))
+  (map #(db-str->keyword %
                          :grocery-unit/unit-common-type
                          :grocery-unit/unit-mass-type
                          :grocery-unit/unit-volume-type)

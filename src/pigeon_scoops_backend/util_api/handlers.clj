@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.util-api.handlers
   (:require [pigeon-scoops-backend.auth0 :refer [roles]]
             [pigeon-scoops-backend.grocery.responses :refer [departments]]
+            [pigeon-scoops-backend.menu.responses :refer [durations]]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
             [pigeon-scoops-backend.units.volume :as volume]
@@ -14,4 +15,5 @@
                                                          (keys volume/conversion-map)))
                   :constants/departments    (vec departments)
                   :constants/roles          (vec roles)
-                  :constants/order-statuses (vec status)})))
+                  :constants/order-statuses (vec status)
+                  :constants/menu-durations (vec durations)})))
