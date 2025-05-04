@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.menu.handlers
   (:require [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.responses :as responses]
+            [pigeon-scoops-backend.utils :refer [end-time]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
@@ -12,7 +13,12 @@
   (fn [request]
     (let [menu-id (UUID/randomUUID)
           menu (-> request :parameters :body)]
-      (menu-db/insert-menu! db (assoc menu :id menu-id))
+      (menu-db/insert-menu! db (cond-> (assoc menu :id menu-id)
+                                       (:active menu) (assoc :end-time (-> menu
+                                                                           (select-keys [:duration :duration-type])
+                                                                           (vals)
+                                                                           ((partial apply end-time))))
+                                       (not (:active menu)) (assoc :end-time nil)))
       (rr/created (str responses/base-url "/menus/" menu-id)
                   {:id menu-id}))))
 

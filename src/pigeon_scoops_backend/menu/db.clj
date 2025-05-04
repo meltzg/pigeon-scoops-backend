@@ -72,9 +72,11 @@
             (db-str->keyword :menu/duration-type))))))
 
 (defn update-menu! [db menu]
-  (sql/update! db :menu
-               (keyword->db-str menu :duration-type)
-               (select-keys menu [:id])))
+  (-> (sql/update! db :menu
+                   (keyword->db-str menu :duration-type)
+                   (select-keys menu [:id]))
+      ::jdbc/update-count
+      (pos?)))
 
 (defn delete-menu! [db menu]
   (-> (sql/delete! db :menu menu)
@@ -85,7 +87,9 @@
   (sql/insert! db :menu-item menu-item))
 
 (defn update-menu-item! [db menu-item]
-  (sql/update! db :menu-item menu-item (select-keys menu-item [:id])))
+  (-> (sql/update! db :menu-item menu-item (select-keys menu-item [:id :menu-id]))
+      ::jdbc/update-count
+      (pos?)))
 
 (defn delete-menu-item! [db menu-item]
   (-> (sql/delete! db :menu-item menu-item)
@@ -96,9 +100,11 @@
   (sql/insert! db :menu-item-size (keyword->db-str menu-item-size :amount-unit)))
 
 (defn update-menu-item-size! [db menu-item-size]
-  (sql/update! db :menu-item-size
-               (keyword->db-str menu-item-size :amount-unit)
-               (select-keys menu-item-size [:id :menu-id :menu-item-id])))
+  (-> (sql/update! db :menu-item-size
+                   (keyword->db-str menu-item-size :amount-unit)
+                   (select-keys menu-item-size [:id :menu-id :menu-item-id]))
+      ::jdbc/update-count
+      (pos?)))
 
 (defn delete-menu-item-size! [db menu-item-size]
   (-> (sql/delete! db :menu-item-size menu-item-size)

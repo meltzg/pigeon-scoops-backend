@@ -69,6 +69,18 @@
         (is (= status 200))))
     (let [{:keys [body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})
           other-menu-id (:id body)]
+      (testing "cannot update menu item without matching menu id"
+        (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/menus/" other-menu-id "/items")
+                                                 {:auth true :body {:id        @menu-item-id
+                                                                    :recipe-id (second recipe-ids)}})]
+          (is (= status 400))))
+      (testing "cannot update menu item size without matching menu id"
+        (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/menus/" other-menu-id "/sizes")
+                                                 {:auth true :body {:id           @menu-item-size-id
+                                                                    :menu-item-id @menu-item-id
+                                                                    :amount       3
+                                                                    :amount-unit  :volume/gal}})]
+          (is (= status 400))))
       (testing "cannot delete menu item size without matching menu id"
         (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" other-menu-id "/sizes") {:auth true
                                                                                                     :body {:id @menu-item-size-id}})]
