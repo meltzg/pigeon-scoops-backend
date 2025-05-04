@@ -73,7 +73,9 @@
 
 (defn update-menu! [db menu]
   (-> (sql/update! db :menu
-                   (keyword->db-str menu :duration-type)
+                   (-> menu
+                       (keyword->db-str :duration-type)
+                       (update :end-time #(when % (Timestamp/from (.toInstant %)))))
                    (select-keys menu [:id]))
       ::jdbc/update-count
       (pos?)))

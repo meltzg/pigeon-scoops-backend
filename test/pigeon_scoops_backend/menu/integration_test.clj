@@ -29,16 +29,48 @@
         menu-item-id (atom nil)
         menu-item-size-id (atom nil)
         recipe-ids (map #(get-in % [:body :id]) (repeatedly 2 #(ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})))]
-    (testing "create menu"
-      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})]
+    (testing "create inactive menu"
+      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})
+            {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" (:id body))
+                                                {:auth true})]
         (reset! menu-id (:id body))
-        (is (= status 201))))
-    (testing "update menu"
+        (is (= status 201))
+        (is (nil? (:menu/end-time menu-body)))))
+    (testing "create active menu"
+      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body (assoc menu :active true)})
+            {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" (:id body))
+                                                {:auth true})]
+        (is (= status 201))
+        (is (some? (:menu/end-time menu-body)))))
+    (let [original-endtime (atom nil)]
+      (testing "activate menu populates end time"
+        (let [{:keys [status]} (ts/test-endpoint
+                                 :put
+                                 (str "/v1/menus/" @menu-id)
+                                 {:auth true :body (assoc menu :active true)})
+              {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
+                                                  {:auth true})]
+          (is (= status 204))
+          (is (some? (:menu/end-time menu-body)))
+          (reset! original-endtime (:menu/end-time menu-body))))
+      (testing "update menu"
+        (let [{:keys [status]} (ts/test-endpoint
+                                 :put
+                                 (str "/v1/menus/" @menu-id)
+                                 {:auth true :body (assoc menu :duration 4 :active true)})
+              {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
+                                                  {:auth true})]
+          (is (= status 204))
+          (is (= (:menu/end-time menu-body) @original-endtime)))))
+    (testing "deactivate menu nils end time"
       (let [{:keys [status]} (ts/test-endpoint
                                :put
                                (str "/v1/menus/" @menu-id)
-                               {:auth true :body (assoc menu :duration 4)})]
-        (is (= status 204))))
+                               {:auth true :body (assoc menu :active false)})
+            {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
+                                                {:auth true})]
+        (is (= status 204))
+        (is (nil? (:menu/end-time menu-body)))))
     (testing "create menu-item"
       (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/menus/" @menu-id "/items")
                                                     {:auth true :body {:recipe-id (first recipe-ids)}})]

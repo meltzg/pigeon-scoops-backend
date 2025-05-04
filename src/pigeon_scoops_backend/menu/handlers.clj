@@ -38,7 +38,16 @@
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
           menu (-> request :parameters :body)
-          successful? (menu-db/update-menu! db (assoc menu :id menu-id))]
+          current-menu (menu-db/find-menu-by-id db menu-id)
+          successful? (menu-db/update-menu! db (cond-> (assoc menu :id menu-id
+                                                                   :end-time (:menu/end-time current-menu))
+                                                       (and (:active menu) (not (:menu/active current-menu)))
+                                                       (assoc :end-time (-> menu
+                                                                            (select-keys [:duration :duration-type])
+                                                                            (vals)
+                                                                            ((partial apply end-time))))
+                                                       (and (not (:active menu)) (:menu/active current-menu))
+                                                       (assoc :end-time nil)))]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "menu-not-found"

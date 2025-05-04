@@ -25,5 +25,5 @@
    :menu/active            boolean?
    :menu/duration          number?
    :menu/duration-type     keyword?
-   :menu/items             [menu-item]
+   (ds/opt :menu/items)    [menu-item]
    (ds/opt :menu/end-time) inst?})
