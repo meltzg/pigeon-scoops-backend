@@ -1,7 +1,6 @@
 (ns pigeon-scoops-backend.menu.db
   (:require [honey.sql :as hsql]
             [honey.sql.helpers :as h]
-            [integrant.repl.state :as state]
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [db-str->keyword
