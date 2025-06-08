@@ -6,8 +6,7 @@
             [pigeon-scoops-backend.utils :refer [db-str->keyword
                                                  keyword->db-str
                                                  with-connection]])
-  (:import (java.sql Timestamp)
-           (java.time ZonedDateTime)))
+  (:import (java.sql Timestamp)))
 
 (defn find-menu-items [db menu-id & menu-ids]
   (with-connection
@@ -111,27 +110,3 @@
   (-> (sql/delete! db :menu-item-size menu-item-size)
       ::jdbc/update-count
       (pos?)))
-
-(comment
-  (do
-    (require '[integrant.repl.state :as state])
-    (import '[java.util UUID])
-    (import '[java.time ZonedDateTime]))
-  (insert-menu! (:db/postgres state/system) {:id            (UUID/randomUUID)
-                                             :name          "foobar menu"
-                                             :repeats       true
-                                             :active        false
-                                             :duration      69
-                                             :duration-type :duration/day
-                                             :end-time      (ZonedDateTime/now)})
-  (insert-menu-item! (:db/postgres state/system) {:id        (UUID/randomUUID)
-                                                  :recipe-id #uuid"3733eda5-3c1c-4e48-90d5-854cd1c79d00"
-                                                  :menu-id   #uuid"526dc6c6-6bd3-4ac4-9fa1-307e729ab941"})
-  (insert-menu-item-size! (:db/postgres state/system) {:id           (UUID/randomUUID)
-                                                       :menu-item-id #uuid"84b1e12b-78fa-4a51-bddd-c885ad7b146c"
-                                                       :menu-id      #uuid"526dc6c6-6bd3-4ac4-9fa1-307e729ab941"
-                                                       :amount       4
-                                                       :amount-unit  :volume/gal})
-  (find-menu-by-id (:db/postgres state/system) #uuid"526dc6c6-6bd3-4ac4-9fa1-307e729ab941")
-  (find-all-menus (:db/postgres state/system) true))
-

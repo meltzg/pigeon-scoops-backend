@@ -49,6 +49,3 @@
               [(f acc-amnt (convert amnt unit acc-unit))
                acc-unit])
             amounts)))
-
-(comment
-  (convert 2.2 :mass/lb :mass/kg))

@@ -97,17 +97,3 @@
     (testing "delete recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:auth true})]
         (is (= status 204))))))
-
-(comment
-  (let [auth (:auth/auth0 integrant.repl.state/system)]
-    (reset! ts/token (ts/get-test-token (assoc auth :username "repl-user@pigeon-scoops.com"
-                                                    :password (:test-password auth))))
-    (ts/test-endpoint :post "/v1/account" {:auth true}))
-  @ts/test-user
-  @ts/token
-  recipe
-  (let [recipe-id (-> (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
-                      :body
-                      :recipe-id)]
-    (ts/test-endpoint :post (str "/v1/recipes/" recipe-id "/favorite") {:auth true}))
-  (ts/test-endpoint :get "/v1/recipes" {:auth true}))
