@@ -44,7 +44,9 @@
 
 (defn port-available? [port]
   (try
-    (.close (Socket. ^String "localhost" ^Integer port))
+    (let [^String host "localhost"
+          ^Integer port port]
+      (.close (Socket. host port)))
     false
     (catch Exception _
       true)))
