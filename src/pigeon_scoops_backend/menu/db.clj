@@ -110,3 +110,27 @@
   (-> (sql/delete! db :menu-item-size menu-item-size)
       ::jdbc/update-count
       (pos?)))
+
+(defn find-active-menu-items [db]
+  (->> (-> (h/select :menu-item/*)
+           (h/from :menu-item)
+           (h/join :menu [:= :menu/id :menu-item/menu-id])
+           (h/where [:= :menu/active true])
+           (hsql/format))
+       (sql/query db)))
+
+(defn find-menu-item-sizes [db & menu-item-ids]
+  (->> (-> (h/select :menu-item-size/*)
+           (h/from :menu-item-size)
+           (h/where [:in :menu-item-id menu-item-ids])
+           (hsql/format))
+       (sql/query db)
+       (map #(db-str->keyword % :menu-item-size/amount-unit))))
+
+(comment
+  (do
+    (require '[integrant.repl.state :as state])
+    (let [items (find-active-menu-items (:db/postgres state/system))]
+      (apply (partial find-menu-item-sizes db)
+             (map :menu-item/id items)))))
+

@@ -9,7 +9,9 @@
             [muuntaja.core :as m]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.auth0 :as auth0]
-            [ring.mock.request :as mock])
+            [ring.mock.request :as mock]
+            [honey.sql :as hsql]
+            [honey.sql.helpers :as h])
   (:import (java.sql Timestamp)
            (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
@@ -229,11 +231,59 @@
                                            FROM ingredient
                                            WHERE recipe_id = (?);"
                                           #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
-  (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
-                                                  :name          "food"
-                                                  :duration      4
-                                                  :duration-type "day"
-                                                  :end-time      (Timestamp/from (java.time.Instant/now))})
+  (let [user (sql/insert! (:db/postgres state/system) :account {:id (str (UUID/randomUUID))
+                                                                :name "greg"})
+
+        chocolate (sql/insert! (:db/postgres state/system) :recipe {:id (UUID/randomUUID)
+                                                                    :name "chocolate"
+                                                                    :public true
+                                                                    :amount 3
+                                                                    :amount-unit "cup"
+                                                                    :user-id (:account/id user)
+                                                                    :instructions (into-array String [])})
+        vanilla (sql/insert! (:db/postgres state/system) :recipe {:id (UUID/randomUUID)
+                                                                  :name "vanilla"
+                                                                  :public true
+                                                                  :amount 3
+                                                                  :amount-unit "cup"
+                                                                  :user-id (:account/id user)
+                                                                  :instructions (into-array String [])})
+        inactive-menu (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
+                                                                      :name          "food"
+                                                                      :duration      4
+                                                                      :duration-type "day"
+                                                                      :end-time      (Timestamp/from (java.time.Instant/now))})
+        active-menu (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
+                                                                    :name          "food"
+                                                                    :active true
+                                                                    :duration      4
+                                                                    :duration-type "day"
+                                                                    :end-time      (Timestamp/from (java.time.Instant/now))})
+        inactive-item (sql/insert! (:db/postgres state/system) :menu-item {:id (UUID/randomUUID)
+                                                                           :menu-id (:menu/id inactive-menu)
+                                                                           :recipe-id (:recipe/id chocolate)})
+        active-item (sql/insert! (:db/postgres state/system) :menu-item {:id (UUID/randomUUID)
+                                                                         :menu-id (:menu/id active-menu)
+                                                                         :recipe-id (:recipe/id vanilla)})
+        inactive-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id (UUID/randomUUID)
+                                                                                        :menu-id (:menu/id inactive-menu)
+                                                                                        :menu-item-id (:menu-item/id inactive-item)
+                                                                                        :amount %
+                                                                                        :amount-unit "cup"})
+                             (range 1 4))
+        active-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id (UUID/randomUUID)
+                                                                                      :menu-id (:menu/id active-menu)
+                                                                                      :menu-item-id (:menu-item/id active-item)
+                                                                                      :amount %
+                                                                                      :amount-unit "cup"})
+                           (range 1 4))]
+    (sql/query (:db/postgres state/system) (-> (h/select :menu-item-size/*)
+                                               (h/from :menu-item-size)
+                                               (h/join :menu [:= :menu/id :menu-item-size/menu-id])
+                                               (h/where [:= :menu/active true])
+                                               (hsql/format))))
+        
+  (ig-repl/go)
   (sql/find-by-keys (:db/postgres state/system) :menu :all)
   @token
   (make-test-user)

@@ -10,14 +10,6 @@
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
-(defn- recipe-in-active-menu? [db recipe-id]
-  (let [active-menus (menu-db/find-all-menus db)]
-    (some (fn [menu]
-            (some (fn [menu-item]
-                    (= (:menu-item/recipe-id menu-item) recipe-id))
-                  (:menu/items menu)))
-          active-menus)))
-
 (defn list-all-orders [db]
   (fn [request]
     (let [uid (-> request :claims :sub)]
@@ -68,20 +60,27 @@
 
 (defn create-order-item! [db]
   (fn [request]
-    (let [order-id (-> request :parameters :path :order-id)
-          {:keys [recipe-id] :as order-item} (-> request :parameters :body)
-          order-item-id (UUID/randomUUID)]
-      (if (recipe-in-active-menu? db recipe-id)
-        (do
-          (order-db/insert-order-item! db (assoc order-item
-                                            :order-id order-id
-                                            :id order-item-id
-                                            :status :status/draft))
-          (rr/created (str responses/base-url "/orders/" order-id)
-                      {:id order-item-id}))
-        (rr/bad-request {:type    "recipe-not-in-active-menu"
-                         :message "recipe is not in an active menu"
-                         :data    (str "recipe-id " recipe-id)})))))
+    (with-connection
+      db
+      (fn [conn-opts]
+        (let [order-id (-> request :parameters :path :order-id)
+              {:keys [recipe-id] :as order-item} (-> request :parameters :body)
+              order-item-id (UUID/randomUUID)
+              active-items (group-by :menu-item/recipe-id (menu-db/find-active-menu-items conn-opts))]
+          (cond
+            (nil? (get active-items recipe-id))
+            (rr/bad-request {:type    "recipe-not-in-active-menu"
+                             :message "recipe is not in an active menu"
+                             :data    (str "recipe-id " recipe-id)})
+            :else
+            (do
+              (order-db/insert-order-item! conn-opts (assoc order-item
+                                                       :order-id order-id
+                                                       :id order-item-id
+                                                       :status :status/draft))
+              (rr/created (str responses/base-url "/orders/" order-id)
+                          {:id order-item-id}))))))))
+
 
 (defn update-order-item! [db]
   (fn [request]
