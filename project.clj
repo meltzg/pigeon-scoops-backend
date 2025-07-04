@@ -30,7 +30,8 @@
                  [org.apache.logging.log4j/log4j-to-slf4j "2.24.3"]]
   :plugins [[lein-ancient "0.7.0"]]
   :profiles {:uberjar {:aot :all}
-             :dev     {:source-paths   ["dev/src"]
+             :dev     {:source-paths   ["dev/src"
+                                        "test"]
                        :resource-paths ["dev/resources"]
                        :dependencies   [[ring/ring-mock "0.4.0"]
                                         [integrant/repl "0.4.0"]

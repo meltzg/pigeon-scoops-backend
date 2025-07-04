@@ -5,6 +5,7 @@
             [pigeon-scoops-backend.recipe.db :refer [ingredient-bom]]
             [pigeon-scoops-backend.recipe.transforms :refer [combine-ingredients]]
             [pigeon-scoops-backend.responses :as responses]
+            [pigeon-scoops-backend.units.common :as units]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr])
@@ -64,14 +65,29 @@
       db
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
-              {:keys [recipe-id] :as order-item} (-> request :parameters :body)
+              {:keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
               order-item-id (UUID/randomUUID)
-              active-items (group-by :menu-item/recipe-id (menu-db/find-active-menu-items conn-opts))]
+              active-items (get
+                             (group-by
+                               :menu-item/recipe-id
+                               (menu-db/find-active-menu-items conn-opts))
+                             recipe-id)
+              active-item-sizes (apply (partial menu-db/find-menu-item-sizes conn-opts)
+                                       (map :menu-item/id (vals active-items)))]
           (cond
             (nil? (get active-items recipe-id))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
                              :message "recipe is not in an active menu"
                              :data    (str "recipe-id " recipe-id)})
+            (not-any? #(zero?
+                  (first
+                    (units/reduce-amounts mod amount amount-unit
+                                          (:menu-item-size/amount %)
+                                          (:menu-item-size/amount-unit))))
+                  active-item-sizes)
+            (rr/bad-request {:type "no-valid-size-order-amount"
+                             :message "order amount cannot be made from any active item size"
+                             :data active-item-sizes})
             :else
             (do
               (order-db/insert-order-item! conn-opts (assoc order-item
@@ -85,15 +101,15 @@
 (defn update-order-item! [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
-          {:keys [recipe-id] :as order-item} (-> request :parameters :body)]
-      (if (recipe-in-active-menu? db recipe-id)
-        (let [successful? (order-db/update-order-item! db (assoc order-item :order-id order-id))]
-          (if successful?
-            (rr/status 204)
-            (rr/bad-request (select-keys order-item [:id]))))
-        (rr/bad-request {:type    "recipe-not-in-active-menu"
-                         :message "recipe is not in an active menu"
-                         :data    (str "recipe-id " recipe-id)})))))
+          {:keys [recipe-id] :as order-item} (-> request :parameters :body)])))
+      ;(if (recipe-in-active-menu? db recipe-id)
+      ;  (let [successful? (order-db/update-order-item! db (assoc order-item :order-id order-id))]
+      ;    (if successful?
+      ;      (rr/status 204)
+      ;      (rr/bad-request (select-keys order-item [:id]))))
+      ;  (rr/bad-request {:type    "recipe-not-in-active-menu"
+      ;                   :message "recipe is not in an active menu"
+      ;                   :data    (str "recipe-id " recipe-id)})))))
 
 (defn delete-order-item! [db]
   (fn [request]

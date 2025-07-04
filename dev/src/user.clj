@@ -159,6 +159,14 @@
                                                                                                  (:amount_unit %))}})
                                            :body
                                            :id))))
+        menu-id (-> (test-endpoint :post "/v1/menus"
+                                   {:auth true
+                                    :body {:name "test menu"
+                                           :active true
+                                           :repeats false
+                                           :duration 3
+                                           :duration-type :duration/day}}))
+
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
@@ -184,7 +192,8 @@
      :recipe-map    recipe-map
      :ingredients   ingredients
      :order-map     order-map
-     :order-items   order-items}))
+     :order-items   order-items
+     :menu-id menu-id}))
 
 (defn init-app []
   (if (.exists (io/file user-config))
@@ -206,7 +215,8 @@
         ig/read-string
         (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
                                                 "&user=" (.getUsername @db-container)
-                                                "&password=" (.getPassword @db-container))))))
+                                                "&password=" (.getPassword @db-container)))
+        (ig/expand))))
 
 (defn go []
   (ig-repl/go)
