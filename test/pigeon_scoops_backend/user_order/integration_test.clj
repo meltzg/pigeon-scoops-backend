@@ -52,8 +52,8 @@
         menu-item-id (:id body)
         _ (ts/test-endpoint :post (str "/v1/menus/" menu-id "/sizes")
                             {:auth true :body {:menu-item-id menu-item-id
-                                               :amount 1
-                                               :amount-unit :volume/pt}})]
+                                               :amount       1
+                                               :amount-unit  :volume/pt}})]
     (testing "create order"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/orders" {:auth true :body order})]
         (reset! order-id (:id body))

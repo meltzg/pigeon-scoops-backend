@@ -3,15 +3,15 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
+            [honey.sql :as hsql]
+            [honey.sql.helpers :as h]
             [integrant.core :as ig]
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.auth0 :as auth0]
-            [ring.mock.request :as mock]
-            [honey.sql :as hsql]
-            [honey.sql.helpers :as h])
+            [ring.mock.request :as mock])
   (:import (java.sql Timestamp)
            (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
@@ -81,9 +81,9 @@
                          (slurp)
                          (m/decode "application/json")
                          (map #(vector (:type %) (-> (make-request :post "/v1/groceries"
-                                                                    {:auth true
-                                                                     :body {:name       (:type %)
-                                                                            :department :department/grocery}})
+                                                                   {:auth true
+                                                                    :body {:name       (:type %)
+                                                                           :department :department/grocery}})
                                                      :body
                                                      :id)))
                          (into {}))
@@ -91,27 +91,27 @@
                    (slurp)
                    (m/decode "application/json")
                    (map #(-> (make-request :post (str "/v1/groceries/" (get grocery-map (:type %)) "/units")
-                                            {:auth true
-                                             :body (cond-> {:source    (:source %)
-                                                            :unit-cost (:unit_cost %)}
-                                                           (:unit_mass %) (merge {:unit-mass      (:unit_mass %)
-                                                                                  :unit-mass-type (keyword "mass" (:unit_mass_type %))})
-                                                           (:unit_volume %) (merge {:unit-volume      (:unit_volume %)
-                                                                                    :unit-volume-type (keyword "volume" (:unit_volume_type %))})
-                                                           (:unit_common %) (merge {:unit-common      (:unit_common %)
-                                                                                    :unit-common-type (keyword "common" (:unit_common_type %))}))})
+                                           {:auth true
+                                            :body (cond-> {:source    (:source %)
+                                                           :unit-cost (:unit_cost %)}
+                                                          (:unit_mass %) (merge {:unit-mass      (:unit_mass %)
+                                                                                 :unit-mass-type (keyword "mass" (:unit_mass_type %))})
+                                                          (:unit_volume %) (merge {:unit-volume      (:unit_volume %)
+                                                                                   :unit-volume-type (keyword "volume" (:unit_volume_type %))})
+                                                          (:unit_common %) (merge {:unit-common      (:unit_common %)
+                                                                                   :unit-common-type (keyword "common" (:unit_common_type %))}))})
                              :body
                              :id)))
         recipe-map (->> "dev/resources/seed/recipes.json"
                         (slurp)
                         (m/decode "application/json")
                         (map #(vector (:id %) (-> (make-request :post "/v1/recipes"
-                                                                 {:auth true
-                                                                  :body (merge (select-keys % [:name :instructions])
-                                                                               {:amount      (:amount %)
-                                                                                :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                      (:amount_unit %))
-                                                                                :source      (or (:source %) "")})})
+                                                                {:auth true
+                                                                 :body (merge (select-keys % [:name :instructions])
+                                                                              {:amount      (:amount %)
+                                                                               :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                     (:amount_unit %))
+                                                                               :source      (or (:source %) "")})})
                                                   :body
                                                   :id)))
                         (into {}))
@@ -119,11 +119,11 @@
                          (slurp)
                          (m/decode "application/json")
                          (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:recipe_id %)) "/ingredients")
-                                                  {:auth true
-                                                   :body {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
-                                                          :amount                (:amount %)
-                                                          :amount-unit           (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                          (:amount_unit %))}})
+                                                 {:auth true
+                                                  :body {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
+                                                         :amount                (:amount %)
+                                                         :amount-unit           (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                         (:amount_unit %))}})
                                    :body
                                    :id)))
         recipe-map (merge recipe-map
@@ -131,20 +131,20 @@
                                (slurp)
                                (m/decode "application/json")
                                (map #(let [recipe-id (-> (make-request :post "/v1/recipes"
-                                                                        {:auth true
-                                                                         :body (merge (select-keys % [:name :instructions])
-                                                                                      {:amount      (:amount %)
-                                                                                       :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                             (:amount_unit %))
-                                                                                       :source      ""})})
+                                                                       {:auth true
+                                                                        :body (merge (select-keys % [:name :instructions])
+                                                                                     {:amount      (:amount %)
+                                                                                      :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                            (:amount_unit %))
+                                                                                      :source      ""})})
                                                          :body
                                                          :id)]
                                        (make-request :post (str "/v1/recipes/" recipe-id "/ingredients")
-                                                      {:auth true
-                                                       :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                              :amount               (:amount %)
-                                                              :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                             (:amount_unit %))}})
+                                                     {:auth true
+                                                      :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                             :amount               (:amount %)
+                                                             :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                            (:amount_unit %))}})
                                        [(:id %) recipe-id]))
                                (into {})))
         ingredients (concat ingredients
@@ -152,27 +152,27 @@
                                  (slurp)
                                  (m/decode "application/json")
                                  (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:flavor_id %)) "/ingredients")
-                                                          {:auth true
-                                                           :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                                  :amount               (:amount %)
-                                                                  :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                 (:amount_unit %))}})
+                                                         {:auth true
+                                                          :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                                 :amount               (:amount %)
+                                                                 :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                (:amount_unit %))}})
                                            :body
                                            :id))))
         menu-id (-> (make-request :post "/v1/menus"
-                                   {:auth true
-                                    :body {:name "test menu"
-                                           :active true
-                                           :repeats false
-                                           :duration 3
-                                           :duration-type :duration/day}}))
+                                  {:auth true
+                                   :body {:name          "test menu"
+                                          :active        true
+                                          :repeats       false
+                                          :duration      3
+                                          :duration-type :duration/day}}))
 
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
                        (map #(vector (:id %) (-> (make-request :post "/v1/orders"
-                                                                {:auth true
-                                                                 :body (select-keys % [:note])})
+                                                               {:auth true
+                                                                :body (select-keys % [:note])})
                                                  :body
                                                  :id)))
                        (into {}))
@@ -180,11 +180,11 @@
                          (slurp)
                          (m/decode "application/json")
                          (map #(-> (make-request :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
-                                                  {:auth true
-                                                   :body {:recipe-id   (get recipe-map (:flavor_id %))
-                                                          :amount      (:amount %)
-                                                          :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                (:amount_unit %))}})
+                                                 {:auth true
+                                                  :body {:recipe-id   (get recipe-map (:flavor_id %))
+                                                         :amount      (:amount %)
+                                                         :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                               (:amount_unit %))}})
                                    :body
                                    :id)))]
     {:grocery-map   grocery-map
@@ -193,7 +193,7 @@
      :ingredients   ingredients
      :order-map     order-map
      :order-items   order-items
-     :menu-id menu-id}))
+     :menu-id       menu-id}))
 
 (defn init-app []
   (if (.exists (io/file user-config))
@@ -244,22 +244,22 @@
                                            FROM ingredient
                                            WHERE recipe_id = (?);"
                                           #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
-  (let [user (sql/insert! (:db/postgres state/system) :account {:id (str (UUID/randomUUID))
+  (let [user (sql/insert! (:db/postgres state/system) :account {:id   (str (UUID/randomUUID))
                                                                 :name "greg"})
 
-        chocolate (sql/insert! (:db/postgres state/system) :recipe {:id (UUID/randomUUID)
-                                                                    :name "chocolate"
-                                                                    :public true
-                                                                    :amount 3
-                                                                    :amount-unit "cup"
-                                                                    :user-id (:account/id user)
+        chocolate (sql/insert! (:db/postgres state/system) :recipe {:id           (UUID/randomUUID)
+                                                                    :name         "chocolate"
+                                                                    :public       true
+                                                                    :amount       3
+                                                                    :amount-unit  "cup"
+                                                                    :user-id      (:account/id user)
                                                                     :instructions (into-array String [])})
-        vanilla (sql/insert! (:db/postgres state/system) :recipe {:id (UUID/randomUUID)
-                                                                  :name "vanilla"
-                                                                  :public true
-                                                                  :amount 3
-                                                                  :amount-unit "cup"
-                                                                  :user-id (:account/id user)
+        vanilla (sql/insert! (:db/postgres state/system) :recipe {:id           (UUID/randomUUID)
+                                                                  :name         "vanilla"
+                                                                  :public       true
+                                                                  :amount       3
+                                                                  :amount-unit  "cup"
+                                                                  :user-id      (:account/id user)
                                                                   :instructions (into-array String [])})
         inactive-menu (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
                                                                       :name          "food"
@@ -268,34 +268,34 @@
                                                                       :end-time      (Timestamp/from (java.time.Instant/now))})
         active-menu (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
                                                                     :name          "food"
-                                                                    :active true
+                                                                    :active        true
                                                                     :duration      4
                                                                     :duration-type "day"
                                                                     :end-time      (Timestamp/from (java.time.Instant/now))})
-        inactive-item (sql/insert! (:db/postgres state/system) :menu-item {:id (UUID/randomUUID)
-                                                                           :menu-id (:menu/id inactive-menu)
+        inactive-item (sql/insert! (:db/postgres state/system) :menu-item {:id        (UUID/randomUUID)
+                                                                           :menu-id   (:menu/id inactive-menu)
                                                                            :recipe-id (:recipe/id chocolate)})
-        active-item (sql/insert! (:db/postgres state/system) :menu-item {:id (UUID/randomUUID)
-                                                                         :menu-id (:menu/id active-menu)
+        active-item (sql/insert! (:db/postgres state/system) :menu-item {:id        (UUID/randomUUID)
+                                                                         :menu-id   (:menu/id active-menu)
                                                                          :recipe-id (:recipe/id vanilla)})
-        inactive-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id (UUID/randomUUID)
-                                                                                        :menu-id (:menu/id inactive-menu)
+        inactive-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id           (UUID/randomUUID)
+                                                                                        :menu-id      (:menu/id inactive-menu)
                                                                                         :menu-item-id (:menu-item/id inactive-item)
-                                                                                        :amount %
-                                                                                        :amount-unit "cup"})
+                                                                                        :amount       %
+                                                                                        :amount-unit  "cup"})
                              (range 1 4))
-        active-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id (UUID/randomUUID)
-                                                                                      :menu-id (:menu/id active-menu)
+        active-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id           (UUID/randomUUID)
+                                                                                      :menu-id      (:menu/id active-menu)
                                                                                       :menu-item-id (:menu-item/id active-item)
-                                                                                      :amount %
-                                                                                      :amount-unit "cup"})
+                                                                                      :amount       %
+                                                                                      :amount-unit  "cup"})
                            (range 1 4))]
     (sql/query (:db/postgres state/system) (-> (h/select :menu-item-size/*)
                                                (h/from :menu-item-size)
                                                (h/join :menu [:= :menu/id :menu-item-size/menu-id])
                                                (h/where [:= :menu/active true])
                                                (hsql/format))))
-        
+
   (ig-repl/go)
   (sql/find-by-keys (:db/postgres state/system) :menu :all)
   @token
@@ -307,11 +307,11 @@
                       (first)
                       (:recipe/id))
         menu-id (-> (make-request :post "/v1/menus" {:auth true
-                                                      :body {:name          "foobar"
-                                                             :repeats       false
-                                                             :active        true
-                                                             :duration      4
-                                                             :duration-type :duration/day}})
+                                                     :body {:name          "foobar"
+                                                            :repeats       false
+                                                            :active        true
+                                                            :duration      4
+                                                            :duration-type :duration/day}})
                     :body
                     :id)
         menu-item-id (-> (make-request
