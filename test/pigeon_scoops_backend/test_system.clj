@@ -12,8 +12,8 @@
            (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
-(def token (atom nil))
-(def test-user (atom nil))
+(def tokens (atom nil))
+(def test-users (atom nil))
 
 (defn get-test-token [{:keys [test-client-id username password]}]
   (->> {:content-type  :json
@@ -35,8 +35,11 @@
   ([method uri opts]
    (let [app (-> state/system :pigeon-scoops-backend/app)
          auth (-> state/system :auth/auth0)
+         token (or (if (:use-other-user opts) (second @tokens) (first @tokens))
+                   (if (:use-other-user opts) (get-test-token (conj auth (second @test-users)))
+                                              (get-test-token (conj auth (first @test-users)))))
          response (app (-> (mock/request method uri (:params opts))
-                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-test-token (conj auth @test-user)))))
+                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " token))
                                    (:body opts) (mock/json-body (:body opts)))))
          response (update response :body (partial m/decode "application/json"))]
      (println method uri opts response)
@@ -95,26 +98,31 @@
   ([manage-user?]
    (fn [f]
      (let [auth (:auth/auth0 state/system)
-           username (str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com")
-           password (str (UUID/randomUUID))
-           create-response (auth0/create-user! auth
-                                               {:connection "Username-Password-Authentication"
-                                                :email      username
-                                                :password   password})]
-       (reset! test-user {:username username
-                          :password password
-                          :uid      (:user_id create-response)})
-       (reset! token (get-test-token (conj auth @test-user)))
+           usernames (repeatedly 2 #(str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com"))
+           passwords (repeatedly 2 #(str (UUID/randomUUID)))
+           create-responses (map #(auth0/create-user! auth
+                                                      {:connection "Username-Password-Authentication"
+                                                       :email      %1
+                                                       :password   %2})
+                                 usernames
+                                 passwords)]
+       (reset! test-users (mapv #(hash-map :username %1
+                                           :password %2
+                                           :uid (:user_id %3))
+                                usernames
+                                passwords
+                                create-responses))
+       (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
        (when manage-user?
-         (test-endpoint :post "/v1/account" {:auth true}))
+         (mapv #(test-endpoint :post "/v1/account" {:auth true :use-other-user %}) [true false]))
        (f)
        (when manage-user?
-         (test-endpoint :delete "/v1/account" {:auth true}))))))
+         (mapv #(test-endpoint :delete "/v1/account" {:auth true :use-other-user %}) [true false]))))))
 
 (defn make-roles-fixture [& roles]
   (fn [f]
     (let [auth (:auth/auth0 state/system)]
-      (auth0/update-roles! auth (:uid @test-user) roles)
-      (reset! token (get-test-token (conj auth @test-user)))
+      (mapv #(auth0/update-roles! auth (:uid %) roles) @test-users)
+      (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
       (f)
-      (reset! token nil))))
+      (reset! tokens nil))))
