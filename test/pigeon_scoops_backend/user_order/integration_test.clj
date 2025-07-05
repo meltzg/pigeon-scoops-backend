@@ -65,7 +65,7 @@
       (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                     {:auth true :body (assoc order-item :recipe-id recipe-id)})]
         (reset! order-item-id (:id body))
-        (is (= status 201) (str body))))
+        (is (= status 201))))
     (testing "recipe owner can create order-item for recipe not in an active menu"
       (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item :recipe-id other-recipe-id)})]
