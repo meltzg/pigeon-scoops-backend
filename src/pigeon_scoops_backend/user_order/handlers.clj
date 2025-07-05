@@ -72,10 +72,12 @@
                                :menu-item/recipe-id
                                (menu-db/find-active-menu-items conn-opts))
                              recipe-id)
-              active-item-sizes (apply (partial menu-db/find-menu-item-sizes conn-opts)
-                                       (map :menu-item/id (vals active-items)))]
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
+                                       (map :menu-item/id active-items)))]
+          (println "AAA" (seq active-items))
+          (println "BBB" active-item-sizes)
           (cond
-            (nil? (get active-items recipe-id))
+            (not (seq active-items))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
                              :message "recipe is not in an active menu"
                              :data    (str "recipe-id " recipe-id)})
@@ -83,7 +85,7 @@
                   (first
                     (units/reduce-amounts mod amount amount-unit
                                           (:menu-item-size/amount %)
-                                          (:menu-item-size/amount-unit))))
+                                          (:menu-item-size/amount-unit %))))
                   active-item-sizes)
             (rr/bad-request {:type "no-valid-size-order-amount"
                              :message "order amount cannot be made from any active item size"

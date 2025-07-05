@@ -12,7 +12,7 @@
 
 (def order-item
   {:amount      1
-   :amount-unit :volume/floz})
+   :amount-unit :volume/qt})
 
 (def updated-order-item
   (assoc order-item :status :status/complete))
@@ -40,20 +40,21 @@
 (deftest orders-crud-test
   (let [order-id (atom nil)
         order-item-id (atom nil)
-        menu-id (atom nil)
         {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
         recipe-id (:id body)
         {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
-        other-recipe-id (:id body)]
-    ;; Create an active menu and add the recipe to it
-    (testing "create active menu"
-      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})]
-        (reset! menu-id (:id body))
-        (is (= status 201))))
-    (testing "create menu-item"
-      (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/menus/" @menu-id "/items")
-                                               {:auth true :body {:recipe-id recipe-id}})]
-        (is (= status 201))))
+        other-recipe-id (:id body)
+        ;; Create an active menu and add the recipe to it
+        {:keys [body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})
+        menu-id (:id body)
+        {:keys [body]} (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
+                                         {:auth true :body {:recipe-id recipe-id}})
+        menu-item-id (:id body)
+        {:keys [body]} (ts/test-endpoint :post (str "/v1/menus/" menu-id "/sizes")
+                                         {:auth true :body {:menu-item-id menu-item-id
+                                                            :amount 1
+                                                            :amount-unit :volume/pt}})
+        menu-item-size-id (:id body)]
     (testing "create order"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/orders" {:auth true :body order})]
         (reset! order-id (:id body))
@@ -65,7 +66,7 @@
       (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                     {:auth true :body (assoc order-item :recipe-id recipe-id)})]
         (reset! order-item-id (:id body))
-        (is (= status 201))))
+        (is (= status 201) (str body))))
     (testing "cannot create order-item for recipe not in an active menu"
       (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item :recipe-id other-recipe-id)})]
