@@ -6,8 +6,7 @@
             [pigeon-scoops-backend.utils :refer [db-str->keyword
                                                  keyword->db-str
                                                  with-connection]])
-  (:import (java.sql Timestamp)
-           (java.time ZonedDateTime)))
+  (:import (java.sql Timestamp)))
 
 (defn find-menu-items [db menu-id & menu-ids]
   (with-connection
@@ -112,26 +111,26 @@
       ::jdbc/update-count
       (pos?)))
 
+(defn find-active-menu-items [db]
+  (->> (-> (h/select :menu-item/*)
+           (h/from :menu-item)
+           (h/join :menu [:= :menu/id :menu-item/menu-id])
+           (h/where [:= :menu/active true])
+           (hsql/format))
+       (sql/query db)))
+
+(defn find-menu-item-sizes [db & menu-item-ids]
+  (->> (-> (h/select :menu-item-size/*)
+           (h/from :menu-item-size)
+           (h/where [:in :menu-item-id menu-item-ids])
+           (hsql/format))
+       (sql/query db)
+       (map #(db-str->keyword % :menu-item-size/amount-unit))))
+
 (comment
   (do
     (require '[integrant.repl.state :as state])
-    (import '[java.util UUID])
-    (import '[java.time ZonedDateTime]))
-  (insert-menu! (:db/postgres state/system) {:id            (UUID/randomUUID)
-                                             :name          "foobar menu"
-                                             :repeats       true
-                                             :active        false
-                                             :duration      69
-                                             :duration-type :duration/day
-                                             :end-time      (ZonedDateTime/now)})
-  (insert-menu-item! (:db/postgres state/system) {:id        (UUID/randomUUID)
-                                                  :recipe-id #uuid"3733eda5-3c1c-4e48-90d5-854cd1c79d00"
-                                                  :menu-id   #uuid"526dc6c6-6bd3-4ac4-9fa1-307e729ab941"})
-  (insert-menu-item-size! (:db/postgres state/system) {:id           (UUID/randomUUID)
-                                                       :menu-item-id #uuid"84b1e12b-78fa-4a51-bddd-c885ad7b146c"
-                                                       :menu-id      #uuid"526dc6c6-6bd3-4ac4-9fa1-307e729ab941"
-                                                       :amount       4
-                                                       :amount-unit  :volume/gal})
-  (find-menu-by-id (:db/postgres state/system) #uuid"526dc6c6-6bd3-4ac4-9fa1-307e729ab941")
-  (find-all-menus (:db/postgres state/system) true))
+    (let [items (find-active-menu-items (:db/postgres state/system))]
+      (apply (partial find-menu-item-sizes db)
+             (map :menu-item/id items)))))
 

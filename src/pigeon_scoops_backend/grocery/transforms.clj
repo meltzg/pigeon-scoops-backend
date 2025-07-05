@@ -63,7 +63,3 @@
                    :grocery/purchase-amount total-amount
                    :grocery/purchase-unit total-unit
                    :grocery/waste-ratio waste-ratio)))
-
-(comment
-  (grocery-for-amount {:grocery/units [{:grocery-unit/unit-mass 1 :grocery-unit/unit-mass-type :mass/kg}
-                                       {:grocery-unit/unit-mass 250 :grocery-unit/unit-mass-type :mass/g}]} 2400 :mass/g))

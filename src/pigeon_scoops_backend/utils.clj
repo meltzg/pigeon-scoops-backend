@@ -49,12 +49,3 @@
         (mapv doall-deep value)
         :else
         value))
-
-(comment
-  (doall-deep (remove-nil-keys [{:foo  1
-                                 :bar  nil
-                                 :fizz [1 2 3]
-                                 :buzz [{:bazz nil :asdf 4}]
-                                 :cram {:data nil}}
-                                {}])))
-

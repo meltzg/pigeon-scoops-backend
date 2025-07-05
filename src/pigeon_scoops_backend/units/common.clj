@@ -50,5 +50,6 @@
                acc-unit])
             amounts)))
 
+
 (comment
-  (convert 2.2 :mass/lb :mass/kg))
+  (reduce-amounts mod 4 :mass/kg 2 :mass/kg))

@@ -8,7 +8,8 @@
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
             [ring.mock.request :as mock])
-  (:import (java.util UUID)
+  (:import (java.net Socket)
+           (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
 (def token (atom nil))
@@ -43,7 +44,9 @@
 
 (defn port-available? [port]
   (try
-    (.close (java.net.Socket. "localhost" port))
+    (let [^String host "localhost"
+          ^Integer port port]
+      (.close (Socket. host port)))
     false
     (catch Exception _
       true)))
@@ -80,7 +83,7 @@
               (try
                 (f)
                 (catch Exception e
-                  (println "FATAL")))
+                  (println "FATAL" e)))
               (ig-repl/halt)
               (.stop postgres-container)))
           :else
@@ -115,6 +118,3 @@
       (reset! token (get-test-token (conj auth @test-user)))
       (f)
       (reset! token nil))))
-
-(comment
-  (test-endpoint :get "/v1/constants" {:auth true}))
