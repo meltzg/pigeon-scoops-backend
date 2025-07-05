@@ -35,9 +35,9 @@
        (m/decode-response-body)
        :access_token))
 
-(defn test-endpoint
+(defn make-request
   ([method uri]
-   (test-endpoint method uri nil))
+   (make-request method uri nil))
   ([method uri opts]
    (let [app (-> state/system :pigeon-scoops-backend/app)
          auth (-> state/system :auth/auth0)
@@ -62,7 +62,7 @@
                          (:uid @test-user)
                          [:manage-orders :manage-recipes :manage-groceries :manage-menus])
     (reset! token (get-token (conj auth @test-user)))
-    (test-endpoint :post "/v1/account" {:auth true})
+    (make-request :post "/v1/account" {:auth true})
     (spit user-config @test-user)))
 
 (defn load-test-user []
@@ -74,13 +74,13 @@
        (conj (:auth/auth0 state/system))
        (get-token)
        (reset! token))
-  (test-endpoint :post "/v1/account" {:auth true}))
+  (make-request :post "/v1/account" {:auth true}))
 
 (defn load-seed-data []
   (let [grocery-map (->> "dev/resources/seed/groceries.json"
                          (slurp)
                          (m/decode "application/json")
-                         (map #(vector (:type %) (-> (test-endpoint :post "/v1/groceries"
+                         (map #(vector (:type %) (-> (make-request :post "/v1/groceries"
                                                                     {:auth true
                                                                      :body {:name       (:type %)
                                                                             :department :department/grocery}})
@@ -90,7 +90,7 @@
         units (->> "dev/resources/seed/grocery_units.json"
                    (slurp)
                    (m/decode "application/json")
-                   (map #(-> (test-endpoint :post (str "/v1/groceries/" (get grocery-map (:type %)) "/units")
+                   (map #(-> (make-request :post (str "/v1/groceries/" (get grocery-map (:type %)) "/units")
                                             {:auth true
                                              :body (cond-> {:source    (:source %)
                                                             :unit-cost (:unit_cost %)}
@@ -105,7 +105,7 @@
         recipe-map (->> "dev/resources/seed/recipes.json"
                         (slurp)
                         (m/decode "application/json")
-                        (map #(vector (:id %) (-> (test-endpoint :post "/v1/recipes"
+                        (map #(vector (:id %) (-> (make-request :post "/v1/recipes"
                                                                  {:auth true
                                                                   :body (merge (select-keys % [:name :instructions])
                                                                                {:amount      (:amount %)
@@ -118,7 +118,7 @@
         ingredients (->> "dev/resources/seed/ingredients.json"
                          (slurp)
                          (m/decode "application/json")
-                         (map #(-> (test-endpoint :post (str "/v1/recipes/" (get recipe-map (:recipe_id %)) "/ingredients")
+                         (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:recipe_id %)) "/ingredients")
                                                   {:auth true
                                                    :body {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
                                                           :amount                (:amount %)
@@ -130,7 +130,7 @@
                           (->> "dev/resources/seed/flavors.json"
                                (slurp)
                                (m/decode "application/json")
-                               (map #(let [recipe-id (-> (test-endpoint :post "/v1/recipes"
+                               (map #(let [recipe-id (-> (make-request :post "/v1/recipes"
                                                                         {:auth true
                                                                          :body (merge (select-keys % [:name :instructions])
                                                                                       {:amount      (:amount %)
@@ -139,7 +139,7 @@
                                                                                        :source      ""})})
                                                          :body
                                                          :id)]
-                                       (test-endpoint :post (str "/v1/recipes/" recipe-id "/ingredients")
+                                       (make-request :post (str "/v1/recipes/" recipe-id "/ingredients")
                                                       {:auth true
                                                        :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
                                                               :amount               (:amount %)
@@ -151,7 +151,7 @@
                             (->> "dev/resources/seed/mixins.json"
                                  (slurp)
                                  (m/decode "application/json")
-                                 (map #(-> (test-endpoint :post (str "/v1/recipes/" (get recipe-map (:flavor_id %)) "/ingredients")
+                                 (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:flavor_id %)) "/ingredients")
                                                           {:auth true
                                                            :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
                                                                   :amount               (:amount %)
@@ -159,7 +159,7 @@
                                                                                                  (:amount_unit %))}})
                                            :body
                                            :id))))
-        menu-id (-> (test-endpoint :post "/v1/menus"
+        menu-id (-> (make-request :post "/v1/menus"
                                    {:auth true
                                     :body {:name "test menu"
                                            :active true
@@ -170,7 +170,7 @@
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
-                       (map #(vector (:id %) (-> (test-endpoint :post "/v1/orders"
+                       (map #(vector (:id %) (-> (make-request :post "/v1/orders"
                                                                 {:auth true
                                                                  :body (select-keys % [:note])})
                                                  :body
@@ -179,7 +179,7 @@
         order-items (->> "dev/resources/seed/flavor_amounts.json"
                          (slurp)
                          (m/decode "application/json")
-                         (map #(-> (test-endpoint :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
+                         (map #(-> (make-request :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
                                                   {:auth true
                                                    :body {:recipe-id   (get recipe-map (:flavor_id %))
                                                           :amount      (:amount %)
@@ -231,6 +231,9 @@
   (init-app))
 
 (comment
+  (map #(auth0/delete-user! (:auth/auth0 state/system) (:user_id %))
+       (filter #(str/starts-with? (:email %) "integration-test")
+               (auth0/get-users (:auth/auth0 state/system))))
   (sql/query (:db/postgres state/system) ["SELECT ingredient.*, recipe.name, grocery.name
                                            FROM ingredient
                                            LEFT JOIN recipe ON ingredient.ingredient_recipe_id = recipe.id
@@ -298,12 +301,12 @@
   @token
   (make-test-user)
   (load-test-user)
-  (let [recipe-id (-> (test-endpoint :get "/v1/recipes" {:auth true})
+  (let [recipe-id (-> (make-request :get "/v1/recipes" {:auth true})
                       :body
                       :private
                       (first)
                       (:recipe/id))
-        menu-id (-> (test-endpoint :post "/v1/menus" {:auth true
+        menu-id (-> (make-request :post "/v1/menus" {:auth true
                                                       :body {:name          "foobar"
                                                              :repeats       false
                                                              :active        true
@@ -311,14 +314,14 @@
                                                              :duration-type :duration/day}})
                     :body
                     :id)
-        menu-item-id (-> (test-endpoint
+        menu-item-id (-> (make-request
                            :post
                            (str "/v1/menus/" menu-id "/items")
                            {:auth true
                             :body {:recipe-id recipe-id}})
                          :body
                          :id)
-        menu (-> (test-endpoint :get (str "/v1/menus") {:auth true})
+        menu (-> (make-request :get (str "/v1/menus") {:auth true})
                  :body
                  :id)]
 

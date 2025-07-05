@@ -34,6 +34,12 @@
          (http/post "https://pigeon-scoops.us.auth0.com/api/v2/users")
          (m/decode-response-body))))
 
+(defn get-users [auth]
+  (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
+       (http/get
+         (str "https://pigeon-scoops.us.auth0.com/api/v2/users"))
+       (m/decode-response-body)))
+
 (defn get-role-ids [token role-names]
   (->> {:headers       {"Authorization" (str "Bearer " token)}
         :cookie-policy :standard

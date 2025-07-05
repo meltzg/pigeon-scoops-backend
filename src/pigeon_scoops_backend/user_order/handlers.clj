@@ -73,23 +73,21 @@
                                (menu-db/find-active-menu-items conn-opts))
                              recipe-id)
               active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
-                                       (map :menu-item/id active-items)))]
-          (println "AAA" (seq active-items))
-          (println "BBB" active-item-sizes)
+                                                          (map :menu-item/id active-items)))]
           (cond
             (not (seq active-items))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
                              :message "recipe is not in an active menu"
                              :data    (str "recipe-id " recipe-id)})
             (not-any? #(zero?
-                  (first
-                    (units/reduce-amounts mod amount amount-unit
-                                          (:menu-item-size/amount %)
-                                          (:menu-item-size/amount-unit %))))
-                  active-item-sizes)
-            (rr/bad-request {:type "no-valid-size-order-amount"
+                         (first
+                           (units/reduce-amounts mod amount amount-unit
+                                                 (:menu-item-size/amount %)
+                                                 (:menu-item-size/amount-unit %))))
+                      active-item-sizes)
+            (rr/bad-request {:type    "no-valid-size-order-amount"
                              :message "order amount cannot be made from any active item size"
-                             :data active-item-sizes})
+                             :data    active-item-sizes})
             :else
             (do
               (order-db/insert-order-item! conn-opts (assoc order-item
@@ -102,16 +100,36 @@
 
 (defn update-order-item! [db]
   (fn [request]
-    (let [order-id (-> request :parameters :path :order-id)
-          {:keys [recipe-id] :as order-item} (-> request :parameters :body)])))
-      ;(if (recipe-in-active-menu? db recipe-id)
-      ;  (let [successful? (order-db/update-order-item! db (assoc order-item :order-id order-id))]
-      ;    (if successful?
-      ;      (rr/status 204)
-      ;      (rr/bad-request (select-keys order-item [:id]))))
-      ;  (rr/bad-request {:type    "recipe-not-in-active-menu"
-      ;                   :message "recipe is not in an active menu"
-      ;                   :data    (str "recipe-id " recipe-id)})))))
+    (with-connection
+      db
+      (fn [conn-opts]
+        (let [order-id (-> request :parameters :path :order-id)
+              {:keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
+              active-items (get
+                             (group-by
+                               :menu-item/recipe-id
+                               (menu-db/find-active-menu-items conn-opts))
+                             recipe-id)
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
+                                                          (map :menu-item/id active-items)))]
+          (cond
+            (not (seq active-items))
+            (rr/bad-request {:type    "recipe-not-in-active-menu"
+                             :message "recipe is not in an active menu"
+                             :data    (str "recipe-id " recipe-id)})
+            (not-any? #(zero?
+                         (first
+                           (units/reduce-amounts mod amount amount-unit
+                                                 (:menu-item-size/amount %)
+                                                 (:menu-item-size/amount-unit %))))
+                      active-item-sizes)
+            (rr/bad-request {:type    "no-valid-size-order-amount"
+                             :message "order amount cannot be made from any active item size"
+                             :data    active-item-sizes})
+            :else
+            (if (order-db/update-order-item! conn-opts (assoc order-item :order-id order-id))
+              (rr/status 204)
+              (rr/bad-request (select-keys order-item [:id])))))))))
 
 (defn delete-order-item! [db]
   (fn [request]
