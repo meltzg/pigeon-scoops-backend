@@ -65,34 +65,67 @@
       (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                     {:auth true :body (assoc order-item :recipe-id recipe-id)})]
         (reset! order-item-id (:id body))
-        (is (= status 201) (str body))))
-    (testing "cannot create order-item for recipe not in an active menu"
+        (is (= status 201))))
+    (testing "recipe owner can create order-item for recipe not in an active menu"
       (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item :recipe-id other-recipe-id)})]
-        (is (= status 400))))
-    (testing "cannot create order-item for an invalid size"
+        (is (= status 201))))
+    (testing "recipe owner can create order-item for an invalid size"
       (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item :recipe-id recipe-id :amount-unit :volume/c)})]
-        (is (= status 400))))
+        (is (= status 201))))
     (testing "update order-item"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc updated-order-item
                                                                    :id @order-item-id
                                                                    :recipe-id recipe-id)})]
         (is (= status 204))))
-    (testing "cannot update order-item for recipe not in an active menu"
+    (testing "recipe owner can update order-item for recipe not in an active menu"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item
                                                                    :id @order-item-id
                                                                    :recipe-id other-recipe-id)})]
-        (is (= status 400))))
-    (testing "cannot update order-item for an invalid size"
+        (is (= status 204))))
+    (testing "recipe owner can update order-item for an invalid size"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item
                                                                    :id @order-item-id
                                                                    :recipe-id recipe-id
                                                                    :amount-unit :volume/c)})]
-        (is (= status 400))))
+        (is (= status 204))))
+    (let [{:keys [body]} (ts/test-endpoint :post "/v1/orders" {:auth true :use-other-user true :body order})
+          order-id (:id body)
+          order-item-id (atom nil)]
+      (testing "other user can create order item for active recipe"
+        (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                                      {:auth true :use-other-user true :body (assoc order-item :recipe-id recipe-id)})]
+          (reset! order-item-id (:id body))
+          (is (= status 201))))
+      (testing "other user cannot create order-item for recipe not in an active menu"
+        (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                                 {:auth           true
+                                                  :use-other-user true
+                                                  :body           (assoc order-item :recipe-id other-recipe-id)})]
+          (is (= status 400))))
+      (testing "other user cannot create order-item for an invalid size"
+        (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                                 {:auth           true
+                                                  :use-other-user true
+                                                  :body           (assoc order-item :recipe-id recipe-id :amount-unit :volume/c)})]
+          (is (= status 400))))
+      (testing "other user cannot update order-item for recipe not in an active menu"
+        (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
+                                                 {:auth true :use-other-user true :body (assoc order-item
+                                                                                          :id @order-item-id
+                                                                                          :recipe-id other-recipe-id)})]
+          (is (= status 400))))
+      (testing "other user cannot update order-item for an invalid size"
+        (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
+                                                 {:auth true :use-other-user true :body (assoc order-item
+                                                                                          :id @order-item-id
+                                                                                          :recipe-id recipe-id
+                                                                                          :amount-unit :volume/c)})]
+          (is (= status 400)))))
     (testing "retrieve order bom"
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/orders/" @order-id "/bom")
                                                {:auth true})]
