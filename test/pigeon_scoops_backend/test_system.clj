@@ -7,6 +7,7 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.config :as config]
             [ring.mock.request :as mock])
   (:import (java.net Socket)
            (java.util UUID)
@@ -77,11 +78,10 @@
                   (-> (if (env :ci-env)
                         "resources/config.edn"
                         "dev/resources/config.edn")
-                      slurp
-                      ig/read-string
+                      (config/load-config)
                       (assoc-in [:db/postgres :jdbc-url] full-uri)
-                      ig/expand
-                      (assoc-in [:server/jetty :port] port))))
+                      (assoc-in [:server/jetty :port] port)
+                      (ig/expand))))
               (ig-repl/go)
               (try
                 (f)
