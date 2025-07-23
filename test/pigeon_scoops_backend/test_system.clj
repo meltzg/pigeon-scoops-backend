@@ -76,8 +76,8 @@
               (ig-repl/set-prep!
                 (fn []
                   (-> (if (env :ci-env)
-                        "resources/config.edn"
-                        "dev/resources/config.edn")
+                        "resources/server-config.edn"
+                        "dev/resources/server-config.edn")
                       (config/load-config)
                       (assoc-in [:db/postgres :jdbc-url] full-uri)
                       (assoc-in [:server/jetty :port] port)
