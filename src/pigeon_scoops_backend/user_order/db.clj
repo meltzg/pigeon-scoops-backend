@@ -3,13 +3,14 @@
             [honey.sql.helpers :as h]
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
-            [pigeon-scoops-backend.utils :refer [db-str->keyword
+            [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
+                                                 apply-keyword->db-str
                                                  keyword->db-str
                                                  with-connection]]))
 
 (defn find-all-order-items [db order-id]
-  (map #(db-str->keyword %
-                         :order-item/status :order-item/amount-unit)
+  (map #(apply-db-str->keyword %
+                               :order-item/status :order-item/amount-unit)
        (sql/query db (-> (h/select :order-item/* :recipe/name)
                          (h/from :order-item)
                          (h/left-join :recipe [:= :order-item/recipe-id :recipe/id])
@@ -20,7 +21,7 @@
   ([db user-id]
    (find-all-orders db user-id false))
   ([db user-id include-deleted?]
-   (map #(db-str->keyword % :user-order/amount-unit :user-order/status)
+   (map #(apply-db-str->keyword % :user-order/amount-unit :user-order/status)
         (sql/find-by-keys db :user-order (merge {:user-id user-id}
                                                 (when-not include-deleted?
                                                   {:deleted false}))))))
@@ -32,14 +33,14 @@
                items (find-all-order-items conn-opts order-id)]
            (when (seq order)
              (-> order
-                 (db-str->keyword :user-order/amount-unit :user-order/status)
+                 (apply-db-str->keyword :user-order/amount-unit :user-order/status)
                  (assoc :user-order/items items)))))))
 
 (defn insert-order! [db order]
-  (sql/insert! db :user-order (keyword->db-str order :amount-unit :status)))
+  (sql/insert! db :user-order (apply-keyword->db-str order :amount-unit :status)))
 
 (defn update-order! [db order]
-  (-> (sql/update! db :user-order (keyword->db-str order :amount-unit :status) (select-keys order [:id]))
+  (-> (sql/update! db :user-order (apply-keyword->db-str order :amount-unit :status) (select-keys order [:id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -49,11 +50,11 @@
       (pos?)))
 
 (defn insert-order-item! [db item]
-  (sql/insert! db :order-item (keyword->db-str item :status :amount-unit)))
+  (sql/insert! db :order-item (apply-keyword->db-str item :status :amount-unit)))
 
 (defn update-order-item! [db item]
   (-> item
-      (keyword->db-str :status :amount-unit)
+      (apply-keyword->db-str :status :amount-unit)
       (#(sql/update! db :order-item %
                      (select-keys % [:id])))
       ::jdbc/update-count
@@ -63,3 +64,19 @@
   (-> (sql/delete! db :order-item item)
       ::jdbc/update-count
       (pos?)))
+
+(defn accept-orders [db recipe-id & rids]
+  (jdbc/with-transaction
+    [tx db]
+    (sql/query tx (-> (h/update :order-item)
+                      (h/set {:status (keyword->db-str :status/in-progress)})
+                      (h/where [:in :recipe-id (conj rids recipe-id)]
+                               [:= :status (keyword->db-str :status/submitted)])
+                      (hsql/format)))
+    (sql/query tx (-> (h/update :user-order)
+                      (h/set {:status (keyword->db-str :status/in-progress)})
+                      (h/where [:= :status (keyword->db-str :status/submitted)]
+                               [:in :id (-> (h/select-distinct :order-id)
+                                            (h/from :order-item)
+                                            (h/where [:= :status (keyword->db-str :status/in-progress)]))])
+                      (hsql/format)))))

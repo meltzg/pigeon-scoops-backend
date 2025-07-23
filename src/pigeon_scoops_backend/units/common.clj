@@ -49,7 +49,3 @@
               [(f acc-amnt (convert amnt unit acc-unit))
                acc-unit])
             amounts)))
-
-
-(comment
-  (reduce-amounts mod 4 :mass/kg 2 :mass/kg))

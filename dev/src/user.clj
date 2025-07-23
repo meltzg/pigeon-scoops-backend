@@ -210,7 +210,7 @@
                              (.withUsername "user")
                              (.withPassword "password")
                              (.start))))
-    (-> "dev/resources/config.edn"
+    (-> "dev/resources/server-config.edn"
         slurp
         ig/read-string
         (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
@@ -327,6 +327,9 @@
 
 
     [recipe-id menu-id menu-item-id menu])
+  (str (.getJdbcUrl @db-container)
+       "&user=" (.getUsername @db-container)
+       "&password=" (.getPassword @db-container))
   (init-app)
   (go)
   (halt)

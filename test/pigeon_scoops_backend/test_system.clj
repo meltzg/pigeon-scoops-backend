@@ -7,6 +7,8 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.config :as config]
+            [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock])
   (:import (java.net Socket)
            (java.util UUID)
@@ -74,14 +76,20 @@
                                 "&password=" (.getPassword postgres-container))]
               (ig-repl/set-prep!
                 (fn []
-                  (-> (if (env :ci-env)
-                        "resources/config.edn"
-                        "dev/resources/config.edn")
-                      slurp
-                      ig/read-string
-                      (assoc-in [:db/postgres :jdbc-url] full-uri)
-                      ig/expand
-                      (assoc-in [:server/jetty :port] port))))
+                  (let [task-system (-> "resources/db-task-config.edn"
+                                        (config/load-config)
+                                        (assoc-in [:db/postgres :jdbc-url] full-uri)
+                                        (config/init-system))
+                        migration-task (:tasks/migration task-system)]
+                    (migration-task)
+                    (ig/halt! task-system)
+                    (-> (if (env :ci-env)
+                          "resources/server-config.edn"
+                          "dev/resources/server-config.edn")
+                        (config/load-config)
+                        (assoc-in [:db/postgres :jdbc-url] full-uri)
+                        (assoc-in [:server/jetty :port] port)
+                        (ig/expand)))))
               (ig-repl/go)
               (try
                 (f)

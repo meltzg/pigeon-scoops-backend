@@ -4,8 +4,8 @@
             [next.jdbc :as jdbc]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.recipe.transforms :as transforms]
-            [pigeon-scoops-backend.utils :refer [db-str->keyword
-                                                 keyword->db-str
+            [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
+                                                 apply-keyword->db-str
                                                  with-connection]]))
 
 (defn find-recipe-favorite-counts [db recipe-ids]
@@ -31,12 +31,12 @@
                                                                                      :public  false})))
              favorite-counts (find-recipe-favorite-counts conn-opts (concat (map :recipe/id public)
                                                                             (map :recipe/id private)))]
-         (merge {:public (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                                :recipe/amount-unit)
+         (merge {:public (map #(apply-db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
+                                                      :recipe/amount-unit)
                               public)}
                 (when private
-                  {:private (map #(db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                                   :recipe/amount-unit)
+                  {:private (map #(apply-db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
+                                                         :recipe/amount-unit)
                                  private)})))))))
 
 
@@ -54,20 +54,20 @@
             favorite-count (count (sql/find-by-keys conn-opts :recipe-favorite {:recipe-id recipe-id}))]
         (when (seq recipe)
           (-> recipe
-              (db-str->keyword :recipe/amount-unit)
+              (apply-db-str->keyword :recipe/amount-unit)
               (assoc
-                :recipe/ingredients (map #(db-str->keyword % :ingredient/amount-unit) ingredients)
+                :recipe/ingredients (map #(apply-db-str->keyword % :ingredient/amount-unit) ingredients)
                 :recipe/favorite-count favorite-count)))))))
 
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (-> recipe
-                              (keyword->db-str :amount-unit)
+                              (apply-keyword->db-str :amount-unit)
                               (assoc :public false
                                      :instructions (into-array String (:instructions recipe))))))
 
 (defn update-recipe! [db recipe]
   (-> (sql/update! db :recipe (-> recipe
-                                  (keyword->db-str :amount-unit)
+                                  (apply-keyword->db-str :amount-unit)
                                   (update :instructions (partial into-array String)))
                    (select-keys recipe [:id]))
       ::jdbc/update-count
@@ -86,10 +86,10 @@
   (sql/delete! db :recipe-favorite data (:options db)))
 
 (defn insert-ingredient! [db ingredient]
-  (sql/insert! db, :ingredient (keyword->db-str ingredient :amount-unit)))
+  (sql/insert! db, :ingredient (apply-keyword->db-str ingredient :amount-unit)))
 
 (defn update-ingredient! [db ingredient]
-  (-> (sql/update! db :ingredient (keyword->db-str
+  (-> (sql/update! db :ingredient (apply-keyword->db-str
                                     (cond-> ingredient
                                             (some? (:ingredient-grocery-id ingredient))
                                             (assoc :ingredient-recipe-id nil)

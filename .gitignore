@@ -12,6 +12,6 @@ pom.xml.asc
 .hgignore
 .hg/
 .idea/
-dev/resources/config.edn
+dev/resources/server-config.edn
 dev/resources/db.sqlite
 test-user.edn
