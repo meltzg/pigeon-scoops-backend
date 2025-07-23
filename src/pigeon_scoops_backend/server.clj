@@ -1,11 +1,11 @@
 (ns pigeon-scoops-backend.server
+  (:gen-class)
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
             [pigeon-scoops-backend.config :as config]
             [pigeon-scoops-backend.router :as router]
             [ring.adapter.jetty :as jetty])
-  (:import (org.eclipse.jetty.server Server)
-           (org.flywaydb.core Flyway)))
+  (:import (org.eclipse.jetty.server Server)))
 
 
 (defmethod ig/expand-key :server/jetty [k config]
@@ -28,14 +28,6 @@
 
 (defmethod ig/init-key :auth/auth0 [_ config]
   config)
-
-(defmethod ig/init-key :db/migration [_ {:keys [jdbc-url]}]
-  (println "\n Migrating database")
-  (-> (Flyway/configure)
-      (.dataSource (:connectable jdbc-url))
-      (.locations (into-array String ["classpath:db/migrations"]))
-      (.load)
-      (.migrate)))
 
 (defmethod ig/halt-key! :server/jetty [_ ^Server jetty]
   (.stop jetty))

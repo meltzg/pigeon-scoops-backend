@@ -126,11 +126,3 @@
            (hsql/format))
        (sql/query db)
        (map #(apply-db-str->keyword % :menu-item-size/amount-unit))))
-
-(comment
-  (do
-    (require '[integrant.repl.state :as state])
-    (let [items (find-active-menu-items (:db/postgres state/system))]
-      (apply (partial find-menu-item-sizes db)
-             (map :menu-item/id items)))))
-

@@ -327,6 +327,9 @@
 
 
     [recipe-id menu-id menu-item-id menu])
+  (str (.getJdbcUrl @db-container)
+       "&user=" (.getUsername @db-container)
+       "&password=" (.getPassword @db-container))
   (init-app)
   (go)
   (halt)

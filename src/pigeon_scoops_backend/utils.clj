@@ -52,6 +52,3 @@
         (mapv doall-deep value)
         :else
         value))
-
-(comment
-  (keyword->db-str :foo/bar))
