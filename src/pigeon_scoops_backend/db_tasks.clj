@@ -40,4 +40,5 @@
                       :options
                       :task
                       (get system))]
-        (task)))))
+        (task)
+        (ig/halt! system)))))

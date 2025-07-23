@@ -3,9 +3,7 @@
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [next.jdbc.connection :as njc]
-            [next.jdbc.result-set :as rs]
-            [pigeon-scoops-backend.router :as router]
-            [ring.adapter.jetty :as jetty])
+            [next.jdbc.result-set :as rs])
   (:import (com.zaxxer.hikari HikariDataSource)
            (java.sql Array)))
 
