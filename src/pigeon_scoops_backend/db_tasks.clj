@@ -1,11 +1,15 @@
 (ns pigeon-scoops-backend.db-tasks
   (:gen-class)
   (:require [clojure.java.io :as io]
-            [clojure.pprint :refer [pprint]]
             [clojure.tools.cli :as cli]
             [integrant.core :as ig]
-            [pigeon-scoops-backend.config :as config])
-  (:import (org.flywaydb.core Flyway)))
+            [next.jdbc :as jdbc]
+            [pigeon-scoops-backend.config :as config]
+            [pigeon-scoops-backend.menu.db :as menu-db]
+            [pigeon-scoops-backend.user-order.db :as order-db]
+            [pigeon-scoops-backend.utils :refer [with-connection]])
+  (:import (java.time ZonedDateTime)
+           (org.flywaydb.core Flyway)))
 
 
 (def options
@@ -17,7 +21,7 @@
 
 (defmethod ig/init-key :tasks/migration [_ {:keys [jdbc-url]}]
   (fn []
-    (println "\n Migrating database")
+    (println "\nMigrating database")
     (-> (Flyway/configure)
         (.dataSource (:connectable jdbc-url))
         (.locations (into-array String ["classpath:db/migrations"]))
@@ -25,10 +29,28 @@
         (.migrate))))
 
 
+(defmethod ig/init-key :tasks/accept-orders [_ {:keys [jdbc-url]}]
+  (fn []
+    (println "\nAccepting orders on expired menus")
+    (with-connection
+      jdbc-url
+      (fn [conn-opts]
+        (let [expired-menus (->> (menu-db/find-all-menus conn-opts)
+                                 (filter #(> (ZonedDateTime/now) (:menu/end-time %)))
+                                 (map :menu/id))
+              recipes-to-accept (->> (menu-db/find-active-menu-items conn-opts)
+                                     (filter #(some (set expired-menus) (:menu-item/menu-id %)))
+                                     (map :menu-item/recipe-id))]
+          (jdbc/with-transaction
+            [tx conn-opts]
+            (apply (partial order-db/accept-orders! tx) recipes-to-accept)
+            (dorun (map #(menu-db/update-menu! tx {:id % :active false}) expired-menus))))))))
+
+
+
 (defn -main
   [& args]
   (let [opts (cli/parse-opts args options)]
-    (pprint opts)
     (if (:errors opts)
       (println (:errors opts))
       (let [system (-> opts
