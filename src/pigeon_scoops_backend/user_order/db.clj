@@ -65,7 +65,7 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn accept-orders [db recipe-id & rids]
+(defn accept-orders! [db recipe-id & rids]
   (jdbc/with-transaction
     [tx db]
     (sql/query tx (-> (h/update :order-item)

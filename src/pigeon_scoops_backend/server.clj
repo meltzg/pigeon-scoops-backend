@@ -19,11 +19,11 @@
                            (env :management-client-secret) (conj {:management-client-secret (env :management-client-secret)})))})
 
 (defmethod ig/init-key :server/jetty [_ {:keys [handler port]}]
-  (println "\n Server running on port" port)
+  (println "\nServer running on port" port)
   (jetty/run-jetty handler {:port port :join? false}))
 
 (defmethod ig/init-key :pigeon-scoops-backend/app [_ config]
-  (println "\n Starting app")
+  (println "\nStarting app")
   (router/routes config))
 
 (defmethod ig/init-key :auth/auth0 [_ config]

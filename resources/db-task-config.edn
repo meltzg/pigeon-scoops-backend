@@ -1,2 +1,3 @@
 {:db/postgres         {:jdbc-url "jdbc-url"}
- :tasks/migration {:jdbc-url #ig/ref :db/postgres}}
+ :tasks/migration     {:jdbc-url #ig/ref :db/postgres}
+ :tasks/accept-orders {:jdbc-url #ig/ref :db/postgres}}
