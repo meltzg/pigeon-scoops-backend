@@ -40,16 +40,13 @@
 (deftest orders-crud-test
   (let [order-id (atom nil)
         order-item-id (atom nil)
-        {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
-        recipe-id (:id body)
-        {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
-        other-recipe-id (:id body)
+        recipe-id (get-in (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe}) [:body :id])
+        other-recipe-id (get-in (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe}) [:body :id])
         ;; Create an active menu and add the recipe to it
-        {:keys [body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})
-        menu-id (:id body)
-        {:keys [body]} (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
-                                         {:auth true :body {:recipe-id recipe-id}})
-        menu-item-id (:id body)
+        menu-id (get-in (ts/test-endpoint :post "/v1/menus" {:auth true :body menu}) [:body :id])
+        menu-item-id (get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
+                                               {:auth true :body {:recipe-id recipe-id}})
+                             [:body :id])
         _ (ts/test-endpoint :post (str "/v1/menus/" menu-id "/sizes")
                             {:auth true :body {:menu-item-id menu-item-id
                                                :amount       1
@@ -136,3 +133,6 @@
     (testing "delete order"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id) {:auth true})]
         (is (= status 204))))))
+
+(deftest accept-orders!-test)
+
