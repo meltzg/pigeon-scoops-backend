@@ -152,11 +152,11 @@
                                                       :amount-unit  :volume/pt}})
                 menu-item-ids)
         order-id (UUID/fromString (get-in (ts/test-endpoint :post "/v1/orders" {:auth true :body order}) [:body :id]))
-        order-item-ids (mapv #(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                        {:auth true :use-other-user true :body (assoc order-item :recipe-id %)})
-                                      [:body :id])
-                             recipe-ids)]
-    (testing "unsubmitted orders are not moved to in-progess"
+        _ (mapv #(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                           {:auth true :use-other-user true :body (assoc order-item :recipe-id %)})
+                         [:body :id])
+                recipe-ids)]
+    (testing "unsubmitted orders are not moved to in-progress"
       (order-db/accept-orders! db (first recipe-ids))
       (is (every? #(= (:order-item/status %) :status/draft)
                   (order-db/find-all-order-items db order-id))))
