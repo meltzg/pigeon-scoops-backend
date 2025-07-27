@@ -44,8 +44,7 @@
 (deftest recipes-crud-test
   (let [recipe-id (atom nil)
         ingredient-id (atom nil)
-        {:keys [body]} (ts/test-endpoint :post "/v1/groceries" {:auth true :body grocery})
-        grocery-id (:id body)]
+        grocery-id (get-in (ts/test-endpoint :post "/v1/groceries" {:auth true :body grocery}) [:body :id])]
     (testing "create recipe"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})]
         (reset! recipe-id (:id body))

@@ -22,7 +22,7 @@
                      {:jdbc-url jdbc-url}))})
 
 (defmethod ig/init-key :db/postgres [_ {:keys [jdbc-url]}]
-  (println "\n Configured DB")
+  (println "\nConfigured DB")
   (extend-protocol rs/ReadableColumn
     Array
     (read-column-by-label [v _]

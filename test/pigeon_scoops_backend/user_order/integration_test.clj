@@ -1,6 +1,9 @@
 (ns pigeon-scoops-backend.user-order.integration-test
   (:require [clojure.test :refer :all]
-            [pigeon-scoops-backend.test-system :as ts]))
+            [pigeon-scoops-backend.user-order.db :as order-db]
+            [pigeon-scoops-backend.test-system :as ts]
+            [integrant.repl.state :as state])
+  (:import (java.util UUID)))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes :manage-orders :manage-menus))
 
@@ -40,16 +43,13 @@
 (deftest orders-crud-test
   (let [order-id (atom nil)
         order-item-id (atom nil)
-        {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
-        recipe-id (:id body)
-        {:keys [body]} (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe})
-        other-recipe-id (:id body)
+        recipe-id (get-in (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe}) [:body :id])
+        other-recipe-id (get-in (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe}) [:body :id])
         ;; Create an active menu and add the recipe to it
-        {:keys [body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body menu})
-        menu-id (:id body)
-        {:keys [body]} (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
-                                         {:auth true :body {:recipe-id recipe-id}})
-        menu-item-id (:id body)
+        menu-id (get-in (ts/test-endpoint :post "/v1/menus" {:auth true :body menu}) [:body :id])
+        menu-item-id (get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
+                                               {:auth true :body {:recipe-id recipe-id}})
+                             [:body :id])
         _ (ts/test-endpoint :post (str "/v1/menus/" menu-id "/sizes")
                             {:auth true :body {:menu-item-id menu-item-id
                                                :amount       1
@@ -136,3 +136,50 @@
     (testing "delete order"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id) {:auth true})]
         (is (= status 204))))))
+
+(deftest accept-orders!-test
+  (let [db (:db/postgres state/system)
+        recipe-ids (doall (repeatedly 3 #(UUID/fromString (get-in (ts/test-endpoint :post "/v1/recipes" {:auth true :body recipe}) [:body :id]))))
+        ;; Create an active menu and add the recipe to it
+        menu-id (get-in (ts/test-endpoint :post "/v1/menus" {:auth true :body menu}) [:body :id])
+        menu-item-ids (mapv #(get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
+                                                       {:auth true :body {:recipe-id %}})
+                                     [:body :id])
+                           recipe-ids)
+        _ (mapv #(ts/test-endpoint :post (str "/v1/menus/" menu-id "/sizes")
+                                   {:auth true :body {:menu-item-id %
+                                                      :amount       1
+                                                      :amount-unit  :volume/pt}})
+                menu-item-ids)
+        order-id (UUID/fromString (get-in (ts/test-endpoint :post "/v1/orders" {:auth true :body order}) [:body :id]))
+        _ (mapv #(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                           {:auth true :use-other-user true :body (assoc order-item :recipe-id %)})
+                         [:body :id])
+                recipe-ids)]
+    (testing "unsubmitted orders are not moved to in-progress"
+      (order-db/accept-orders! db (first recipe-ids))
+      (is (every? #(= (:order-item/status %) :status/draft)
+                  (order-db/find-all-order-items db order-id))))
+    (testing "submitted orders are moved to in-progress"
+      (ts/test-endpoint :put (str "/v1/orders/" order-id)
+                        {:auth true :use-other-user true :body {:status :status/submitted}})
+      (order-db/accept-orders! db (first recipe-ids))
+      (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
+                                (order-db/find-all-order-items db order-id))]
+        (is (every? #(= (:order-item/status %) :status/in-progress)
+                    (get items true)))
+        (is (every? #(= (:order-item/status %) :status/draft)
+                    (get items false)))))
+    (testing "completed orders are not moved to in-progress"
+      (ts/test-endpoint :put (str "/v1/orders/" order-id)
+                        {:auth true :use-other-user true :body {:status :status/complete}})
+      (order-db/accept-orders! db (first recipe-ids))
+      (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
+                                (order-db/find-all-order-items db order-id))]
+        (is (every? #(= (:order-item/status %) :status/complete)
+                    (get items true)))
+        (is (every? #(= (:order-item/status %) :status/draft)
+                    (get items false)))))))
+
+
+
