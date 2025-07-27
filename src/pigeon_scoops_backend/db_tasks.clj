@@ -40,10 +40,10 @@
                                  (map :menu/id))
               recipes-to-accept (->> (menu-db/find-active-menu-items conn-opts)
                                      (filter #(some (set expired-menus) (:menu-item/menu-id %)))
-                                     (map :menu-item/recipe-id))]
+                                     (mapv :menu-item/recipe-id))]
           (jdbc/with-transaction
             [tx conn-opts]
-            (when recipes-to-accept
+            (when (seq recipes-to-accept)
               (apply (partial order-db/accept-orders! tx) recipes-to-accept))
             (dorun (->> expired-menus
                         (filter :menu/repeats)
