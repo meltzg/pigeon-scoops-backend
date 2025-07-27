@@ -7,7 +7,7 @@
             [pigeon-scoops-backend.config :as config]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.utils :refer [with-connection]])
+            [pigeon-scoops-backend.utils :refer [with-connection end-time]])
   (:import (java.time ZonedDateTime)
            (org.flywaydb.core Flyway)))
 
@@ -44,7 +44,14 @@
           (jdbc/with-transaction
             [tx conn-opts]
             (apply (partial order-db/accept-orders! tx) recipes-to-accept)
-            (dorun (map #(menu-db/update-menu! tx {:id % :active false}) expired-menus))))))))
+            (dorun (->> expired-menus
+                        (filter :menu/repeats)
+                        (map #(menu-db/update-menu! tx {:id % :active false}))))
+            (dorun (->> expired-menus
+                        (remove :menu/repeats)
+                        (map #(menu-db/update-menu! tx {:id %
+                                                        :end-time (end-time (:menu/duration %)
+                                                                            (:menu/duration-type %))}))))))))))
 
 
 
