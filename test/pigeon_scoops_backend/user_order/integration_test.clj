@@ -159,5 +159,27 @@
     (testing "unsubmitted orders are not moved to in-progess"
       (order-db/accept-orders! db (first recipe-ids))
       (is (every? #(= (:order-item/status %) :status/draft)
-                  (order-db/find-all-order-items db order-id))))))
+                  (order-db/find-all-order-items db order-id))))
+    (testing "submitted orders are moved to in-progress"
+      (ts/test-endpoint :put (str "/v1/orders/" order-id)
+                        {:auth true :use-other-user true :body {:status :status/submitted}})
+      (order-db/accept-orders! db (first recipe-ids))
+      (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
+                                (order-db/find-all-order-items db order-id))]
+        (is (every? #(= (:order-item/status %) :status/in-progress)
+                    (get items true)))
+        (is (every? #(= (:order-item/status %) :status/draft)
+                    (get items false)))))
+    (testing "completed orders are not moved to in-progress"
+      (ts/test-endpoint :put (str "/v1/orders/" order-id)
+                        {:auth true :use-other-user true :body {:status :status/complete}})
+      (order-db/accept-orders! db (first recipe-ids))
+      (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
+                                (order-db/find-all-order-items db order-id))]
+        (is (every? #(= (:order-item/status %) :status/complete)
+                    (get items true)))
+        (is (every? #(= (:order-item/status %) :status/draft)
+                    (get items false)))))))
+
+
 
