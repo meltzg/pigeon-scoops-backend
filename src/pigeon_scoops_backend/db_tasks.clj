@@ -43,7 +43,8 @@
                                      (map :menu-item/recipe-id))]
           (jdbc/with-transaction
             [tx conn-opts]
-            (apply (partial order-db/accept-orders! tx) recipes-to-accept)
+            (when recipes-to-accept
+              (apply (partial order-db/accept-orders! tx) recipes-to-accept))
             (dorun (->> expired-menus
                         (filter :menu/repeats)
                         (map #(menu-db/update-menu! tx {:id % :active false}))))
