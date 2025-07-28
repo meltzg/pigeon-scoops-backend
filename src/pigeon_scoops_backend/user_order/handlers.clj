@@ -139,12 +139,21 @@
 
 (defn delete-order-item! [db]
   (fn [request]
-    (let [order-id (-> request :parameters :path :order-id)
-          order-item-id (-> request :parameters :body :id)
-          successful? (order-db/delete-order-item! db {:id order-item-id :order-id order-id})]
-      (if successful?
-        (rr/status 204)
-        (rr/bad-request (-> request :parameters :body))))))
+    (with-connection
+      db
+      (fn [conn-opts]
+        (let [order-id (-> request :parameters :path :order-id)
+              order-item-id (-> request :parameters :body :id)
+              order (order-db/find-order-by-id conn-opts order-id)]
+          (cond
+            (#{:status/complete :status/in-progress} (:user-order/status order))
+            (rr/bad-request {:type    "non-deletable-status"
+                             :message "Cannot delete an order in progress or completed"
+                             :data    (:user-order/status order)})
+            (order-db/delete-order-item! conn-opts {:id order-item-id :order-id order-id})
+            (rr/status 204)
+            :else
+            (rr/bad-request (-> request :parameters :body))))))))
 
 (defn retrieve-order-bom [db]
   (fn [request]
