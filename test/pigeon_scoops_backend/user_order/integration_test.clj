@@ -1,8 +1,9 @@
 (ns pigeon-scoops-backend.user-order.integration-test
   (:require [clojure.test :refer :all]
-            [pigeon-scoops-backend.user-order.db :as order-db]
+            [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
-            [integrant.repl.state :as state])
+            [pigeon-scoops-backend.user-order.db :as order-db]
+            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]])
   (:import (java.util UUID)))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes :manage-orders :manage-menus))
@@ -84,13 +85,15 @@
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item
                                                                    :id @order-item-id
-                                                                   :recipe-id other-recipe-id)})]
+                                                                   :recipe-id other-recipe-id
+                                                                   :status :status/in-progress)})]
         (is (= status 204))))
     (testing "recipe owner can update order-item for an invalid size"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items")
                                                {:auth true :body (assoc order-item
                                                                    :id @order-item-id
                                                                    :recipe-id recipe-id
+                                                                   :status :status/in-progress
                                                                    :amount-unit :volume/c)})]
         (is (= status 204))))
     (let [{:keys [body]} (ts/test-endpoint :post "/v1/orders" {:auth true :use-other-user true :body order})
@@ -117,12 +120,14 @@
         (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
                                                  {:auth true :use-other-user true :body (assoc order-item
                                                                                           :id @order-item-id
+                                                                                          :status :status/in-progress
                                                                                           :recipe-id other-recipe-id)})]
           (is (= status 400))))
       (testing "other user cannot update order-item for an invalid size"
         (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
                                                  {:auth true :use-other-user true :body (assoc order-item
                                                                                           :id @order-item-id
+                                                                                          :status :status/in-progress
                                                                                           :recipe-id recipe-id
                                                                                           :amount-unit :volume/c)})]
           (is (= status 400)))))
@@ -130,9 +135,21 @@
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/orders/" @order-id "/bom")
                                                {:auth true})]
         (is (= status 200))))
-    (testing "delete order-item"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items") {:auth true :body {:id @order-item-id}})]
-        (is (= status 204))))
+    (testing "can only delete order item that are not in a terminal state"
+      (mapv #(let [order-item-id (-> (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
+                                                       {:auth true :body (assoc order-item :recipe-id recipe-id)})
+                                     :body
+                                     :id)
+                   _ (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items")
+                                       {:auth true :body (assoc order-item
+                                                           :recipe-id recipe-id
+                                                           :id order-item-id
+                                                           :status %)})
+                   {:keys [body status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items") {:auth true :body {:id order-item-id}})]
+               (if-not (terminal? %)
+                 (is (= status 204))
+                 (is (= status 400))))
+            status))
     (testing "delete order"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id) {:auth true})]
         (is (= status 204))))))
@@ -145,7 +162,7 @@
         menu-item-ids (mapv #(get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
                                                        {:auth true :body {:recipe-id %}})
                                      [:body :id])
-                           recipe-ids)
+                            recipe-ids)
         _ (mapv #(ts/test-endpoint :post (str "/v1/menus/" menu-id "/sizes")
                                    {:auth true :body {:menu-item-id %
                                                       :amount       1
@@ -162,7 +179,7 @@
                   (order-db/find-all-order-items db order-id))))
     (testing "submitted orders are moved to in-progress"
       (ts/test-endpoint :put (str "/v1/orders/" order-id)
-                        {:auth true :use-other-user true :body {:status :status/submitted}})
+                        {:auth true :use-other-user true :body {:status :status/submitted :note "foo"}})
       (order-db/accept-orders! db (first recipe-ids))
       (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
                                 (order-db/find-all-order-items db order-id))]
@@ -172,7 +189,7 @@
                     (get items false)))))
     (testing "completed orders are not moved to in-progress"
       (ts/test-endpoint :put (str "/v1/orders/" order-id)
-                        {:auth true :use-other-user true :body {:status :status/complete}})
+                        {:auth true :use-other-user true :body {:status :status/complete :note "foo"}})
       (order-db/accept-orders! db (first recipe-ids))
       (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
                                 (order-db/find-all-order-items db order-id))]

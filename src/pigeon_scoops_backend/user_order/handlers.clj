@@ -7,6 +7,7 @@
             [pigeon-scoops-backend.responses :as responses]
             [pigeon-scoops-backend.units.common :as units]
             [pigeon-scoops-backend.user-order.db :as order-db]
+            [pigeon-scoops-backend.user-order.responses :refer [terminal?]]
             [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
@@ -144,12 +145,12 @@
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
               order-item-id (-> request :parameters :body :id)
-              order (order-db/find-order-by-id conn-opts order-id)]
+              order-item (order-db/find-order-item-by-id conn-opts order-item-id)]
           (cond
-            (#{:status/complete :status/in-progress} (:user-order/status order))
+            (terminal? (:order-item/status order-item))
             (rr/bad-request {:type    "non-deletable-status"
-                             :message "Cannot delete an order in progress or completed"
-                             :data    (:user-order/status order)})
+                             :message (str "Cannot delete an order item in a terminal state. " (:user-order/status order-item) " is not terminal")
+                             :data    (:user-order/status order-item)})
             (order-db/delete-order-item! conn-opts {:id order-item-id :order-id order-id})
             (rr/status 204)
             :else
