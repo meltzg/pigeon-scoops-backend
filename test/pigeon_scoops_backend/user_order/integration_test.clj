@@ -150,9 +150,18 @@
                  (is (= status 204))
                  (is (= status 400))))
             status))
-    (testing "delete order"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id) {:auth true})]
-        (is (= status 204))))))
+    (testing "can only delete order that are not in a terminal state"
+      (mapv #(let [order-id (-> (ts/test-endpoint :post "/v1/orders" {:auth true :body order})
+                                :body
+                                :id)
+                   _ (ts/test-endpoint :put (str "/v1/orders/" order-id)
+                                       {:auth true :body (assoc order
+                                                           :status %)})
+                   {:keys [body status]} (ts/test-endpoint :delete (str "/v1/orders/" order-id) {:auth true})]
+               (if-not (terminal? %)
+                 (is (= status 204))
+                 (is (= status 400))))
+            status))))
 
 (deftest accept-orders!-test
   (let [db (:db/postgres state/system)
