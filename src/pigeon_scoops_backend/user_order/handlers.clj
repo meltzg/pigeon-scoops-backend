@@ -7,6 +7,7 @@
             [pigeon-scoops-backend.responses :as responses]
             [pigeon-scoops-backend.units.common :as units]
             [pigeon-scoops-backend.user-order.db :as order-db]
+            [pigeon-scoops-backend.user-order.responses :refer [terminal?]]
             [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
@@ -51,13 +52,22 @@
 
 (defn delete-order! [db]
   (fn [request]
-    (let [order-id (-> request :parameters :path :order-id)
-          successful? (order-db/delete-order! db order-id)]
-      (if successful?
-        (rr/status 204)
-        (rr/not-found {:type    "order-not-found"
-                       :message "order not found"
-                       :data    (str "order-id " order-id)})))))
+    (with-connection
+      db
+      (fn [conn-opts]
+        (let [order-id (-> request :parameters :path :order-id)
+              order-status (->> order-id
+                                (order-db/find-order-by-id conn-opts)
+                                :user-order/status)]
+          (cond
+            (terminal? order-status)
+            (rr/bad-request {:type    "non-deletable-status"
+                             :message (str "Cannot delete an order in a terminal state. " order-status " is not terminal")
+                             :data    (:user-order/status order-status)})
+            (order-db/delete-order! conn-opts order-id)
+            (rr/status 204)
+            :else
+            (rr/bad-request (-> request :parameters :body))))))))
 
 (defn create-order-item! [db]
   (fn [request]
@@ -139,12 +149,23 @@
 
 (defn delete-order-item! [db]
   (fn [request]
-    (let [order-id (-> request :parameters :path :order-id)
-          order-item-id (-> request :parameters :body :id)
-          successful? (order-db/delete-order-item! db {:id order-item-id :order-id order-id})]
-      (if successful?
-        (rr/status 204)
-        (rr/bad-request (-> request :parameters :body))))))
+    (with-connection
+      db
+      (fn [conn-opts]
+        (let [order-id (-> request :parameters :path :order-id)
+              order-item-id (-> request :parameters :body :id)
+              order-item-status (->> order-item-id
+                                     (order-db/find-order-item-by-id conn-opts)
+                                     :order-item/status)]
+          (cond
+            (terminal? order-item-status)
+            (rr/bad-request {:type    "non-deletable-status"
+                             :message (str "Cannot delete an order item in a terminal state. " order-item-status " is not terminal")
+                             :data    order-item-status})
+            (order-db/delete-order-item! conn-opts {:id order-item-id :order-id order-id})
+            (rr/status 204)
+            :else
+            (rr/bad-request (-> request :parameters :body))))))))
 
 (defn retrieve-order-bom [db]
   (fn [request]

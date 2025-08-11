@@ -11,6 +11,9 @@
     :status/in-progress
     :status/complete})
 
+(defn terminal? [s]
+  (#{:status/complete :status/in-progress} s))
+
 (def order-item
   {:order-item/id                   uuid?
    :order-item/recipe-id            uuid?
@@ -29,3 +32,6 @@
    :user-order/user-id        string?
    :user-order/status         (s/and keyword? status)
    (ds/opt :user-order/items) [order-item]})
+
+(comment
+  (terminal? :status/complete))

@@ -7,7 +7,7 @@
             [pigeon-scoops-backend.config :as config]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.utils :refer [with-connection end-time]])
+            [pigeon-scoops-backend.utils :refer [end-time with-connection]])
   (:import (java.time ZonedDateTime)
            (org.flywaydb.core Flyway)))
 
@@ -50,7 +50,7 @@
                         (map #(menu-db/update-menu! tx {:id % :active false}))))
             (dorun (->> expired-menus
                         (remove :menu/repeats)
-                        (map #(menu-db/update-menu! tx {:id %
+                        (map #(menu-db/update-menu! tx {:id       %
                                                         :end-time (end-time (:menu/duration %)
                                                                             (:menu/duration-type %))}))))))))))
 

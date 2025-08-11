@@ -36,6 +36,11 @@
                  (apply-db-str->keyword :user-order/amount-unit :user-order/status)
                  (assoc :user-order/items items)))))))
 
+(defn find-order-item-by-id [db order-item-id]
+  (-> (sql/find-by-keys db :order-item {:id order-item-id})
+      (first)
+      (apply-db-str->keyword :order-item/status :order-item/amount-unit)))
+
 (defn insert-order! [db order]
   (sql/insert! db :user-order (apply-keyword->db-str order :amount-unit :status)))
 
