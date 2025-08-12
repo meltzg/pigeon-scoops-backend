@@ -145,7 +145,7 @@
                                                            :recipe-id recipe-id
                                                            :id order-item-id
                                                            :status %)})
-                   {:keys [body status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items") {:auth true :body {:id order-item-id}})]
+                   {:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items") {:auth true :body {:id order-item-id}})]
                (if-not (terminal? %)
                  (is (= status 204))
                  (is (= status 400))))
@@ -157,7 +157,7 @@
                    _ (ts/test-endpoint :put (str "/v1/orders/" order-id)
                                        {:auth true :body (assoc order
                                                            :status %)})
-                   {:keys [body status]} (ts/test-endpoint :delete (str "/v1/orders/" order-id) {:auth true})]
+                   {:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" order-id) {:auth true})]
                (if-not (terminal? %)
                  (is (= status 204))
                  (is (= status 400))))
@@ -190,7 +190,7 @@
       (ts/test-endpoint :put (str "/v1/orders/" order-id)
                         {:auth true :use-other-user true :body {:status :status/submitted :note "foo"}})
       (order-db/accept-orders! db (first recipe-ids))
-      (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
+      (let [items (partition-by #(= (:order-item/recipe-id %) (first recipe-ids))
                                 (order-db/find-all-order-items db order-id))]
         (is (every? #(= (:order-item/status %) :status/in-progress)
                     (get items true)))
@@ -200,7 +200,7 @@
       (ts/test-endpoint :put (str "/v1/orders/" order-id)
                         {:auth true :use-other-user true :body {:status :status/complete :note "foo"}})
       (order-db/accept-orders! db (first recipe-ids))
-      (let [items (partition-by #(= (:order-item/recipe-id) (first recipe-ids))
+      (let [items (partition-by #(= (:order-item/recipe-id %) (first recipe-ids))
                                 (order-db/find-all-order-items db order-id))]
         (is (every? #(= (:order-item/status %) :status/complete)
                     (get items true)))

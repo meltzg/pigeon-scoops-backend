@@ -13,9 +13,9 @@
     (let [{:keys [status]} (ts/test-endpoint :post "/v1/account" {:auth true})]
       (is (= status 204))))
   (testing "Update user role"
-    (let [{:keys [status] :as resp} (ts/test-endpoint :put (str "/v1/account/" (URLEncoder/encode ^String (:uid (first @ts/test-users)) "UTF-8"))
-                                                      {:auth true
-                                                       :body {:roles [:manage-recipes :manage-groceries]}})]
+    (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/account/" (URLEncoder/encode ^String (:uid (first @ts/test-users)) "UTF-8"))
+                                             {:auth true
+                                              :body {:roles [:manage-recipes :manage-groceries]}})]
       (is (= status 204))))
   (testing "Delete user account"
     (let [{:keys [status]} (ts/test-endpoint :delete "/v1/account" {:auth true})]

@@ -13,11 +13,11 @@
                  [clj-http "3.13.1"]
                  [ovotech/ring-jwt "2.3.0"]
                  [camel-snake-kebab "0.4.3"]
-                 [com.zaxxer/HikariCP "6.3.1"]
-                 [org.flywaydb/flyway-database-postgresql "11.10.3"]
+                 [com.zaxxer/HikariCP "7.0.1"]
+                 [org.flywaydb/flyway-database-postgresql "11.11.0"]
                  [ring-cors "0.1.13"]
                  [ring/ring-codec "1.3.0"]
-                 [com.github.seancorfield/honeysql "2.7.1310"]
+                 [com.github.seancorfield/honeysql "2.7.1340"]
                  [org.clojure/tools.cli "1.1.230"]
 
                  ;; Logging
@@ -35,7 +35,7 @@
              :dev     {:source-paths   ["dev/src"
                                         "test"]
                        :resource-paths ["dev/resources"]
-                       :dependencies   [[ring/ring-mock "0.6.1"]
+                       :dependencies   [[ring/ring-mock "0.6.2"]
                                         [integrant/repl "0.4.0"]
                                         [org.testcontainers/postgresql "1.21.3"]]}}
   :uberjar-name "pigeon-scoops.jar")
