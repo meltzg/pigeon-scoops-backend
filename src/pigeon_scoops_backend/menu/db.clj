@@ -44,14 +44,12 @@
    (with-connection
      db
      (fn [conn-opts]
-       (let [menus (sql/find-by-keys
-                     conn-opts
-                     :menu
-                     (if include-inactive? :all {:active true}))
-             menu-items (when (seq menus) (apply (partial find-menu-items conn-opts) (map :menu/id menus)))]
-         (->> menus
-              (map #(assoc % :menu/items (get menu-items (:menu/id %))))
-              (map #(apply-db-str->keyword % :menu/duration-type))))))))
+       (->> (sql/find-by-keys
+              conn-opts
+              :menu
+              (if include-inactive? :all {:active true}))
+            (map #(apply-db-str->keyword % :menu/duration-type)))))))
+
 
 
 (defn insert-menu! [db menu]
