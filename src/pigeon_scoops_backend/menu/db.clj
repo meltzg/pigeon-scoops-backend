@@ -76,8 +76,8 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn delete-menu! [db menu]
-  (-> (sql/delete! db :menu menu)
+(defn delete-menu! [db menu-id]
+  (-> (sql/update! db :menu {:deleted true} {:id menu-id})
       ::jdbc/update-count
       (pos?)))
 

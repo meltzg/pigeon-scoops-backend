@@ -11,6 +11,8 @@
             [muuntaja.core :as m]
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.config :as config]
+            [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock])
   (:import (java.sql Timestamp)
            (java.util UUID)
@@ -210,6 +212,15 @@
                              (.withUsername "user")
                              (.withPassword "password")
                              (.start))))
+    (let [task-system (-> "resources/db-task-config.edn"
+                          (config/load-config)
+                          (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
+                                                                  "&user=" (.getUsername @db-container)
+                                                                  "&password=" (.getPassword @db-container)))
+                          (config/init-system))
+          migration-task (:tasks/migration task-system)]
+      (migration-task)
+      (ig/halt! task-system))
     (-> "dev/resources/server-config.edn"
         slurp
         ig/read-string
