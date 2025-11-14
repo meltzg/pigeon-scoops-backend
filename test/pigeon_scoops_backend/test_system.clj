@@ -64,39 +64,38 @@
     (cond state/system
           (f)
           port
-          (do
-            (let [postgres-container
-                  (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
-                    (.withDatabaseName "test_db")
-                    (.withUsername "user")
-                    (.withPassword "password")
-                    (.start))
-                  full-uri (str (.getJdbcUrl postgres-container)
-                                "&user=" (.getUsername postgres-container)
-                                "&password=" (.getPassword postgres-container))]
-              (ig-repl/set-prep!
-                (fn []
-                  (let [task-system (-> "resources/db-task-config.edn"
-                                        (config/load-config)
-                                        (assoc-in [:db/postgres :jdbc-url] full-uri)
-                                        (config/init-system))
-                        migration-task (:tasks/migration task-system)]
-                    (migration-task)
-                    (ig/halt! task-system)
-                    (-> (if (env :ci-env)
-                          "resources/server-config.edn"
-                          "dev/resources/server-config.edn")
-                        (config/load-config)
-                        (assoc-in [:db/postgres :jdbc-url] full-uri)
-                        (assoc-in [:server/jetty :port] port)
-                        (ig/expand)))))
-              (ig-repl/go)
-              (try
-                (f)
-                (catch Exception e
-                  (println "FATAL" e)))
-              (ig-repl/halt)
-              (.stop postgres-container)))
+          (let [postgres-container
+                (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
+                  (.withDatabaseName "test_db")
+                  (.withUsername "user")
+                  (.withPassword "password")
+                  (.start))
+                full-uri (str (.getJdbcUrl postgres-container)
+                              "&user=" (.getUsername postgres-container)
+                              "&password=" (.getPassword postgres-container))]
+            (ig-repl/set-prep!
+              (fn []
+                (let [task-system (-> "resources/db-task-config.edn"
+                                      (config/load-config)
+                                      (assoc-in [:db/postgres :jdbc-url] full-uri)
+                                      (config/init-system))
+                      migration-task (:tasks/migration task-system)]
+                  (migration-task)
+                  (ig/halt! task-system)
+                  (-> (if (env :ci-env)
+                        "resources/server-config.edn"
+                        "dev/resources/server-config.edn")
+                      (config/load-config)
+                      (assoc-in [:db/postgres :jdbc-url] full-uri)
+                      (assoc-in [:server/jetty :port] port)
+                      (ig/expand)))))
+            (ig-repl/go)
+            (try
+              (f)
+              (catch Exception e
+                (println "FATAL" e)))
+            (ig-repl/halt)
+            (.stop postgres-container))
           :else
           (throw (RuntimeException. "No available port")))))
 
