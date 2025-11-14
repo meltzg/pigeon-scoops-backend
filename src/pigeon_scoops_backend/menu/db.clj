@@ -39,15 +39,22 @@
 
 (defn find-all-menus
   ([db]
-   (find-all-menus db false))
+   (find-all-menus db false false))
   ([db include-inactive?]
+   (find-all-menus db include-inactive? false))
+  ([db include-inactive? include-deleted?]
    (with-connection
      db
      (fn [conn-opts]
        (->> (sql/find-by-keys
               conn-opts
               :menu
-              (if include-inactive? :all {:active true}))
+              (if
+                (and include-inactive? include-deleted?)
+                :all
+                (cond-> {}
+                        (not include-inactive?) (assoc :active true)
+                        (not include-deleted?) (assoc :deleted false))))
             (map #(apply-db-str->keyword % :menu/duration-type)))))))
 
 
