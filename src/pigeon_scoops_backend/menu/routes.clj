@@ -5,7 +5,8 @@
             [pigeon-scoops-backend.middleware :as mw]
             [pigeon-scoops-backend.units.common :as common]
             [pigeon-scoops-backend.units.mass :as mass]
-            [pigeon-scoops-backend.units.volume :as volume]))
+            [pigeon-scoops-backend.units.volume :as volume]
+            [spec-tools.data-spec :as ds]))
 
 (defn routes [{db :jdbc-url}]
   ["/menus" {:swagger    {:tags ["menus"]}
@@ -15,12 +16,12 @@
                :summary   "list of menus"}
         :post {:handler    (menu/create-menu! db)
                :middleware [[(mw/wrap-with-permission :create/menu)]]
-               :parameters {:body {:name          string?
-                                   :repeats       boolean?
-                                   :active        boolean?
-                                   :duration      number?
-                                   :duration-type (s/and keyword?
-                                                         responses/durations)}}
+               :parameters {:body {:name             string?
+                                   (ds/opt :repeats) boolean?
+                                   (ds/opt :active)  boolean?
+                                   :duration         number?
+                                   :duration-type    (s/and keyword?
+                                                            responses/durations)}}
                :summary    "create menu"}}]
    ["/:menu-id" {:parameters {:path {:menu-id uuid?}}}
     ["" {:get    {:handler   (menu/retrieve-menu db)
