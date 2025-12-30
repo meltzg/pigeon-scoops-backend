@@ -32,6 +32,3 @@
    :user-order/user-id        string?
    :user-order/status         (s/and keyword? status)
    (ds/opt :user-order/items) [order-item]})
-
-(comment
-  (terminal? :status/complete))
