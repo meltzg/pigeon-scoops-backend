@@ -9,7 +9,7 @@
             [spec-tools.data-spec :as ds]))
 
 (defn routes [{db :jdbc-url}]
-  ["/groceries" {:swagger    {:tags ["groceries"]}
+  ["/groceries" {:openapi    {:tags ["groceries"]}
                  :middleware [[mw/wrap-auth0]]}
    ["" {:get  {:handler    (grocery/list-all-groceries db)
                :middleware [[(mw/wrap-with-permission :view/grocery)]]
