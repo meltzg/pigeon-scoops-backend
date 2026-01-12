@@ -3,19 +3,15 @@
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [honey.sql :as hsql]
-            [honey.sql.helpers :as h]
             [integrant.core :as ig]
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
-            [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.auth0 :as auth0]
             [pigeon-scoops-backend.config :as config]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock])
-  (:import (java.sql Timestamp)
-           (java.util UUID)
+  (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
 (def user-config "dev/resources/test-user.edn")
@@ -245,103 +241,6 @@
   (map #(auth0/delete-user! (:auth/auth0 state/system) (:user_id %))
        (filter #(str/starts-with? (:email %) "integration-test")
                (auth0/get-users (:auth/auth0 state/system))))
-  (sql/query (:db/postgres state/system) ["SELECT ingredient.*, recipe.name, grocery.name
-                                           FROM ingredient
-                                           LEFT JOIN recipe ON ingredient.ingredient_recipe_id = recipe.id
-                                           LEFT JOIN grocery ON ingredient.ingredient_grocery_id = grocery.id
-                                           WHERE ingredient.recipe_id = (?);"
-                                          #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
-  (sql/query (:db/postgres state/system) ["SELECT *
-                                           FROM ingredient
-                                           WHERE recipe_id = (?);"
-                                          #uuid"93509207-f5b1-4996-9d51-e39f328c7371"])
-  (let [user (sql/insert! (:db/postgres state/system) :account {:id   (str (UUID/randomUUID))
-                                                                :name "greg"})
-
-        chocolate (sql/insert! (:db/postgres state/system) :recipe {:id           (UUID/randomUUID)
-                                                                    :name         "chocolate"
-                                                                    :public       true
-                                                                    :amount       3
-                                                                    :amount-unit  "cup"
-                                                                    :user-id      (:account/id user)
-                                                                    :instructions (into-array String [])})
-        vanilla (sql/insert! (:db/postgres state/system) :recipe {:id           (UUID/randomUUID)
-                                                                  :name         "vanilla"
-                                                                  :public       true
-                                                                  :amount       3
-                                                                  :amount-unit  "cup"
-                                                                  :user-id      (:account/id user)
-                                                                  :instructions (into-array String [])})
-        inactive-menu (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
-                                                                      :name          "food"
-                                                                      :duration      4
-                                                                      :duration-type "day"
-                                                                      :end-time      (Timestamp/from (java.time.Instant/now))})
-        active-menu (sql/insert! (:db/postgres state/system) :menu {:id            (UUID/randomUUID)
-                                                                    :name          "food"
-                                                                    :active        true
-                                                                    :duration      4
-                                                                    :duration-type "day"
-                                                                    :end-time      (Timestamp/from (java.time.Instant/now))})
-        inactive-item (sql/insert! (:db/postgres state/system) :menu-item {:id        (UUID/randomUUID)
-                                                                           :menu-id   (:menu/id inactive-menu)
-                                                                           :recipe-id (:recipe/id chocolate)})
-        active-item (sql/insert! (:db/postgres state/system) :menu-item {:id        (UUID/randomUUID)
-                                                                         :menu-id   (:menu/id active-menu)
-                                                                         :recipe-id (:recipe/id vanilla)})
-        inactive-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id           (UUID/randomUUID)
-                                                                                        :menu-id      (:menu/id inactive-menu)
-                                                                                        :menu-item-id (:menu-item/id inactive-item)
-                                                                                        :amount       %
-                                                                                        :amount-unit  "cup"})
-                             (range 1 4))
-        active-sizes (mapv #(sql/insert! (:db/postgres state/system) :menu-item-size {:id           (UUID/randomUUID)
-                                                                                      :menu-id      (:menu/id active-menu)
-                                                                                      :menu-item-id (:menu-item/id active-item)
-                                                                                      :amount       %
-                                                                                      :amount-unit  "cup"})
-                           (range 1 4))]
-    (sql/query (:db/postgres state/system) (-> (h/select :menu-item-size/*)
-                                               (h/from :menu-item-size)
-                                               (h/join :menu [:= :menu/id :menu-item-size/menu-id])
-                                               (h/where [:= :menu/active true])
-                                               (hsql/format))))
-
-  (ig-repl/go)
-  (sql/find-by-keys (:db/postgres state/system) :menu :all)
-  @token
-  (make-test-user)
-  (load-test-user)
-  (let [recipe-id (-> (make-request :get "/v1/recipes" {:auth true})
-                      :body
-                      :private
-                      (first)
-                      (:recipe/id))
-        menu-id (-> (make-request :post "/v1/menus" {:auth true
-                                                     :body {:name          "foobar"
-                                                            :repeats       false
-                                                            :active        true
-                                                            :duration      4
-                                                            :duration-type :duration/day}})
-                    :body
-                    :id)
-        menu-item-id (-> (make-request
-                           :post
-                           (str "/v1/menus/" menu-id "/items")
-                           {:auth true
-                            :body {:recipe-id recipe-id}})
-                         :body
-                         :id)
-        menu (-> (make-request :get (str "/v1/menus") {:auth true})
-                 :body
-                 :id)]
-
-
-    [recipe-id menu-id menu-item-id menu])
-  (str (.getJdbcUrl @db-container)
-       "&user=" (.getUsername @db-container)
-       "&password=" (.getPassword @db-container))
-  (init-app)
   (go)
   (halt)
   (reset)

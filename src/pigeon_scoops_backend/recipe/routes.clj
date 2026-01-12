@@ -17,7 +17,7 @@
   (mw/wrap-owner :recipe-id :recipe/public :recipe recipe-db/find-recipe-by-id))
 
 (defn routes [{db :jdbc-url}]
-  ["/recipes" {:swagger    {:tags ["recipes"]}
+  ["/recipes" {:openapi    {:tags ["recipes"]}
                :middleware [[mw/wrap-auth0]]}
    ["" {:get  {:handler   (recipe/list-all-recipes db)
                :responses {200 {:body responses/recipes}}

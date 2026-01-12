@@ -8,7 +8,7 @@
   (mw/wrap-with-permission :edit/role))
 
 (defn routes [{:keys [auth] db :jdbc-url}]
-  ["/account" {:swagger    {:tags ["account"]}
+  ["/account" {:openapi    {:tags ["account"]}
                :middleware [[mw/wrap-auth0]]}
    ["" {:post   {:handler   (account/create-account! db)
                  :responses {201 {:body nil?}}

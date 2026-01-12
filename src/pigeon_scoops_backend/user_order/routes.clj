@@ -10,7 +10,7 @@
             [pigeon-scoops-backend.user-order.responses :as responses]))
 
 (defn routes [{db :jdbc-url}]
-  ["/orders" {:swagger    {:tags ["orders"]}
+  ["/orders" {:openapi    {:tags ["orders"]}
               :middleware [[mw/wrap-auth0]]}
    ["" {:get  {:handler   (order/list-all-orders db)
                :responses {200 {:body [responses/order]}}

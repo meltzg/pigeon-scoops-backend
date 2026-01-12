@@ -4,7 +4,7 @@
             [pigeon-scoops-backend.util-api.responses :as responses]))
 
 (defn routes []
-  ["" {:swagger    {:tags ["utilities"]}
+  ["" {:openapi    {:tags ["utilities"]}
        :middleware [[mw/wrap-auth0]]}
    ["/constants" {:get {:handler   (util-api/get-constants)
                         :responses {200 {:body responses/constants}}

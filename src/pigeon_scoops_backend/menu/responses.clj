@@ -21,8 +21,8 @@
 (def menu
   {:menu/id                uuid?
    :menu/name              string?
-   :menu/repeats           boolean?
-   :menu/active            boolean?
+   (ds/opt :menu/repeats)  boolean?
+   (ds/opt :menu/active)   boolean?
    :menu/duration          number?
    :menu/duration-type     keyword?
    (ds/opt :menu/items)    [menu-item]

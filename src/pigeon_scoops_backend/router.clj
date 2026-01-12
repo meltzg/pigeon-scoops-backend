@@ -9,6 +9,7 @@
             [pigeon-scoops-backend.util-api.routes :as util-api]
             [reitit.coercion.spec :as coercion-spec]
             [reitit.dev.pretty :as pretty]
+            [reitit.openapi :as openapi]
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
             [reitit.ring.middleware.exception :as exception]
@@ -38,27 +39,23 @@
                             coercion/coerce-response-middleware
                             mw/wrap-remove-nil-keys]}})
 
-(def swagger-docs
-  ["/swagger.json"
-   {:get
-    {:no-doc  true
-     :swagger {:basePath            "/"
-               :info                {:title       "Pigeon Scoops Backend Reference"
-                                     :description "The Pigeon Scoops Backend API is organized around REST. Returns JSON, Transit (msgpack, json), or EDN  encoded responses."
-                                     :version     "1.0.0"}
-               :securityDefinitions {:BearerAuth
-                                     {:type        "apiKey"
-                                      :name        "Authorization"
-                                      :in          "header"
-                                      :description "Token must be prepended with \"Bearer \""}}}
-     :handler (swagger/create-swagger-handler)}}])
+(def openapi-docs
+  ["/openapi.json"
+   {:get {:no-doc  true
+          :openapi {:info       {:title       "Pigeon Scoops Backend Reference"
+                                 :description "The Pigeon Scoops Backend API is organized around REST. Returns JSON, Transit (msgpack, json), or EDN  encoded responses."
+                                 :version     "1.0.0"}
+                    :components {:securitySchemes {"auth" {:type         :http
+                                                           :scheme       :bearer
+                                                           :bearerFormat "JWT"}}}}
+          :handler (openapi/create-openapi-handler)}}])
 
 (defn routes [env]
   (ring/ring-handler
     (ring/router
-      [swagger-docs
+      [openapi-docs
        ["/v1"
-        {:swagger {:security [{:BearerAuth []}]}}
+        {:openapi {:security [{"auth" []}]}}
         (grocery/routes env)
         (recipe/routes env)
         (menu/routes env)
@@ -67,4 +64,9 @@
         (account/routes env)]]
       router-config)
     (ring/routes
-      (swagger-ui/create-swagger-ui-handler {:path "/"}))))
+      (swagger-ui/create-swagger-ui-handler
+        {:path   "/"
+         :config {:validatorUrl     nil
+                  :urls             [{:name "openapi", :url "openapi.json"}]
+                  :urls.primaryName "openapi"
+                  :operationsSorter "alpha"}}))))
