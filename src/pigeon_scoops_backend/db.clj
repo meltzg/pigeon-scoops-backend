@@ -1,4 +1,4 @@
-(ns pigeon-scoops-backend.config
+(ns pigeon-scoops-backend.db
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
             [next.jdbc :as jdbc]

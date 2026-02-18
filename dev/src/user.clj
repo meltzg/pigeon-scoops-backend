@@ -8,7 +8,7 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
-            [pigeon-scoops-backend.config :as config]
+            [pigeon-scoops-backend.db :as db]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock])
   (:import (java.util UUID)
@@ -37,7 +37,7 @@
   ([method uri]
    (make-request method uri nil))
   ([method uri opts]
-   (let [app (-> state/system :pigeon-scoops-backend/app)
+   (let [app (-> state/system :server/routes)
          auth (-> state/system :auth/auth0)
          response (app (-> (mock/request method uri)
                            (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-token (conj auth @test-user)))))
@@ -209,12 +209,12 @@
                              (.withPassword "password")
                              (.start))))
     (let [task-system (-> "resources/db-task-config.edn"
-                          (config/load-config)
+                          (db/load-config)
                           (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
                                                                   "&user=" (.getUsername @db-container)
                                                                   "&password=" (.getPassword @db-container)))
-                          (config/init-system))
-          migration-task (:tasks/migration task-system)]
+                          (db/init-system))
+          migration-task (:db-tasks/migration task-system)]
       (migration-task)
       (ig/halt! task-system))
     (-> "dev/resources/server-config.edn"
@@ -225,9 +225,12 @@
                                                 "&password=" (.getPassword @db-container)))
         (ig/expand))))
 
-(defn go []
-  (ig-repl/go)
-  (init-app))
+(defn go
+  ([]
+   (go true))
+  ([init-db?]
+   (ig-repl/go)
+   (when init-db? (init-app))))
 (defn halt []
   (ig-repl/halt))
 (defn reset []
@@ -242,6 +245,7 @@
        (filter #(str/starts-with? (:email %) "integration-test")
                (auth0/get-users (:auth/auth0 state/system))))
   (go)
+  (go false)
   (halt)
   (reset)
   (reset-all))

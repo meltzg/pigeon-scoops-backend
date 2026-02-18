@@ -4,7 +4,7 @@
             [clojure.tools.cli :as cli]
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
-            [pigeon-scoops-backend.config :as config]
+            [pigeon-scoops-backend.db :as config]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.utils :refer [end-time with-connection]])
@@ -19,7 +19,7 @@
     :parse-fn keyword]])
 
 
-(defmethod ig/init-key :tasks/migration [_ {:keys [jdbc-url]}]
+(defmethod ig/init-key :db-tasks/migration [_ {:keys [jdbc-url]}]
   (fn []
     (println "\nMigrating database")
     (-> (Flyway/configure)
@@ -29,7 +29,7 @@
         (.migrate))))
 
 
-(defmethod ig/init-key :tasks/accept-orders [_ {:keys [jdbc-url]}]
+(defmethod ig/init-key :db-tasks/accept-orders [_ {:keys [jdbc-url]}]
   (fn []
     (println "\nAccepting orders on expired menus")
     (with-connection
