@@ -7,7 +7,7 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth0 :as auth0]
-            [pigeon-scoops-backend.config :as config]
+            [pigeon-scoops-backend.db :as config]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock])
   (:import (java.net Socket)
@@ -35,7 +35,7 @@
   ([method uri]
    (test-endpoint method uri nil))
   ([method uri opts]
-   (let [app (-> state/system :pigeon-scoops-backend/app)
+   (let [app (-> state/system :server/routes)
          auth (-> state/system :auth/auth0)
          token (or (if (:use-other-user opts) (second @tokens) (first @tokens))
                    (if (:use-other-user opts) (get-test-token (conj auth (second @test-users)))
@@ -59,6 +59,19 @@
 (defn find-next-available-port [ports]
   (first (filter port-available? ports)))
 
+(defn strict-fixture [{:keys [setup teardown msg]}]
+  (fn [f]
+    (try
+      (when setup (setup))
+      (try
+        (f)
+        (finally
+          (when teardown (teardown))))
+      (catch Throwable t
+        (do-report {:type :error :message msg :expected nil :actual t})
+        (throw t)))))
+
+
 (defn system-fixture [f]
   (let [port (find-next-available-port (range 3000 4000))]
     (cond state/system
@@ -79,7 +92,7 @@
                                       (config/load-config)
                                       (assoc-in [:db/postgres :jdbc-url] full-uri)
                                       (config/init-system))
-                      migration-task (:tasks/migration task-system)]
+                      migration-task (:db-tasks/migration task-system)]
                   (migration-task)
                   (ig/halt! task-system)
                   (-> (if (env :ci-env)
@@ -93,9 +106,10 @@
             (try
               (f)
               (catch Exception e
-                (println "FATAL" e)))
-            (ig-repl/halt)
-            (.stop postgres-container))
+                (println "FATAL" e))
+              (finally
+                (ig-repl/halt)
+                (.stop postgres-container))))
           :else
           (throw (RuntimeException. "No available port")))))
 
@@ -103,28 +117,30 @@
   ([]
    (make-account-fixture true))
   ([manage-user?]
-   (fn [f]
-     (let [auth (:auth/auth0 state/system)
-           usernames (repeatedly 2 #(str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com"))
-           passwords (repeatedly 2 #(str (UUID/randomUUID)))
-           create-responses (map #(auth0/create-user! auth
-                                                      {:connection "Username-Password-Authentication"
-                                                       :email      %1
-                                                       :password   %2})
-                                 usernames
-                                 passwords)]
-       (reset! test-users (mapv #(hash-map :username %1
-                                           :password %2
-                                           :uid (:user_id %3))
-                                usernames
-                                passwords
-                                create-responses))
-       (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
-       (when manage-user?
-         (mapv #(test-endpoint :post "/v1/account" {:auth true :use-other-user %}) [true false]))
-       (f)
-       (when manage-user?
-         (mapv #(test-endpoint :delete "/v1/account" {:auth true :use-other-user %}) [true false]))))))
+   (strict-fixture
+     {:setup    (fn []
+                  (let [auth (:auth/auth0 state/system)
+                        usernames (repeatedly 2 #(str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com"))
+                        passwords (repeatedly 2 #(str (UUID/randomUUID)))
+                        create-responses (map #(auth0/create-user! auth
+                                                                   {:connection "Username-Password-Authentication"
+                                                                    :email      %1
+                                                                    :password   %2})
+                                              usernames
+                                              passwords)]
+                    (reset! test-users (mapv #(hash-map :username %1
+                                                        :password %2
+                                                        :uid (:user_id %3))
+                                             usernames
+                                             passwords
+                                             create-responses))
+                    (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
+                    (when manage-user?
+                      (mapv #(test-endpoint :post "/v1/account" {:auth true :use-other-user %}) [true false]))))
+      :teardown (fn []
+                  (when manage-user?
+                    (mapv #(test-endpoint :delete "/v1/account" {:auth true :use-other-user %}) [true false])))
+      :msg      "account fixture failed"})))
 
 (defn make-roles-fixture [& roles]
   (fn [f]
