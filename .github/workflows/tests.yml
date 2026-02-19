@@ -42,5 +42,5 @@ jobs:
           MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
           DOCKER_HOST: unix:///var/run/docker.sock
-          JAVA_TOOL_OPTIONS: -Ddocker.api.version=1.44
+          DOCKER_API_VERSION: "1.44"
         run: lein test
