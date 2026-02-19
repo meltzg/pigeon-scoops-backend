@@ -2,7 +2,7 @@
   (:gen-class)
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
-            [pigeon-scoops-backend.config :as config]
+            [pigeon-scoops-backend.db :as config]
             [pigeon-scoops-backend.router :as router]
             [ring.adapter.jetty :as jetty])
   (:import (org.eclipse.jetty.server Server)))
@@ -22,7 +22,7 @@
   (println "\nServer running on port" port)
   (jetty/run-jetty handler {:port port :join? false}))
 
-(defmethod ig/init-key :pigeon-scoops-backend/app [_ config]
+(defmethod ig/init-key :server/routes [_ config]
   (println "\nStarting app")
   (router/routes config))
 

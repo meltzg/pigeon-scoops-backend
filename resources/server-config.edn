@@ -1,6 +1,6 @@
-{:server/jetty              {:handler #ig/ref :pigeon-scoops-backend/app
+{:server/jetty              {:handler #ig/ref :server/routes
                              :port    3000}
- :pigeon-scoops-backend/app {:jdbc-url #ig/ref :db/postgres
+ :server/routes {:jdbc-url #ig/ref :db/postgres
                              :auth     #ig/ref :auth/auth0}
  :db/postgres               {:jdbc-url "jdbc-url"}
  :auth/auth0                {:test-client-id           "test-client-id"
