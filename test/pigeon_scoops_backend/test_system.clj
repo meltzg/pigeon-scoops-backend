@@ -72,46 +72,43 @@
         (throw t)))))
 
 
-(defn system-fixture [f]
-  (let [port (find-next-available-port (range 3000 4000))]
-    (cond state/system
-          (f)
-          port
-          (let [postgres-container
-                (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
-                  (.withDatabaseName "test_db")
-                  (.withUsername "user")
-                  (.withPassword "password")
-                  (.start))
-                full-uri (str (.getJdbcUrl postgres-container)
-                              "&user=" (.getUsername postgres-container)
-                              "&password=" (.getPassword postgres-container))]
-            (ig-repl/set-prep!
-              (fn []
-                (let [task-system (-> "resources/db-task-config.edn"
-                                      (config/load-config)
-                                      (assoc-in [:db/postgres :jdbc-url] full-uri)
-                                      (config/init-system))
-                      migration-task (:db-tasks/migration task-system)]
-                  (migration-task)
-                  (ig/halt! task-system)
-                  (-> (if (env :ci-env)
-                        "resources/server-config.edn"
-                        "dev/resources/server-config.edn")
-                      (config/load-config)
-                      (assoc-in [:db/postgres :jdbc-url] full-uri)
-                      (assoc-in [:server/jetty :port] port)
-                      (ig/expand)))))
-            (ig-repl/go)
-            (try
-              (f)
-              (catch Exception e
-                (println "FATAL" e))
-              (finally
-                (ig-repl/halt)
-                (.stop postgres-container))))
-          :else
-          (throw (RuntimeException. "No available port")))))
+(def system-fixture
+  (let [postgres-container (atom nil)]
+    (strict-fixture
+      {:msg "failed to set up test system"
+       :setup (when-not state/system
+                (fn []
+                  (reset! postgres-container
+                          (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
+                            (.withDatabaseName "test_db")
+                            (.withUsername "user")
+                            (.withPassword "password")
+                            (.start)))
+                  (let [port (find-next-available-port (range 3000 4000))
+
+                        full-uri (str (.getJdbcUrl @postgres-container)
+                                      "&user=" (.getUsername @postgres-container)
+                                      "&password=" (.getPassword @postgres-container))]
+                    (ig-repl/set-prep!
+                      (fn []
+                        (let [task-system (-> "resources/db-task-config.edn"
+                                              (config/load-config)
+                                              (assoc-in [:db/postgres :jdbc-url] full-uri)
+                                              (config/init-system))
+                              migration-task (:db-tasks/migration task-system)]
+                          (migration-task)
+                          (ig/halt! task-system)
+                          (-> (if (env :ci-env)
+                                "resources/server-config.edn"
+                                "dev/resources/server-config.edn")
+                              (config/load-config)
+                              (assoc-in [:db/postgres :jdbc-url] full-uri)
+                              (assoc-in [:server/jetty :port] port)
+                              (ig/expand)))))
+                    (ig-repl/go))))
+       :teardown (fn []
+                   (ig-repl/halt)
+                   (.stop @postgres-container))})))
 
 (defn make-account-fixture
   ([]
@@ -143,9 +140,10 @@
       :msg      "account fixture failed"})))
 
 (defn make-roles-fixture [& roles]
-  (fn [f]
-    (let [auth (:auth/auth0 state/system)]
-      (mapv #(auth0/update-roles! auth (:uid %) roles) @test-users)
-      (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
-      (f)
-      (reset! tokens nil))))
+  (strict-fixture
+    {:setup    (fn []
+                 (let [auth (:auth/auth0 state/system)]
+                   (mapv #(auth0/update-roles! auth (:uid %) roles) @test-users)
+                   (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))))
+     :teardown #(reset! tokens nil)
+     :msg      "make roles failed"}))
