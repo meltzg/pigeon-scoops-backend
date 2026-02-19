@@ -29,6 +29,12 @@ jobs:
           lein version  # Verify installation
       - name: Install dependencies
         run: lein deps
+      - name: Debug Docker for Testcontainers
+        run: |
+          echo "DOCKER_HOST=$DOCKER_HOST"
+          ls -l /var/run/docker.sock || true
+          docker version || true
+          docker info || true
       - name: Run tests
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
