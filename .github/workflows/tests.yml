@@ -29,21 +29,9 @@ jobs:
           lein version  # Verify installation
       - name: Install dependencies
         run: lein deps
-      - name: Debug Docker for Testcontainers
-        run: |
-          echo "DOCKER_HOST=$DOCKER_HOST"
-          ls -l /var/run/docker.sock || true
-          docker version || true
-          docker info || true
-          echo "ENV VARS $(env | sort | grep -E '^DOCKER')" || true
       - name: Run tests
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
           MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-          DOCKER_HOST: unix:///var/run/docker.sock
-          DOCKER_API_VERSION: "1.44"
-        run: |
-          echo "DOCKER_HOST=$DOCKER_HOST"
-          echo "DOCKER_API_VERSION=$DOCKER_API_VERSION"
-          lein test
+        run: lein test
