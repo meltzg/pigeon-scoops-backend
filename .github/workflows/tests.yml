@@ -11,6 +11,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    services:
+      docker:
+        image: docker:latest
+
     env: # Environment variable for the entire job
       CI_ENV: true
 
