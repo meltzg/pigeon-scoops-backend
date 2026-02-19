@@ -35,6 +35,7 @@ jobs:
           ls -l /var/run/docker.sock || true
           docker version || true
           docker info || true
+          env | sort | grep -E '^DOCKER' || true
       - name: Run tests
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
