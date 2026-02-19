@@ -43,4 +43,7 @@ jobs:
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
           DOCKER_HOST: unix:///var/run/docker.sock
           DOCKER_API_VERSION: "1.44"
-        run: lein test
+        run: |
+          echo "DOCKER_HOST=$DOCKER_HOST"
+          echo "DOCKER_API_VERSION=$DOCKER_API_VERSION"
+          lein test
