@@ -17,8 +17,8 @@
                :summary    "list of groceries"}
         :post {:handler    (grocery/create-grocery! db)
                :middleware [[(mw/wrap-with-permission :create/grocery)]]
-               :parameters {:body {:name       string?
-                                   :department (s/and keyword? responses/departments)}}
+               :parameters {:body {:grocery/name       string?
+                                   :grocery/department (s/and keyword? responses/departments)}}
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:grocery-id" {:parameters {:path {:grocery-id uuid?}}}
     ["" {:get    {:handler    (grocery/retrieve-grocery db)
@@ -27,8 +27,8 @@
                   :summary    "Retrieve grocery"}
          :put    {:handler    (grocery/update-grocery! db)
                   :middleware [[(mw/wrap-with-permission :edit/grocery)]]
-                  :parameters {:body {:name       string?
-                                      :department (s/and keyword? responses/departments)}}
+                  :parameters {:body {:grocery/name       string?
+                                      :grocery/department (s/and keyword? responses/departments)}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update grocery"}
          :delete {:handler    (grocery/delete-grocery! db)
@@ -37,30 +37,30 @@
                   :summary    "Delete grocery"}}]
     ["/units" {:middleware [[(mw/wrap-with-permission :edit/grocery)]]}
      ["" {:post   {:handler    (grocery/create-grocery-unit! db)
-                   :parameters {:body {:source                    string?
-                                       :unit-cost                 number?
-                                       (ds/opt :unit-mass)        number?
-                                       (ds/opt :unit-mass-type)   (s/and keyword?
-                                                                         (set (keys mass/conversion-map)))
-                                       (ds/opt :unit-volume)      number?
-                                       (ds/opt :unit-volume-type) (s/and keyword?
-                                                                         (set (keys volume/conversion-map)))
-                                       (ds/opt :unit-common)      number?
-                                       (ds/opt :unit-common-type) (s/and keyword? common/other-units)}}
+                   :parameters {:body {:grocery-unit/source                    string?
+                                       :grocery-unit/unit-cost                 number?
+                                       (ds/opt :grocery-unit/unit-mass)        number?
+                                       (ds/opt :grocery-unit/unit-mass-type)   (s/and keyword?
+                                                                                      (set (keys mass/conversion-map)))
+                                       (ds/opt :grocery-unit/unit-volume)      number?
+                                       (ds/opt :grocery-unit/unit-volume-type) (s/and keyword?
+                                                                                      (set (keys volume/conversion-map)))
+                                       (ds/opt :grocery-unit/unit-common)      number?
+                                       (ds/opt :grocery-unit/unit-common-type) (s/and keyword? common/other-units)}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create grocery-unit"}
           :put    {:handler    (grocery/update-grocery-unit! db)
-                   :parameters {:body {:id                        uuid?
-                                       :source                    string?
-                                       :unit-cost                 number?
-                                       (ds/opt :unit-mass)        number?
-                                       (ds/opt :unit-mass-type)   (s/and keyword?
-                                                                         (set (keys mass/conversion-map)))
-                                       (ds/opt :unit-volume)      number?
-                                       (ds/opt :unit-volume-type) (s/and keyword?
-                                                                         (set (keys volume/conversion-map)))
-                                       (ds/opt :unit-common)      number?
-                                       (ds/opt :unit-common-type) (s/and keyword? common/other-units)}}
+                   :parameters {:body {:grocery-unit/id                        uuid?
+                                       :grocery-unit/source                    string?
+                                       :grocery-unit/unit-cost                 number?
+                                       (ds/opt :grocery-unit/unit-mass)        number?
+                                       (ds/opt :grocery-unit/unit-mass-type)   (s/and keyword?
+                                                                                      (set (keys mass/conversion-map)))
+                                       (ds/opt :grocery-unit/unit-volume)      number?
+                                       (ds/opt :grocery-unit/unit-volume-type) (s/and keyword?
+                                                                                      (set (keys volume/conversion-map)))
+                                       (ds/opt :grocery-unit/unit-common)      number?
+                                       (ds/opt :grocery-unit/unit-common-type) (s/and keyword? common/other-units)}}
                    :responses  {204 {:body nil?}}
                    :summary    "Update grocery-unit"}
           :delete {:handler    (grocery/delete-grocery-unit! db)

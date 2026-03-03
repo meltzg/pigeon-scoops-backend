@@ -23,9 +23,9 @@
           uid (-> request :claims :sub)
           order (-> request :parameters :body)]
       (order-db/insert-order! db (assoc order
-                                   :id order-id
-                                   :user-id uid
-                                   :status :status/draft))
+                                   :user-order/id order-id
+                                   :user-order/user-id uid
+                                   :user-order/status :status/draft))
       (rr/created (str responses/base-url "/orders/" order-id)
                   {:id order-id}))))
 
@@ -43,7 +43,7 @@
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
           order (-> request :parameters :body)
-          successful? (order-db/update-order! db (assoc order :id order-id))]
+          successful? (order-db/update-order! db (assoc order :user-order/id order-id))]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "order-not-found"
@@ -76,7 +76,7 @@
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
               uid (-> request :claims :sub)
-              {:keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
+              {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
               recipe (recipe-db/find-recipe-by-id conn-opts recipe-id)
               recipe-owner? (= uid (:recipe/user-id recipe))
               order-item-id (UUID/randomUUID)
@@ -104,9 +104,9 @@
             :else
             (do
               (order-db/insert-order-item! conn-opts (assoc order-item
-                                                       :order-id order-id
-                                                       :id order-item-id
-                                                       :status :status/draft))
+                                                       :order-item/order-id order-id
+                                                       :order-item/id order-item-id
+                                                       :order-item/status :status/draft))
               (rr/created (str responses/base-url "/orders/" order-id)
                           {:id order-item-id}))))))))
 
@@ -118,7 +118,7 @@
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
               uid (-> request :claims :sub)
-              {:keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
+              {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
               recipe (recipe-db/find-recipe-by-id conn-opts recipe-id)
               recipe-owner? (= uid (:recipe/user-id recipe))
               active-items (get
@@ -143,7 +143,7 @@
                              :message "order amount cannot be made from any active item size"
                              :data    active-item-sizes})
             :else
-            (if (order-db/update-order-item! conn-opts (assoc order-item :order-id order-id))
+            (if (order-db/update-order-item! conn-opts (assoc order-item :order-item/order-id order-id))
               (rr/status 204)
               (rr/bad-request (select-keys order-item [:id])))))))))
 

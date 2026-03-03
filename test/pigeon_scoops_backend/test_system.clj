@@ -6,7 +6,7 @@
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
-            [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.db :as config]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock])

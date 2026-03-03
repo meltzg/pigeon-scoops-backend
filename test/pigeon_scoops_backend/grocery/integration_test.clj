@@ -5,21 +5,21 @@
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-groceries))
 
 (def grocery
-  {:name "orange" :department :department/produce})
+  {:grocery/name "orange" :grocery/department :department/produce})
 
 (def updated-grocery
-  (assoc grocery :name "lime"))
+  (assoc grocery :grocery/name "lime"))
 
 (def grocery-unit
-  {:source         "store"
-   :unit-cost      3.3
-   :unit-mass      420
-   :unit-mass-type :mass/kg})
+  {:grocery-unit/source         "store"
+   :grocery-unit/unit-cost      3.3
+   :grocery-unit/unit-mass      420
+   :grocery-unit/unit-mass-type :mass/kg})
 
 (def updated-grocery-unit
   (assoc grocery-unit
-    :unit-common-type :common/unit
-    :unit-common 1000))
+    :grocery-unit/unit-common-type :common/unit
+    :grocery-unit/unit-common 1000))
 
 (deftest groceries-list-test
   (testing "List groceries"

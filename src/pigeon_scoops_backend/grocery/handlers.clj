@@ -12,7 +12,7 @@
   (fn [request]
     (let [grocery-id (UUID/randomUUID)
           grocery (-> request :parameters :body)]
-      (grocery-db/insert-grocery! db (assoc grocery :id grocery-id))
+      (grocery-db/insert-grocery! db (assoc grocery :grocery/id grocery-id))
       (rr/created (str responses/base-url "/groceries/" grocery-id)
                   {:id grocery-id}))))
 
@@ -30,7 +30,7 @@
   (fn [request]
     (let [grocery-id (-> request :parameters :path :grocery-id)
           grocery (-> request :parameters :body)
-          successful? (grocery-db/update-grocery! db (assoc grocery :id grocery-id))]
+          successful? (grocery-db/update-grocery! db (assoc grocery :grocery/id grocery-id))]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "grocery-not-found"
@@ -52,8 +52,8 @@
     (let [grocery-id (-> request :parameters :path :grocery-id)
           grocery-unit (-> request :parameters :body)
           grocery-unit-id (UUID/randomUUID)]
-      (grocery-db/insert-grocery-unit! db (assoc grocery-unit :grocery-id grocery-id
-                                                              :id grocery-unit-id))
+      (grocery-db/insert-grocery-unit! db (assoc grocery-unit :grocery-unit/grocery-id grocery-id
+                                                              :grocery-unit/id grocery-unit-id))
       (rr/created (str responses/base-url "/groceries/" grocery-id)
                   {:id grocery-unit-id}))))
 
@@ -61,7 +61,7 @@
   (fn [request]
     (let [grocery-id (-> request :parameters :path :grocery-id)
           grocery-unit (-> request :parameters :body)
-          successful? (grocery-db/update-grocery-unit! db (assoc grocery-unit :grocery-id grocery-id))]
+          successful? (grocery-db/update-grocery-unit! db (assoc grocery-unit :grocery-unit/grocery-id grocery-id))]
       (if successful?
         (rr/status 204)
         (rr/bad-request (select-keys grocery-unit [:id]))))))

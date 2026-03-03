@@ -7,7 +7,7 @@
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
-            [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.db :as db]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock]
@@ -81,8 +81,8 @@
                          (m/decode "application/json")
                          (map #(vector (:type %) (-> (make-request :post "/v1/groceries"
                                                                    {:auth true
-                                                                    :body {:name       (:type %)
-                                                                           :department :department/grocery}})
+                                                                    :body {:grocery/name       (:type %)
+                                                                           :grocery/department :department/grocery}})
                                                      :body
                                                      :id)))
                          (into {}))
@@ -91,14 +91,14 @@
                    (m/decode "application/json")
                    (map #(-> (make-request :post (str "/v1/groceries/" (get grocery-map (:type %)) "/units")
                                            {:auth true
-                                            :body (cond-> {:source    (:source %)
-                                                           :unit-cost (:unit_cost %)}
-                                                          (:unit_mass %) (merge {:unit-mass      (:unit_mass %)
-                                                                                 :unit-mass-type (keyword "mass" (:unit_mass_type %))})
-                                                          (:unit_volume %) (merge {:unit-volume      (:unit_volume %)
-                                                                                   :unit-volume-type (keyword "volume" (:unit_volume_type %))})
-                                                          (:unit_common %) (merge {:unit-common      (:unit_common %)
-                                                                                   :unit-common-type (keyword "common" (:unit_common_type %))}))})
+                                            :body (cond-> {:grocery-unit/source    (:source %)
+                                                           :grocery-unit/unit-cost (:unit_cost %)}
+                                                          (:unit_mass %) (merge {:grocery-unit/unit-mass      (:unit_mass %)
+                                                                                 :grocery-unit/unit-mass-type (keyword "mass" (:unit_mass_type %))})
+                                                          (:unit_volume %) (merge {:grocery-unit/unit-volume      (:unit_volume %)
+                                                                                   :grocery-unit/unit-volume-type (keyword "volume" (:unit_volume_type %))})
+                                                          (:unit_common %) (merge {:grocery-unit/unit-common      (:unit_common %)
+                                                                                   :grocery-unit/unit-common-type (keyword "common" (:unit_common_type %))}))})
                              :body
                              :id)))
         recipe-map (->> "dev/resources/seed/recipes.json"
@@ -168,18 +168,19 @@
                                            :id))))
         menu-id (-> (make-request :post "/v1/menus"
                                   {:auth true
-                                   :body {:name          "test menu"
-                                          :active        true
-                                          :repeats       false
-                                          :duration      3
-                                          :duration-type :duration/day}}))
+                                   :body {:menu/name          "test menu"
+                                          :menu/active        true
+                                          :menu/repeats       false
+                                          :menu/duration      3
+                                          :menu/duration-type :duration/day}}))
 
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
                        (map #(vector (:id %) (-> (make-request :post "/v1/orders"
                                                                {:auth true
-                                                                :body (select-keys % [:note])})
+                                                                :body (update-keys (select-keys % [:note])
+                                                                                   (fn [k] (keyword "user-order" (name k))))})
                                                  :body
                                                  :id)))
                        (into {}))
@@ -188,10 +189,10 @@
                          (m/decode "application/json")
                          (map #(-> (make-request :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
                                                  {:auth true
-                                                  :body {:recipe-id   (get recipe-map (:flavor_id %))
-                                                         :amount      (:amount %)
-                                                         :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                               (:amount_unit %))}})
+                                                  :body {:order-item/recipe-id   (get recipe-map (:flavor_id %))
+                                                         :order-item/amount      (:amount %)
+                                                         :order-item/amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                          (:amount_unit %))}})
                                    :body
                                    :id)))]
     {:grocery-map   grocery-map

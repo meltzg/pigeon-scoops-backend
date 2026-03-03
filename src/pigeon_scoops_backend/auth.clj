@@ -1,8 +1,19 @@
-(ns pigeon-scoops-backend.auth0
-  (:require [clj-http.client :as http]
+(ns pigeon-scoops-backend.auth
+  (:require [environ.core :refer [env]]
+            [clj-http.client :as http]
+            [integrant.core :as ig]
             [muuntaja.core :as m]))
 
 (def roles #{:manage-roles :manage-recipes :manage-groceries :manage-orders :manage-menus})
+
+(defmethod ig/expand-key :auth/auth0 [k config]
+  {k (merge config (cond-> {}
+                           (env :test-client-id) (conj {:test-client-id (env :test-client-id)})
+                           (env :management-client-id) (conj {:management-client-id (env :management-client-id)})
+                           (env :management-client-secret) (conj {:management-client-secret (env :management-client-secret)})))})
+
+(defmethod ig/init-key :auth/auth0 [_ config]
+  config)
 
 (defn get-management-token [{:keys [management-client-id management-client-secret]}]
   (->> {:content-type  :json
