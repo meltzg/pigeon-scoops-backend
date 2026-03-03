@@ -10,7 +10,8 @@
             [pigeon-scoops-backend.auth0 :as auth0]
             [pigeon-scoops-backend.db :as db]
             [pigeon-scoops-backend.db-tasks]
-            [ring.mock.request :as mock])
+            [ring.mock.request :as mock]
+            [clojure.pprint :refer [pprint]])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
@@ -105,11 +106,13 @@
                         (m/decode "application/json")
                         (map #(vector (:id %) (-> (make-request :post "/v1/recipes"
                                                                 {:auth true
-                                                                 :body (merge (select-keys % [:name :instructions])
-                                                                              {:amount      (:amount %)
-                                                                               :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                     (:amount_unit %))
-                                                                               :source      (or (:source %) "")})})
+                                                                 :body (update-keys
+                                                                         (merge (select-keys % [:name :instructions])
+                                                                                {:amount      (:amount %)
+                                                                                 :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                       (:amount_unit %))
+                                                                                 :source      (or (:source %) "")})
+                                                                         (fn [k] (keyword "recipe" (name k))))})
                                                   :body
                                                   :id)))
                         (into {}))
@@ -118,10 +121,12 @@
                          (m/decode "application/json")
                          (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:recipe_id %)) "/ingredients")
                                                  {:auth true
-                                                  :body {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
-                                                         :amount                (:amount %)
-                                                         :amount-unit           (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                         (:amount_unit %))}})
+                                                  :body (update-keys {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
+                                                                      :amount                (:amount %)
+                                                                      :amount-unit           (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                      (:amount_unit %))}
+                                                                     (fn [k] (keyword "ingredient" (name k))))})
+
                                    :body
                                    :id)))
         recipe-map (merge recipe-map
@@ -130,19 +135,22 @@
                                (m/decode "application/json")
                                (map #(let [recipe-id (-> (make-request :post "/v1/recipes"
                                                                        {:auth true
-                                                                        :body (merge (select-keys % [:name :instructions])
-                                                                                     {:amount      (:amount %)
-                                                                                      :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                            (:amount_unit %))
-                                                                                      :source      ""})})
+                                                                        :body (update-keys (merge (select-keys % [:name :instructions])
+                                                                                                  {:amount      (:amount %)
+                                                                                                   :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                                         (:amount_unit %))
+                                                                                                   :source      ""})
+                                                                                           (fn [k] (keyword "recipe" (name k))))})
                                                          :body
                                                          :id)]
                                        (make-request :post (str "/v1/recipes/" recipe-id "/ingredients")
                                                      {:auth true
-                                                      :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                             :amount               (:amount %)
-                                                             :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                            (:amount_unit %))}})
+                                                      :body (update-keys {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                                          :amount               (:amount %)
+                                                                          :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                         (:amount_unit %))}
+                                                                         (fn [k] (keyword "ingredient" (name k))))})
+
                                        [(:id %) recipe-id]))
                                (into {})))
         ingredients (concat ingredients
@@ -151,10 +159,11 @@
                                  (m/decode "application/json")
                                  (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:flavor_id %)) "/ingredients")
                                                          {:auth true
-                                                          :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                                 :amount               (:amount %)
-                                                                 :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                (:amount_unit %))}})
+                                                          :body (update-keys {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                                              :amount               (:amount %)
+                                                                              :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                             (:amount_unit %))}
+                                                                             (fn [k] (keyword "ingredient" (name k))))})
                                            :body
                                            :id))))
         menu-id (-> (make-request :post "/v1/menus"

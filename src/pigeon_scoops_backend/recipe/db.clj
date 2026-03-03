@@ -61,14 +61,14 @@
 
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (-> recipe
-                              (apply-keyword->db-str :amount-unit)
-                              (assoc :public false
-                                     :instructions (into-array String (:instructions recipe))))))
+                              (apply-keyword->db-str :recipe/amount-unit)
+                              (assoc :recipe/public false
+                                     :recipe/instructions (into-array String (:recipe/instructions recipe))))))
 
 (defn update-recipe! [db recipe]
   (-> (sql/update! db :recipe (-> recipe
-                                  (apply-keyword->db-str :amount-unit)
-                                  (update :instructions (partial into-array String)))
+                                  (apply-keyword->db-str :recipe/amount-unit)
+                                  (update :recipe/instructions (partial into-array String)))
                    (select-keys recipe [:id]))
       ::jdbc/update-count
       (pos?)))
@@ -86,17 +86,17 @@
   (sql/delete! db :recipe-favorite data (:options db)))
 
 (defn insert-ingredient! [db ingredient]
-  (sql/insert! db, :ingredient (apply-keyword->db-str ingredient :amount-unit)))
+  (sql/insert! db, :ingredient (apply-keyword->db-str ingredient :ingredient/amount-unit)))
 
 (defn update-ingredient! [db ingredient]
   (-> (sql/update! db :ingredient (apply-keyword->db-str
                                     (cond-> ingredient
-                                            (some? (:ingredient-grocery-id ingredient))
-                                            (assoc :ingredient-recipe-id nil)
-                                            (some? (:ingredient-recipe-id ingredient))
-                                            (assoc :ingredient-grocery-id nil))
-                                    :amount-unit)
-                   (select-keys ingredient [:id]))
+                                            (some? (:ingredient/ingredient-grocery-id ingredient))
+                                            (assoc :ingredient/ingredient-recipe-id nil)
+                                            (some? (:ingredient/ingredient-recipe-id ingredient))
+                                            (assoc :ingredient/ingredient-grocery-id nil))
+                                    :ingredient/amount-unit)
+                   (select-keys ingredient [:ingredient/id]))
       ::jdbc/update-count
       (pos?)))
 
