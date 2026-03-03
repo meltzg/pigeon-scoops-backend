@@ -48,7 +48,6 @@
                                                                (amount-key unit))
                                                             (unit-key unit)])))
 
-
                                                    units)))
         waste-ratio (when (seq units)
                       (->> [amount amount-unit
@@ -58,8 +57,8 @@
                            (- 1)))]
 
     (assoc grocery :grocery/units units
-                   :grocery/required-amount amount
-                   :grocery/required-unit amount-unit
-                   :grocery/purchase-amount total-amount
-                   :grocery/purchase-unit total-unit
-                   :grocery/waste-ratio waste-ratio)))
+           :grocery/required-amount amount
+           :grocery/required-unit amount-unit
+           :grocery/purchase-amount total-amount
+           :grocery/purchase-unit total-unit
+           :grocery/waste-ratio waste-ratio)))

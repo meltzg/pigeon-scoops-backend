@@ -2,7 +2,6 @@
   (:require [clojure.test :refer :all]
             [pigeon-scoops-backend.recipe.transforms :as transforms]))
 
-
 (def recipe
   {:recipe/name         "a spicy meatball"
    :recipe/amount       1
@@ -16,11 +15,10 @@
                           :ingredient/amount      2
                           :ingredient/amount-unit :common/unit}]})
 
-
 (deftest scale-recipe-test
   (testing "A recipe can be scaled up and down"
     (are [recipe amount amount-unit expected]
-      (= (transforms/scale-recipe recipe amount amount-unit) expected)
+         (= (transforms/scale-recipe recipe amount amount-unit) expected)
       recipe 3 :volume/qt {:recipe/name         "a spicy meatball"
                            :recipe/amount       3
                            :recipe/amount-unit  :volume/qt

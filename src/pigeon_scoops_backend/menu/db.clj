@@ -47,17 +47,15 @@
      db
      (fn [conn-opts]
        (->> (sql/find-by-keys
-              conn-opts
-              :menu
-              (if
-                (and include-inactive? include-deleted?)
-                :all
-                (cond-> {}
-                        (not include-inactive?) (assoc :active true)
-                        (not include-deleted?) (assoc :deleted false))))
+             conn-opts
+             :menu
+             (if
+              (and include-inactive? include-deleted?)
+               :all
+               (cond-> {}
+                 (not include-inactive?) (assoc :active true)
+                 (not include-deleted?) (assoc :deleted false))))
             (map #(apply-db-str->keyword % :menu/duration-type)))))))
-
-
 
 (defn insert-menu! [db menu]
   (sql/insert! db :menu

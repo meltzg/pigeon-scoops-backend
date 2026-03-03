@@ -14,11 +14,11 @@
     (let [menu-id (UUID/randomUUID)
           menu (-> request :parameters :body)]
       (menu-db/insert-menu! db (cond-> (assoc menu :id menu-id)
-                                       (:menu/active menu) (assoc :menu/end-time (-> menu
-                                                                                     (select-keys [:menu/duration :menu/duration-type])
-                                                                                     (vals)
-                                                                                     ((partial apply end-time))))
-                                       (not (:menu/active menu)) (assoc :menu/end-time nil)))
+                                 (:menu/active menu) (assoc :menu/end-time (-> menu
+                                                                               (select-keys [:menu/duration :menu/duration-type])
+                                                                               (vals)
+                                                                               ((partial apply end-time))))
+                                 (not (:menu/active menu)) (assoc :menu/end-time nil)))
       (rr/created (str responses/base-url "/menus/" menu-id)
                   {:id menu-id}))))
 
@@ -40,14 +40,14 @@
           menu (-> request :parameters :body)
           current-menu (menu-db/find-menu-by-id db menu-id)
           successful? (menu-db/update-menu! db (cond-> (assoc menu :menu/id menu-id
-                                                                   :menu/end-time (:menu/end-time current-menu))
-                                                       (and (:menu/active menu) (not (:menu/active current-menu)))
-                                                       (assoc :menu/end-time (-> menu
-                                                                                 (select-keys [:menu/duration :menu/duration-type])
-                                                                                 (vals)
-                                                                                 ((partial apply end-time))))
-                                                       (and (not (:menu/active menu)) (:menu/active current-menu))
-                                                       (assoc :menu/end-time nil)))]
+                                                              :menu/end-time (:menu/end-time current-menu))
+                                                 (and (:menu/active menu) (not (:menu/active current-menu)))
+                                                 (assoc :menu/end-time (-> menu
+                                                                           (select-keys [:menu/duration :menu/duration-type])
+                                                                           (vals)
+                                                                           ((partial apply end-time))))
+                                                 (and (not (:menu/active menu)) (:menu/active current-menu))
+                                                 (assoc :menu/end-time nil)))]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "menu-not-found"
@@ -70,7 +70,7 @@
           menu-item (-> request :parameters :body)
           menu-item-id (UUID/randomUUID)]
       (menu-db/insert-menu-item! db (assoc menu-item :menu-item/menu-id menu-id
-                                                     :menu-item/id menu-item-id))
+                                           :menu-item/id menu-item-id))
       (rr/created (str responses/base-url "/menus/" menu-id)
                   {:id menu-item-id}))))
 
@@ -120,7 +120,6 @@
         (rr/status 204)
         :else
         (rr/bad-request (select-keys menu-item-size [:id]))))))
-
 
 (defn delete-menu-item-size! [db]
   (fn [request]

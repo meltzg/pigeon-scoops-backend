@@ -53,7 +53,7 @@
           grocery-unit (-> request :parameters :body)
           grocery-unit-id (UUID/randomUUID)]
       (grocery-db/insert-grocery-unit! db (assoc grocery-unit :grocery-unit/grocery-id grocery-id
-                                                              :grocery-unit/id grocery-unit-id))
+                                                 :grocery-unit/id grocery-unit-id))
       (rr/created (str responses/base-url "/groceries/" grocery-id)
                   {:id grocery-unit-id}))))
 

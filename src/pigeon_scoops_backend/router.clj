@@ -52,21 +52,21 @@
 
 (defn routes [env]
   (ring/ring-handler
-    (ring/router
-      [openapi-docs
-       ["/v1"
-        {:openapi {:security [{"auth" []}]}}
-        (grocery/routes env)
-        (recipe/routes env)
-        (menu/routes env)
-        (user-order/routes env)
-        (util-api/routes)
-        (account/routes env)]]
-      router-config)
-    (ring/routes
-      (swagger-ui/create-swagger-ui-handler
-        {:path   "/"
-         :config {:validatorUrl     nil
-                  :urls             [{:name "openapi", :url "openapi.json"}]
-                  :urls.primaryName "openapi"
-                  :operationsSorter "alpha"}}))))
+   (ring/router
+    [openapi-docs
+     ["/v1"
+      {:openapi {:security [{"auth" []}]}}
+      (grocery/routes env)
+      (recipe/routes env)
+      (menu/routes env)
+      (user-order/routes env)
+      (util-api/routes)
+      (account/routes env)]]
+    router-config)
+   (ring/routes
+    (swagger-ui/create-swagger-ui-handler
+     {:path   "/"
+      :config {:validatorUrl     nil
+               :urls             [{:name "openapi", :url "openapi.json"}]
+               :urls.primaryName "openapi"
+               :operationsSorter "alpha"}}))))

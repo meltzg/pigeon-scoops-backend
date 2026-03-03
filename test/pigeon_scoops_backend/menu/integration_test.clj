@@ -45,9 +45,9 @@
     (let [original-endtime (atom nil)]
       (testing "activate menu populates end time"
         (let [{:keys [status]} (ts/test-endpoint
-                                 :put
-                                 (str "/v1/menus/" @menu-id)
-                                 {:auth true :body (assoc menu :active true)})
+                                :put
+                                (str "/v1/menus/" @menu-id)
+                                {:auth true :body (assoc menu :active true)})
               {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
                                                   {:auth true})]
           (is (= status 204))
@@ -55,18 +55,18 @@
           (reset! original-endtime (:menu/end-time menu-body))))
       (testing "update menu"
         (let [{:keys [status]} (ts/test-endpoint
-                                 :put
-                                 (str "/v1/menus/" @menu-id)
-                                 {:auth true :body (assoc menu :duration 4 :active true)})
+                                :put
+                                (str "/v1/menus/" @menu-id)
+                                {:auth true :body (assoc menu :duration 4 :active true)})
               {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
                                                   {:auth true})]
           (is (= status 204))
           (is (= (:menu/end-time menu-body) @original-endtime)))))
     (testing "deactivate menu nils end time"
       (let [{:keys [status]} (ts/test-endpoint
-                               :put
-                               (str "/v1/menus/" @menu-id)
-                               {:auth true :body (assoc menu :active false)})
+                              :put
+                              (str "/v1/menus/" @menu-id)
+                              {:auth true :body (assoc menu :active false)})
             {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
                                                 {:auth true})]
         (is (= status 204))

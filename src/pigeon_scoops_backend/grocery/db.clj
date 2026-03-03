@@ -54,9 +54,9 @@
 (defn update-grocery-unit! [db unit]
   (-> unit
       (apply-keyword->db-str
-        :grocery-unit/unit-common-type
-        :grocery-unit/unit-mass-type
-        :grocery-unit/unit-volume-type)
+       :grocery-unit/unit-common-type
+       :grocery-unit/unit-mass-type
+       :grocery-unit/unit-volume-type)
       (#(sql/update! db :grocery-unit %
                      (select-keys % [:id])))
       ::jdbc/update-count

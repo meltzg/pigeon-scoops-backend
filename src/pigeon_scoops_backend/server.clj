@@ -7,7 +7,6 @@
             [ring.adapter.jetty :as jetty])
   (:import (org.eclipse.jetty.server Server)))
 
-
 (defmethod ig/expand-key :server/jetty [k config]
   {k (merge config (when-some [port (env :port)]
                      {:port (Integer/parseInt port)}))})

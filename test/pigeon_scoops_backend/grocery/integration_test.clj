@@ -18,8 +18,8 @@
 
 (def updated-grocery-unit
   (assoc grocery-unit
-    :grocery-unit/unit-common-type :common/unit
-    :grocery-unit/unit-common 1000))
+         :grocery-unit/unit-common-type :common/unit
+         :grocery-unit/unit-common 1000))
 
 (deftest groceries-list-test
   (testing "List groceries"

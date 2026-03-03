@@ -93,12 +93,12 @@
                                            {:auth true
                                             :body (cond-> {:grocery-unit/source    (:source %)
                                                            :grocery-unit/unit-cost (:unit_cost %)}
-                                                          (:unit_mass %) (merge {:grocery-unit/unit-mass      (:unit_mass %)
-                                                                                 :grocery-unit/unit-mass-type (keyword "mass" (:unit_mass_type %))})
-                                                          (:unit_volume %) (merge {:grocery-unit/unit-volume      (:unit_volume %)
-                                                                                   :grocery-unit/unit-volume-type (keyword "volume" (:unit_volume_type %))})
-                                                          (:unit_common %) (merge {:grocery-unit/unit-common      (:unit_common %)
-                                                                                   :grocery-unit/unit-common-type (keyword "common" (:unit_common_type %))}))})
+                                                    (:unit_mass %) (merge {:grocery-unit/unit-mass      (:unit_mass %)
+                                                                           :grocery-unit/unit-mass-type (keyword "mass" (:unit_mass_type %))})
+                                                    (:unit_volume %) (merge {:grocery-unit/unit-volume      (:unit_volume %)
+                                                                             :grocery-unit/unit-volume-type (keyword "volume" (:unit_volume_type %))})
+                                                    (:unit_common %) (merge {:grocery-unit/unit-common      (:unit_common %)
+                                                                             :grocery-unit/unit-common-type (keyword "common" (:unit_common_type %))}))})
                              :body
                              :id)))
         recipe-map (->> "dev/resources/seed/recipes.json"
@@ -107,12 +107,12 @@
                         (map #(vector (:id %) (-> (make-request :post "/v1/recipes"
                                                                 {:auth true
                                                                  :body (update-keys
-                                                                         (merge (select-keys % [:name :instructions])
-                                                                                {:amount      (:amount %)
-                                                                                 :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                       (:amount_unit %))
-                                                                                 :source      (or (:source %) "")})
-                                                                         (fn [k] (keyword "recipe" (name k))))})
+                                                                        (merge (select-keys % [:name :instructions])
+                                                                               {:amount      (:amount %)
+                                                                                :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                      (:amount_unit %))
+                                                                                :source      (or (:source %) "")})
+                                                                        (fn [k] (keyword "recipe" (name k))))})
                                                   :body
                                                   :id)))
                         (into {}))
@@ -210,30 +210,30 @@
   (load-seed-data))
 
 (ig-repl/set-prep!
-  (fn []
-    (when-not @db-container
-      (println "resetting db")
-      (reset! db-container (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
-                             (.withDatabaseName "test_db")
-                             (.withUsername "user")
-                             (.withPassword "password")
-                             (.start))))
-    (let [task-system (-> "resources/db-task-config.edn"
-                          (db/load-config)
-                          (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
-                                                                  "&user=" (.getUsername @db-container)
-                                                                  "&password=" (.getPassword @db-container)))
-                          (db/init-system))
-          migration-task (:db-tasks/migration task-system)]
-      (migration-task)
-      (ig/halt! task-system))
-    (-> "dev/resources/server-config.edn"
-        slurp
-        ig/read-string
-        (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
-                                                "&user=" (.getUsername @db-container)
-                                                "&password=" (.getPassword @db-container)))
-        (ig/expand))))
+ (fn []
+   (when-not @db-container
+     (println "resetting db")
+     (reset! db-container (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
+                            (.withDatabaseName "test_db")
+                            (.withUsername "user")
+                            (.withPassword "password")
+                            (.start))))
+   (let [task-system (-> "resources/db-task-config.edn"
+                         (db/load-config)
+                         (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
+                                                                 "&user=" (.getUsername @db-container)
+                                                                 "&password=" (.getPassword @db-container)))
+                         (db/init-system))
+         migration-task (:db-tasks/migration task-system)]
+     (migration-task)
+     (ig/halt! task-system))
+   (-> "dev/resources/server-config.edn"
+       slurp
+       ig/read-string
+       (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
+                                               "&user=" (.getUsername @db-container)
+                                               "&password=" (.getPassword @db-container)))
+       (ig/expand))))
 
 (defn go
   ([]

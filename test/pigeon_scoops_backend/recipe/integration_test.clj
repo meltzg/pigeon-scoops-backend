@@ -66,9 +66,9 @@
     (testing "update ingredient"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients")
                                                {:auth true :body (assoc ingredient
-                                                                   :ingredient/id @ingredient-id
-                                                                   :ingredient/amount 3000
-                                                                   :igredient/ingredient-recipe-id @recipe-id)})]
+                                                                        :ingredient/id @ingredient-id
+                                                                        :ingredient/amount 3000
+                                                                        :igredient/ingredient-recipe-id @recipe-id)})]
         (is (= status 204))))
     (testing "switching from recipe to grocery ingredient"
       (let [ingredient (-> ingredient

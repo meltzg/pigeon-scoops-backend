@@ -36,10 +36,10 @@
 (defn remove-nil-keys [value]
   (cond (map? value)
         (update-vals
-          (->> value
-               (remove (comp nil? val))
-               (into {}))
-          remove-nil-keys)
+         (->> value
+              (remove (comp nil? val))
+              (into {}))
+         remove-nil-keys)
         (coll? value)
         (map remove-nil-keys value)
         :else

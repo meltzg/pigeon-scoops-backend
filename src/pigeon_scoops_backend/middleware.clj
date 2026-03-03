@@ -9,10 +9,10 @@
    :description "Middleware for auth0 authentication and authorization"
    :wrap        (fn [handler]
                   (jwt/wrap-jwt
-                    handler
-                    {:issuers {"https://pigeon-scoops.us.auth0.com/"
-                               {:alg          :RS256
-                                :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
+                   handler
+                   {:issuers {"https://pigeon-scoops.us.auth0.com/"
+                              {:alg          :RS256
+                               :jwk-endpoint "https://pigeon-scoops.us.auth0.com/.well-known/jwks.json"}}}))})
 
 (def wrap-remove-nil-keys
   {:name        ::remove-nil-keys
@@ -22,7 +22,6 @@
                     (-> request
                         (handler)
                         (update :body (comp doall-deep remove-nil-keys)))))})
-
 
 (defn wrap-owner
   ([id-key table find-by-id]
