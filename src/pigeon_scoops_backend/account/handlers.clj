@@ -17,17 +17,11 @@
               (account-db/create-account! conn-opts {:id sub :name (get claims "https://api.pigeon-scoops.com/email") :picture picture})
               (rr/status 201))))))))
 
-(defn delete-account! [auth db]
+(defn delete-account! [db]
   (fn [request]
-    (let [uid (-> request :claims :sub)
-          delete-auth0-account! (auth0/delete-user! auth uid)]
-      (if (= (:status delete-auth0-account!) 204)
-        (do
-          (account-db/delete-account! db {:id uid})
-          (rr/status 204))
-        (rr/not-found {:type    "user-not-found"
-                       :message "User not found"
-                       :data    (str "uid " uid)})))))
+    (let [uid (-> request :claims :sub)]
+      (account-db/delete-account! db {:id uid})
+      (rr/status 204))))
 
 (defn update-roles! [auth]
   (fn [request]

@@ -15,10 +15,10 @@
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
-(def user-config "dev/resources/test-user.edn")
+(def users-config "dev/resources/test-users.edn")
 (def db-container (atom nil))
-(def token (atom nil))
-(def test-user (atom nil))
+(def tokens (atom nil))
+(def test-users (atom nil))
 
 (defn get-token [{:keys [test-client-id username password]}]
   (->> {:content-type  :json
@@ -41,38 +41,45 @@
    (let [app (-> state/system :server/routes)
          auth (-> state/system :auth/auth0)
          response (app (-> (mock/request method uri)
-                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-token (conj auth @test-user)))))
+                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or (first @tokens) (get-token (conj auth (first @test-users))))))
                                    (:body opts) (mock/json-body (:body opts)))))
          response (update response :body (partial m/decode "application/json"))]
      response)))
 
-(defn make-test-user []
+(defn make-test-users [n]
   (let [auth (:auth/auth0 state/system)
-        username (str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com")
-        password (str (UUID/randomUUID))
-        create-response (auth0/create-user! auth
-                                            {:connection "Username-Password-Authentication"
-                                             :email      username
-                                             :password   password})]
-    (reset! test-user {:username username
-                       :password password
-                       :uid      (:user_id create-response)})
-    (auth0/update-roles! auth
-                         (:uid @test-user)
-                         [:manage-orders :manage-recipes :manage-groceries :manage-menus])
-    (reset! token (get-token (conj auth @test-user)))
+        usernames (repeatedly n #(str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com"))
+        passwords (repeatedly n #(str (UUID/randomUUID)))
+        create-responses (mapv #(auth0/create-user! auth
+                                                    {:connection "Username-Password-Authentication"
+                                                     :email      %1
+                                                     :password   %2})
+                               usernames passwords)]
+    (reset! test-users (mapv (fn [u p c]
+                               {:username u
+                                :password p
+                                :uid      (:user_id c)})
+                             usernames passwords create-responses))
+    (mapv #(auth0/update-roles! auth
+                                (:uid %)
+                                [:manage-orders :manage-recipes :manage-groceries :manage-menus])
+          @test-users)
+    (reset! tokens (mapv #(get-token (conj auth %)) @test-users))
     (make-request :post "/v1/account" {:auth true})
-    (spit user-config @test-user)))
+    (spit users-config (with-out-str
+                         (pprint @test-users)))))
 
 (defn load-test-user []
   (println "loading token")
-  (->> user-config
+  (->> users-config
        (slurp)
        (edn/read-string)
-       (reset! test-user)
+       (reset! test-users)
+       (first)
        (conj (:auth/auth0 state/system))
        (get-token)
-       (reset! token))
+       (vector)
+       (reset! tokens))
   (make-request :post "/v1/account" {:auth true}))
 
 (defn load-seed-data []
@@ -204,9 +211,9 @@
      :menu-id       menu-id}))
 
 (defn init-app []
-  (if (.exists (io/file user-config))
+  (if (.exists (io/file users-config))
     (load-test-user)
-    (make-test-user))
+    (make-test-users 1))
   (load-seed-data))
 
 (ig-repl/set-prep!
@@ -254,6 +261,7 @@
   (map #(auth0/delete-user! (:auth/auth0 state/system) (:user_id %))
        (filter #(str/starts-with? (:email %) "integration-test")
                (auth0/get-users (:auth/auth0 state/system))))
+  (make-test-users 2)
   (go)
   (go false)
   (halt)

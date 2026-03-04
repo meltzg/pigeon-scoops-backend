@@ -9,7 +9,9 @@
             [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.db :as config]
             [pigeon-scoops-backend.db-tasks]
-            [ring.mock.request :as mock])
+            [ring.mock.request :as mock]
+            [clojure.java.io :as io]
+            [clojure.edn :as edn])
   (:import (java.net Socket)
            (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
@@ -113,30 +115,42 @@
   ([]
    (make-account-fixture true))
   ([manage-user?]
-   (strict-fixture
-    {:setup    (fn []
-                 (let [auth (:auth/auth0 state/system)
-                       usernames (repeatedly 2 #(str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com"))
-                       passwords (repeatedly 2 #(str (UUID/randomUUID)))
-                       create-responses (map #(auth0/create-user! auth
-                                                                  {:connection "Username-Password-Authentication"
-                                                                   :email      %1
-                                                                   :password   %2})
-                                             usernames
-                                             passwords)]
-                   (reset! test-users (mapv #(hash-map :username %1
-                                                       :password %2
-                                                       :uid (:user_id %3))
-                                            usernames
-                                            passwords
-                                            create-responses))
-                   (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
-                   (when manage-user?
-                     (mapv #(test-endpoint :post "/v1/account" {:auth true :use-other-user %}) [true false]))))
-     :teardown (fn []
-                 (when manage-user?
-                   (mapv #(test-endpoint :delete "/v1/account" {:auth true :use-other-user %}) [true false])))
-     :msg      "account fixture failed"})))
+   (let [local-users (when (.exists (io/file "dev/resources/test-users.edn"))
+                       (-> "dev/resources/test-users.edn"
+                           (slurp)
+                           (edn/read-string)))]
+     (strict-fixture
+      {:setup    (fn []
+                   (let [auth (:auth/auth0 state/system)]
+                     (if local-users
+                       (reset! test-users local-users)
+                       (let [usernames (repeatedly 2 #(str "integration-test" (UUID/randomUUID) "@pigeon-scoops.com"))
+                             passwords (repeatedly 2 #(str (UUID/randomUUID)))
+                             create-responses (map #(auth0/create-user! auth
+                                                                        {:connection "Username-Password-Authentication"
+                                                                         :email      %1
+                                                                         :password   %2})
+                                                   usernames
+                                                   passwords)]
+                         (reset! test-users (mapv #(hash-map :username %1
+                                                             :password %2
+                                                             :uid (:user_id %3))
+                                                  usernames
+                                                  passwords
+                                                  create-responses))))
+                     (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
+                     (when manage-user?
+                       (mapv #(test-endpoint :post "/v1/account" {:auth true :use-other-user %}) [true false]))))
+       :teardown (fn []
+                   (let [auth (:auth/auth0 state/system)]
+                     (when manage-user?
+                       (mapv #(do
+                                (test-endpoint :delete "/v1/account" {:auth true :use-other-user %})
+                                (when (nil? local-users)
+                                  (auth0/delete-user! auth (:uid (if % (second @test-users)
+                                                                       (first @test-users))))))
+                             [true false]))))
+       :msg      "account fixture failed"}))))
 
 (defn make-roles-fixture [& roles]
   (strict-fixture

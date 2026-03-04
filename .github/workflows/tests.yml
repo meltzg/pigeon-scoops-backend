@@ -29,6 +29,8 @@ jobs:
           lein version  # Verify installation
       - name: Install dependencies
         run: lein deps
+      - name: Lint
+        run: lein cljfmt check
       - name: Run tests
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}

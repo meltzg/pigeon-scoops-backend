@@ -13,7 +13,7 @@
    ["" {:post   {:handler   (account/create-account! db)
                  :responses {201 {:body nil?}}
                  :summary   "Create account"}
-        :delete {:handler   (account/delete-account! auth db)
+        :delete {:handler   (account/delete-account! db)
                  :responses {204 {:body nil?}}
                  :summary   "Delete account"}}]
    ["/:user-id" {:parameters {:path {:user-id string?}}
