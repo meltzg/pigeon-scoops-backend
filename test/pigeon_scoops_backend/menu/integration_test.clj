@@ -37,7 +37,7 @@
         (is (= status 201))
         (is (nil? (:menu/end-time menu-body)))))
     (testing "create active menu"
-      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body (assoc menu :active true)})
+      (let [{:keys [status body]} (ts/test-endpoint :post "/v1/menus" {:auth true :body (assoc menu :menu/active true)})
             {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" (:id body))
                                                 {:auth true})]
         (is (= status 201))
@@ -47,7 +47,7 @@
         (let [{:keys [status]} (ts/test-endpoint
                                 :put
                                 (str "/v1/menus/" @menu-id)
-                                {:auth true :body (assoc menu :active true)})
+                                {:auth true :body (assoc menu :menu/active true)})
               {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
                                                   {:auth true})]
           (is (= status 204))
@@ -57,7 +57,7 @@
         (let [{:keys [status]} (ts/test-endpoint
                                 :put
                                 (str "/v1/menus/" @menu-id)
-                                {:auth true :body (assoc menu :duration 4 :active true)})
+                                {:auth true :body (assoc menu :menu/duration 4 :menu/active true)})
               {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
                                                   {:auth true})]
           (is (= status 204))
@@ -66,7 +66,7 @@
       (let [{:keys [status]} (ts/test-endpoint
                               :put
                               (str "/v1/menus/" @menu-id)
-                              {:auth true :body (assoc menu :active false)})
+                              {:auth true :body (assoc menu :menu/active false)})
             {menu-body :body} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
                                                 {:auth true})]
         (is (= status 204))
@@ -87,7 +87,7 @@
                                                                        :menu-item-size/amount       4
                                                                        :menu-item-size/amount-unit  :mass/lb}})]
         (reset! menu-item-size-id (:id body))
-        (is (= status 201))))
+        (is (= status 201) (str "body " body))))
     (testing "update menu item size"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/menus/" @menu-id "/sizes")
                                                {:auth true :body {:menu-item-size/id           @menu-item-size-id
@@ -122,9 +122,9 @@
                                                                                                     :body {:menu-item/id @menu-item-id}})]
           (is (= status 400)))))
     (testing "delete menu item size"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/sizes") {:auth true
-                                                                                             :body {:menu-item-size/id @menu-item-size-id}})]
-        (is (= status 204))))
+      (let [{:keys [status body]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/sizes") {:auth true
+                                                                                                  :body {:menu-item-size/id @menu-item-size-id}})]
+        (is (= status 204) (str "AAA" body))))
     (testing "delete menu item"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/items") {:auth true
                                                                                              :body {:menu-item/id @menu-item-id}})]

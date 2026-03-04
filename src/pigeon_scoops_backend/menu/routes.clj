@@ -42,7 +42,7 @@
                   :summary    "Delete menu"}}]
     ["/items" {:middleware [[(mw/wrap-with-permission :edit/menu)]]}
      ["" {:post   {:handler    (menu/create-menu-item! db)
-                   :parameters {:body {:recipe-id uuid?}}
+                   :parameters {:body {:menu-item/recipe-id uuid?}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create menu-item"}
           :put    {:handler    (menu/update-menu-item! db)
@@ -52,7 +52,7 @@
                    :summary    "Update menu-item"}
           :delete {:handler    (menu/delete-menu-item! db)
                    :parameters {:body {:menu-item/id uuid?}}
-                   :responses  {204 {:menu-item/body nil?}}
+                   :responses  {204 {:body nil?}}
                    :summary    "delete menu-item"}}]]
     ["/sizes" {:middleware [[(mw/wrap-with-permission :edit/menu)]]}
      ["" {:post   {:handler    (menu/create-menu-item-size! db)
@@ -73,6 +73,6 @@
                    :responses  {204 {:body nil?}}
                    :summary    "Update menu-item size"}
           :delete {:handler    (menu/delete-menu-item-size! db)
-                   :parameters {:body {:id uuid?}}
+                   :parameters {:body {:menu-item-size/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete menu-item size"}}]]]])

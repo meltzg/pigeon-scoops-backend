@@ -36,7 +36,8 @@
   (sql/insert! db :grocery (apply-keyword->db-str grocery :grocery/department)))
 
 (defn update-grocery! [db grocery]
-  (-> (sql/update! db :grocery (apply-keyword->db-str grocery :grocery/department) (select-keys grocery [:id]))
+  (-> (sql/update! db :grocery (apply-keyword->db-str grocery :grocery/department)
+                   (select-keys grocery [:grocery/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -58,7 +59,7 @@
        :grocery-unit/unit-mass-type
        :grocery-unit/unit-volume-type)
       (#(sql/update! db :grocery-unit %
-                     (select-keys % [:id])))
+                     (select-keys % [:grocery-unit/id])))
       ::jdbc/update-count
       (pos?)))
 

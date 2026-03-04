@@ -53,10 +53,10 @@
                                        :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                             (keys mass/conversion-map)
                                                                                             (keys volume/conversion-map))))
-                                       :status      (s/and keyword? responses/status)}}
+                                       :order-item/status      (s/and keyword? responses/status)}}
                    :responses  {204 {:body nil?}}
                    :summary    "Update order-item"}
           :delete {:handler    (order/delete-order-item! db)
-                   :parameters {:body {:id uuid?}}
+                   :parameters {:body {:order-item/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete order-item"}}]]]])

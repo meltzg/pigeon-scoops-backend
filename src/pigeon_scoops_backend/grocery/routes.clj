@@ -64,6 +64,6 @@
                    :responses  {204 {:body nil?}}
                    :summary    "Update grocery-unit"}
           :delete {:handler    (grocery/delete-grocery-unit! db)
-                   :parameters {:body {:id uuid?}}
+                   :parameters {:body {:grocery-unit/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete grocery-unit"}}]]]])

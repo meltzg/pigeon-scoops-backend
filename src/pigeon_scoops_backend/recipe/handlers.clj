@@ -98,8 +98,8 @@
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)
           ingredient-id (UUID/randomUUID)]
-      (recipe-db/insert-ingredient! db (assoc ingredient :recipe-id recipe-id
-                                              :id ingredient-id))
+      (recipe-db/insert-ingredient! db (assoc ingredient :ingredient/recipe-id recipe-id
+                                              :ingredient/id ingredient-id))
       (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:id ingredient-id}))))
 
@@ -108,7 +108,7 @@
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)]
       (if (-> ingredient
-              (select-keys [:ingredient-recipe-id :ingredient-grocery-id])
+              (select-keys [:ingredient/ingredient-recipe-id :ingredient/ingredient-grocery-id])
               (vals)
               ((partial remove nil?))
               (count)

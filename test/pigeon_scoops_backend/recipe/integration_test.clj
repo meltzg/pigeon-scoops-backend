@@ -59,7 +59,7 @@
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
         (is (= status 204))))
     (testing "create ingredient from recipe"
-      (let [ingredient (assoc ingredient :ingredient-recipe-id @recipe-id)
+      (let [ingredient (assoc ingredient :ingredient/ingredient-recipe-id @recipe-id)
             {:keys [status body]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body ingredient})]
         (reset! ingredient-id (:id body))
         (is (= status 201))))
@@ -68,7 +68,7 @@
                                                {:auth true :body (assoc ingredient
                                                                         :ingredient/id @ingredient-id
                                                                         :ingredient/amount 3000
-                                                                        :igredient/ingredient-recipe-id @recipe-id)})]
+                                                                        :ingredient/ingredient-recipe-id @recipe-id)})]
         (is (= status 204))))
     (testing "switching from recipe to grocery ingredient"
       (let [ingredient (-> ingredient

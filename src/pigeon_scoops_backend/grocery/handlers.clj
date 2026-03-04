@@ -69,8 +69,8 @@
 (defn delete-grocery-unit! [db]
   (fn [request]
     (let [grocery-id (-> request :parameters :path :grocery-id)
-          grocery-unit-id (-> request :parameters :body :id)
-          successful? (grocery-db/delete-grocery-unit! db {:id grocery-unit-id :grocery-id grocery-id})]
+          grocery-unit-id (-> request :parameters :body :grocery-unit/id)
+          successful? (grocery-db/delete-grocery-unit! db {:grocery-unit/id grocery-unit-id :grocery-unit/grocery-id grocery-id})]
       (if successful?
         (rr/status 204)
         (rr/bad-request (-> request :parameters :body))))))

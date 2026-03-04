@@ -86,7 +86,7 @@
 (defn delete-menu-item! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
-          menu-item-id (-> request :parameters :body :id)
+          menu-item-id (-> request :parameters :body :menu-item/id)
           successful? (menu-db/delete-menu-item! db {:menu/id menu-item-id :menu/menu-id menu-id})]
       (if successful?
         (rr/status 204)
@@ -95,7 +95,7 @@
 (defn create-menu-item-size! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
-          {:keys [menu-item-id] :as menu-item-size} (-> request :parameters :body)
+          {:menu-item-size/keys [menu-item-id] :as menu-item-size} (-> request :parameters :body)
           menu-item (menu-db/find-menu-item-by-id db menu-item-id)
           menu-item-size-id (UUID/randomUUID)]
       (if (= menu-id (:menu-item/menu-id menu-item))
@@ -109,7 +109,7 @@
 (defn update-menu-item-size! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
-          {:keys [menu-item-id] :as menu-item-size} (-> request :parameters :body)
+          {:menu-item-size/keys [menu-item-id] :as menu-item-size} (-> request :parameters :body)
           menu-item (menu-db/find-menu-item-by-id db menu-item-id)]
       (cond
         (not= menu-id (:menu-item/menu-id menu-item))
@@ -124,7 +124,7 @@
 (defn delete-menu-item-size! [db]
   (fn [request]
     (let [menu-id (-> request :parameters :path :menu-id)
-          menu-item-size-id (-> request :parameters :body :id)
+          menu-item-size-id (-> request :parameters :body :menu-item-size/id)
           successful? (menu-db/delete-menu-item-size! db {:id menu-item-size-id :menu-id menu-id})]
       (if successful?
         (rr/status 204)

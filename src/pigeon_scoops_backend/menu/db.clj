@@ -77,7 +77,7 @@
                    (-> menu
                        (apply-keyword->db-str :menu/duration-type)
                        (update :menu/end-time #(when % (Timestamp/from (.toInstant %)))))
-                   (select-keys menu [:id]))
+                   (select-keys menu [:menu/id]))
       ::jdbc/update-count
       (pos?)))
 
