@@ -15,7 +15,7 @@
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
-(def users-config "dev/resources/test-users.edn")
+(def users-config "dev/resources/repl-users.edn")
 (def db-container (atom nil))
 (def tokens (atom nil))
 (def test-users (atom nil))

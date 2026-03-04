@@ -27,10 +27,12 @@
        (m/decode-response-body)
        :access_token))
 
-(defn delete-user! [auth uid]
-  (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
-       (http/delete
-        (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid))))
+(defn delete-user! [{:keys [skip-auth0-delete?] :as auth} uid]
+  (if skip-auth0-delete?
+    {:status 204}
+    (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
+         (http/delete
+          (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid)))))
 
 (defn create-user! [auth {:keys [connection email password]}]
   (let [token (get-management-token auth)]
