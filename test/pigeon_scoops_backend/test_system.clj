@@ -148,7 +148,7 @@
                                 (test-endpoint :delete "/v1/account" {:auth true :use-other-user %})
                                 (when (nil? local-users)
                                   (auth0/delete-user! auth (:uid (if % (second @test-users)
-                                                                       (first @test-users))))))
+                                                                     (first @test-users))))))
                              [true false]))))
        :msg      "account fixture failed"}))))
 
