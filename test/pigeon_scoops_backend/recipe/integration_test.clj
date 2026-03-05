@@ -1,7 +1,6 @@
 (ns pigeon-scoops-backend.recipe.integration-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [integrant.repl.state]
-            [pigeon-scoops-backend.server :refer :all]
             [pigeon-scoops-backend.test-system :as ts]))
 
 (use-fixtures
@@ -91,7 +90,7 @@
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id "/bom") {:auth true :params {:amount 5 :amount-unit "mass/g"}})]
         (is (= status 200))))
     (testing "delete ingredient"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body {:id @ingredient-id}})]
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:auth true :body {:ingredient/id @ingredient-id}})]
         (is (= status 204))))
     (testing "delete recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:auth true})]

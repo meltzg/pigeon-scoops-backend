@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.menu.integration-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [pigeon-scoops-backend.test-system :as ts]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes :manage-menus))

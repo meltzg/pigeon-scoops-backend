@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.user-order.integration-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
             [pigeon-scoops-backend.user-order.db :as order-db]

@@ -105,6 +105,6 @@
                    :summary    "Update ingredient"}
           :delete {:handler    (recipe/delete-ingredient! db)
                    :middleware [[wrap-recipe-owner db]]
-                   :parameters {:body {:id uuid?}}
+                   :parameters {:body {:ingredient/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete ingredient"}}]]]])

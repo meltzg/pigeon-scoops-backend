@@ -125,7 +125,7 @@
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)
-          successful? (recipe-db/delete-ingredient! db (assoc (select-keys ingredient [:id])
+          successful? (recipe-db/delete-ingredient! db (assoc (select-keys ingredient [:ingredient/id])
                                                               :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)

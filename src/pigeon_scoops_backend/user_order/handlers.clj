@@ -9,8 +9,7 @@
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.responses :refer [terminal?]]
             [pigeon-scoops-backend.utils :refer [with-connection]]
-            [ring.util.response :as rr]
-            [clojure.pprint :refer [pprint]])
+            [ring.util.response :as rr])
   (:import (java.util UUID)))
 
 (defn list-all-orders [db]

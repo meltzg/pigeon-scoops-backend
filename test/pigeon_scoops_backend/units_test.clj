@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.units-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [are deftest testing]]
             [pigeon-scoops-backend.units.common :as units]))
 
 (def tolerance 0.0001)
