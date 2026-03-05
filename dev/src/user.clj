@@ -7,17 +7,18 @@
             [integrant.repl :as ig-repl]
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
-            [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.db :as db]
             [pigeon-scoops-backend.db-tasks]
-            [ring.mock.request :as mock])
+            [ring.mock.request :as mock]
+            [clojure.pprint :refer [pprint]])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
-(def user-config "dev/resources/test-user.edn")
+(def users-config "dev/resources/repl-users.edn")
 (def db-container (atom nil))
-(def token (atom nil))
-(def test-user (atom nil))
+(def tokens (atom nil))
+(def test-users (atom nil))
 
 (defn get-token [{:keys [test-client-id username password]}]
   (->> {:content-type  :json
@@ -40,38 +41,45 @@
    (let [app (-> state/system :server/routes)
          auth (-> state/system :auth/auth0)
          response (app (-> (mock/request method uri)
-                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or @token (get-token (conj auth @test-user)))))
+                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or (first @tokens) (get-token (conj auth (first @test-users))))))
                                    (:body opts) (mock/json-body (:body opts)))))
          response (update response :body (partial m/decode "application/json"))]
      response)))
 
-(defn make-test-user []
+(defn make-test-users [n]
   (let [auth (:auth/auth0 state/system)
-        username (str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com")
-        password (str (UUID/randomUUID))
-        create-response (auth0/create-user! auth
-                                            {:connection "Username-Password-Authentication"
-                                             :email      username
-                                             :password   password})]
-    (reset! test-user {:username username
-                       :password password
-                       :uid      (:user_id create-response)})
-    (auth0/update-roles! auth
-                         (:uid @test-user)
-                         [:manage-orders :manage-recipes :manage-groceries :manage-menus])
-    (reset! token (get-token (conj auth @test-user)))
+        usernames (repeatedly n #(str "repl-user" (UUID/randomUUID) "@pigeon-scoops.com"))
+        passwords (repeatedly n #(str (UUID/randomUUID)))
+        create-responses (mapv #(auth0/create-user! auth
+                                                    {:connection "Username-Password-Authentication"
+                                                     :email      %1
+                                                     :password   %2})
+                               usernames passwords)]
+    (reset! test-users (mapv (fn [u p c]
+                               {:username u
+                                :password p
+                                :uid      (:user_id c)})
+                             usernames passwords create-responses))
+    (mapv #(auth0/update-roles! auth
+                                (:uid %)
+                                [:manage-orders :manage-recipes :manage-groceries :manage-menus])
+          @test-users)
+    (reset! tokens (mapv #(get-token (conj auth %)) @test-users))
     (make-request :post "/v1/account" {:auth true})
-    (spit user-config @test-user)))
+    (spit users-config (with-out-str
+                         (pprint @test-users)))))
 
 (defn load-test-user []
   (println "loading token")
-  (->> user-config
+  (->> users-config
        (slurp)
        (edn/read-string)
-       (reset! test-user)
+       (reset! test-users)
+       (first)
        (conj (:auth/auth0 state/system))
        (get-token)
-       (reset! token))
+       (vector)
+       (reset! tokens))
   (make-request :post "/v1/account" {:auth true}))
 
 (defn load-seed-data []
@@ -80,8 +88,8 @@
                          (m/decode "application/json")
                          (map #(vector (:type %) (-> (make-request :post "/v1/groceries"
                                                                    {:auth true
-                                                                    :body {:name       (:type %)
-                                                                           :department :department/grocery}})
+                                                                    :body {:grocery/name       (:type %)
+                                                                           :grocery/department :department/grocery}})
                                                      :body
                                                      :id)))
                          (into {}))
@@ -90,14 +98,14 @@
                    (m/decode "application/json")
                    (map #(-> (make-request :post (str "/v1/groceries/" (get grocery-map (:type %)) "/units")
                                            {:auth true
-                                            :body (cond-> {:source    (:source %)
-                                                           :unit-cost (:unit_cost %)}
-                                                          (:unit_mass %) (merge {:unit-mass      (:unit_mass %)
-                                                                                 :unit-mass-type (keyword "mass" (:unit_mass_type %))})
-                                                          (:unit_volume %) (merge {:unit-volume      (:unit_volume %)
-                                                                                   :unit-volume-type (keyword "volume" (:unit_volume_type %))})
-                                                          (:unit_common %) (merge {:unit-common      (:unit_common %)
-                                                                                   :unit-common-type (keyword "common" (:unit_common_type %))}))})
+                                            :body (cond-> {:grocery-unit/source    (:source %)
+                                                           :grocery-unit/unit-cost (:unit_cost %)}
+                                                    (:unit_mass %) (merge {:grocery-unit/unit-mass      (:unit_mass %)
+                                                                           :grocery-unit/unit-mass-type (keyword "mass" (:unit_mass_type %))})
+                                                    (:unit_volume %) (merge {:grocery-unit/unit-volume      (:unit_volume %)
+                                                                             :grocery-unit/unit-volume-type (keyword "volume" (:unit_volume_type %))})
+                                                    (:unit_common %) (merge {:grocery-unit/unit-common      (:unit_common %)
+                                                                             :grocery-unit/unit-common-type (keyword "common" (:unit_common_type %))}))})
                              :body
                              :id)))
         recipe-map (->> "dev/resources/seed/recipes.json"
@@ -105,11 +113,13 @@
                         (m/decode "application/json")
                         (map #(vector (:id %) (-> (make-request :post "/v1/recipes"
                                                                 {:auth true
-                                                                 :body (merge (select-keys % [:name :instructions])
-                                                                              {:amount      (:amount %)
-                                                                               :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                     (:amount_unit %))
-                                                                               :source      (or (:source %) "")})})
+                                                                 :body (update-keys
+                                                                        (merge (select-keys % [:name :instructions])
+                                                                               {:amount      (:amount %)
+                                                                                :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                      (:amount_unit %))
+                                                                                :source      (or (:source %) "")})
+                                                                        (fn [k] (keyword "recipe" (name k))))})
                                                   :body
                                                   :id)))
                         (into {}))
@@ -118,10 +128,12 @@
                          (m/decode "application/json")
                          (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:recipe_id %)) "/ingredients")
                                                  {:auth true
-                                                  :body {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
-                                                         :amount                (:amount %)
-                                                         :amount-unit           (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                         (:amount_unit %))}})
+                                                  :body (update-keys {:ingredient-grocery-id (get grocery-map (:ingredient_type %))
+                                                                      :amount                (:amount %)
+                                                                      :amount-unit           (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                      (:amount_unit %))}
+                                                                     (fn [k] (keyword "ingredient" (name k))))})
+
                                    :body
                                    :id)))
         recipe-map (merge recipe-map
@@ -130,19 +142,22 @@
                                (m/decode "application/json")
                                (map #(let [recipe-id (-> (make-request :post "/v1/recipes"
                                                                        {:auth true
-                                                                        :body (merge (select-keys % [:name :instructions])
-                                                                                     {:amount      (:amount %)
-                                                                                      :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                            (:amount_unit %))
-                                                                                      :source      ""})})
+                                                                        :body (update-keys (merge (select-keys % [:name :instructions])
+                                                                                                  {:amount      (:amount %)
+                                                                                                   :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                                         (:amount_unit %))
+                                                                                                   :source      ""})
+                                                                                           (fn [k] (keyword "recipe" (name k))))})
                                                          :body
                                                          :id)]
                                        (make-request :post (str "/v1/recipes/" recipe-id "/ingredients")
                                                      {:auth true
-                                                      :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                             :amount               (:amount %)
-                                                             :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                            (:amount_unit %))}})
+                                                      :body (update-keys {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                                          :amount               (:amount %)
+                                                                          :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                         (:amount_unit %))}
+                                                                         (fn [k] (keyword "ingredient" (name k))))})
+
                                        [(:id %) recipe-id]))
                                (into {})))
         ingredients (concat ingredients
@@ -151,26 +166,28 @@
                                  (m/decode "application/json")
                                  (map #(-> (make-request :post (str "/v1/recipes/" (get recipe-map (:flavor_id %)) "/ingredients")
                                                          {:auth true
-                                                          :body {:ingredient-recipe-id (get recipe-map (:recipe_id %))
-                                                                 :amount               (:amount %)
-                                                                 :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                                (:amount_unit %))}})
+                                                          :body (update-keys {:ingredient-recipe-id (get recipe-map (:recipe_id %))
+                                                                              :amount               (:amount %)
+                                                                              :amount-unit          (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                                             (:amount_unit %))}
+                                                                             (fn [k] (keyword "ingredient" (name k))))})
                                            :body
                                            :id))))
         menu-id (-> (make-request :post "/v1/menus"
                                   {:auth true
-                                   :body {:name          "test menu"
-                                          :active        true
-                                          :repeats       false
-                                          :duration      3
-                                          :duration-type :duration/day}}))
+                                   :body {:menu/name          "test menu"
+                                          :menu/active        true
+                                          :menu/repeats       false
+                                          :menu/duration      3
+                                          :menu/duration-type :duration/day}}))
 
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
                        (map #(vector (:id %) (-> (make-request :post "/v1/orders"
                                                                {:auth true
-                                                                :body (select-keys % [:note])})
+                                                                :body (update-keys (select-keys % [:note])
+                                                                                   (fn [k] (keyword "user-order" (name k))))})
                                                  :body
                                                  :id)))
                        (into {}))
@@ -179,10 +196,10 @@
                          (m/decode "application/json")
                          (map #(-> (make-request :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
                                                  {:auth true
-                                                  :body {:recipe-id   (get recipe-map (:flavor_id %))
-                                                         :amount      (:amount %)
-                                                         :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                               (:amount_unit %))}})
+                                                  :body {:order-item/recipe-id   (get recipe-map (:flavor_id %))
+                                                         :order-item/amount      (:amount %)
+                                                         :order-item/amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                          (:amount_unit %))}})
                                    :body
                                    :id)))]
     {:grocery-map   grocery-map
@@ -194,36 +211,36 @@
      :menu-id       menu-id}))
 
 (defn init-app []
-  (if (.exists (io/file user-config))
+  (if (.exists (io/file users-config))
     (load-test-user)
-    (make-test-user))
+    (make-test-users 1))
   (load-seed-data))
 
 (ig-repl/set-prep!
-  (fn []
-    (when-not @db-container
-      (println "resetting db")
-      (reset! db-container (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
-                             (.withDatabaseName "test_db")
-                             (.withUsername "user")
-                             (.withPassword "password")
-                             (.start))))
-    (let [task-system (-> "resources/db-task-config.edn"
-                          (db/load-config)
-                          (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
-                                                                  "&user=" (.getUsername @db-container)
-                                                                  "&password=" (.getPassword @db-container)))
-                          (db/init-system))
-          migration-task (:db-tasks/migration task-system)]
-      (migration-task)
-      (ig/halt! task-system))
-    (-> "dev/resources/server-config.edn"
-        slurp
-        ig/read-string
-        (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
-                                                "&user=" (.getUsername @db-container)
-                                                "&password=" (.getPassword @db-container)))
-        (ig/expand))))
+ (fn []
+   (when-not @db-container
+     (println "resetting db")
+     (reset! db-container (doto (PostgreSQLContainer. "postgres:latest") ;; Full reference to PostgreSQLContainer
+                            (.withDatabaseName "test_db")
+                            (.withUsername "user")
+                            (.withPassword "password")
+                            (.start))))
+   (let [task-system (-> "resources/db-task-config.edn"
+                         (db/load-config)
+                         (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
+                                                                 "&user=" (.getUsername @db-container)
+                                                                 "&password=" (.getPassword @db-container)))
+                         (db/init-system))
+         migration-task (:db-tasks/migration task-system)]
+     (migration-task)
+     (ig/halt! task-system))
+   (-> "dev/resources/server-config.edn"
+       slurp
+       ig/read-string
+       (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
+                                               "&user=" (.getUsername @db-container)
+                                               "&password=" (.getPassword @db-container)))
+       (ig/expand))))
 
 (defn go
   ([]
@@ -244,6 +261,7 @@
   (map #(auth0/delete-user! (:auth/auth0 state/system) (:user_id %))
        (filter #(str/starts-with? (:email %) "integration-test")
                (auth0/get-users (:auth/auth0 state/system))))
+  (make-test-users 2)
   (go)
   (go false)
   (halt)

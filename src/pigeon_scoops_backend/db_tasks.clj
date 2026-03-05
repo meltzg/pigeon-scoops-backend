@@ -11,13 +11,11 @@
   (:import (java.time ZonedDateTime)
            (org.flywaydb.core Flyway)))
 
-
 (def options
   [["-c" "--config-file CONFIG_FILE" "Config File"
     :validate [#(.exists (io/file %))]]
    ["-t" "--task TASK" "DB Task"
     :parse-fn keyword]])
-
 
 (defmethod ig/init-key :db-tasks/migration [_ {:keys [jdbc-url]}]
   (fn []
@@ -27,7 +25,6 @@
         (.locations (into-array String ["classpath:db/migrations"]))
         (.load)
         (.migrate))))
-
 
 (defmethod ig/init-key :db-tasks/accept-orders [_ {:keys [jdbc-url]}]
   (fn []
@@ -53,8 +50,6 @@
                         (map #(menu-db/update-menu! tx {:id       %
                                                         :end-time (end-time (:menu/duration %)
                                                                             (:menu/duration-type %))}))))))))))
-
-
 
 (defn -main
   [& args]

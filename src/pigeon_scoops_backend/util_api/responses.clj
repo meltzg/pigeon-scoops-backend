@@ -1,6 +1,6 @@
 (ns pigeon-scoops-backend.util-api.responses
   (:require [clojure.spec.alpha :as s]
-            [pigeon-scoops-backend.auth0 :refer [roles]]
+            [pigeon-scoops-backend.auth :refer [roles]]
             [pigeon-scoops-backend.grocery.responses :refer [departments]]
             [pigeon-scoops-backend.menu.responses :refer [durations]]
             [pigeon-scoops-backend.units.common :as common]

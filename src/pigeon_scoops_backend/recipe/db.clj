@@ -39,7 +39,6 @@
                                                          :recipe/amount-unit)
                                  private)})))))))
 
-
 (defn find-recipe-by-id [db recipe-id]
   (with-connection
     db
@@ -56,20 +55,20 @@
           (-> recipe
               (apply-db-str->keyword :recipe/amount-unit)
               (assoc
-                :recipe/ingredients (map #(apply-db-str->keyword % :ingredient/amount-unit) ingredients)
-                :recipe/favorite-count favorite-count)))))))
+               :recipe/ingredients (map #(apply-db-str->keyword % :ingredient/amount-unit) ingredients)
+               :recipe/favorite-count favorite-count)))))))
 
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (-> recipe
-                              (apply-keyword->db-str :amount-unit)
-                              (assoc :public false
-                                     :instructions (into-array String (:instructions recipe))))))
+                              (apply-keyword->db-str :recipe/amount-unit)
+                              (assoc :recipe/public false
+                                     :recipe/instructions (into-array String (:recipe/instructions recipe))))))
 
 (defn update-recipe! [db recipe]
   (-> (sql/update! db :recipe (-> recipe
-                                  (apply-keyword->db-str :amount-unit)
-                                  (update :instructions (partial into-array String)))
-                   (select-keys recipe [:id]))
+                                  (apply-keyword->db-str :recipe/amount-unit)
+                                  (update :recipe/instructions (partial into-array String)))
+                   (select-keys recipe [:recipe/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -78,7 +77,6 @@
       ::jdbc/update-count
       (pos?)))
 
-
 (defn favorite-recipe! [db data]
   (sql/insert! db :recipe-favorite data (:options db)))
 
@@ -86,17 +84,17 @@
   (sql/delete! db :recipe-favorite data (:options db)))
 
 (defn insert-ingredient! [db ingredient]
-  (sql/insert! db, :ingredient (apply-keyword->db-str ingredient :amount-unit)))
+  (sql/insert! db, :ingredient (apply-keyword->db-str ingredient :ingredient/amount-unit)))
 
 (defn update-ingredient! [db ingredient]
   (-> (sql/update! db :ingredient (apply-keyword->db-str
-                                    (cond-> ingredient
-                                            (some? (:ingredient-grocery-id ingredient))
-                                            (assoc :ingredient-recipe-id nil)
-                                            (some? (:ingredient-recipe-id ingredient))
-                                            (assoc :ingredient-grocery-id nil))
-                                    :amount-unit)
-                   (select-keys ingredient [:id]))
+                                   (cond-> ingredient
+                                     (some? (:ingredient/ingredient-grocery-id ingredient))
+                                     (assoc :ingredient/ingredient-recipe-id nil)
+                                     (some? (:ingredient/ingredient-recipe-id ingredient))
+                                     (assoc :ingredient/ingredient-grocery-id nil))
+                                   :ingredient/amount-unit)
+                   (select-keys ingredient [:ingredient/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -118,9 +116,9 @@
           (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
                 {:keys [recipe-ingredients grocery-ingredients]}
                 (->> (transforms/scale-recipe
-                       (find-recipe-by-id conn-opts ingredient-recipe-id)
-                       amount
-                       amount-unit)
+                      (find-recipe-by-id conn-opts ingredient-recipe-id)
+                      amount
+                      amount-unit)
                      :recipe/ingredients
                      (group-by #(if (some? (:ingredient/ingredient-recipe-id %))
                                   :recipe-ingredients

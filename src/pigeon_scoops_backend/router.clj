@@ -13,7 +13,6 @@
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
             [reitit.ring.middleware.exception :as exception]
-    ;[reitit.ring.middleware.dev :as dev]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
             [reitit.swagger :as swagger]
@@ -23,7 +22,6 @@
 
 (def router-config
   {:validate  rs/validate
-   ;:reitit.middleware/transform dev/print-request-diffs
    :exception pretty/exception
    :data      {:coercion   coercion-spec/coercion
                :muuntaja   m/instance
@@ -52,21 +50,21 @@
 
 (defn routes [env]
   (ring/ring-handler
-    (ring/router
-      [openapi-docs
-       ["/v1"
-        {:openapi {:security [{"auth" []}]}}
-        (grocery/routes env)
-        (recipe/routes env)
-        (menu/routes env)
-        (user-order/routes env)
-        (util-api/routes)
-        (account/routes env)]]
-      router-config)
-    (ring/routes
-      (swagger-ui/create-swagger-ui-handler
-        {:path   "/"
-         :config {:validatorUrl     nil
-                  :urls             [{:name "openapi", :url "openapi.json"}]
-                  :urls.primaryName "openapi"
-                  :operationsSorter "alpha"}}))))
+   (ring/router
+    [openapi-docs
+     ["/v1"
+      {:openapi {:security [{"auth" []}]}}
+      (grocery/routes env)
+      (recipe/routes env)
+      (menu/routes env)
+      (user-order/routes env)
+      (util-api/routes)
+      (account/routes env)]]
+    router-config)
+   (ring/routes
+    (swagger-ui/create-swagger-ui-handler
+     {:path   "/"
+      :config {:validatorUrl     nil
+               :urls             [{:name "openapi", :url "openapi.json"}]
+               :urls.primaryName "openapi"
+               :operationsSorter "alpha"}}))))

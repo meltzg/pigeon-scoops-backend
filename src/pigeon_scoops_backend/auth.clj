@@ -1,8 +1,19 @@
-(ns pigeon-scoops-backend.auth0
-  (:require [clj-http.client :as http]
+(ns pigeon-scoops-backend.auth
+  (:require [environ.core :refer [env]]
+            [clj-http.client :as http]
+            [integrant.core :as ig]
             [muuntaja.core :as m]))
 
 (def roles #{:manage-roles :manage-recipes :manage-groceries :manage-orders :manage-menus})
+
+(defmethod ig/expand-key :auth/auth0 [k config]
+  {k (merge config (cond-> {}
+                     (env :test-client-id) (conj {:test-client-id (env :test-client-id)})
+                     (env :management-client-id) (conj {:management-client-id (env :management-client-id)})
+                     (env :management-client-secret) (conj {:management-client-secret (env :management-client-secret)})))})
+
+(defmethod ig/init-key :auth/auth0 [_ config]
+  config)
 
 (defn get-management-token [{:keys [management-client-id management-client-secret]}]
   (->> {:content-type  :json
@@ -16,10 +27,12 @@
        (m/decode-response-body)
        :access_token))
 
-(defn delete-user! [auth uid]
-  (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
-       (http/delete
-         (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid))))
+(defn delete-user! [{:keys [skip-auth0-delete?] :as auth} uid]
+  (if skip-auth0-delete?
+    {:status 204}
+    (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
+         (http/delete
+          (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid)))))
 
 (defn create-user! [auth {:keys [connection email password]}]
   (let [token (get-management-token auth)]
@@ -37,7 +50,7 @@
 (defn get-users [auth]
   (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
        (http/get
-         (str "https://pigeon-scoops.us.auth0.com/api/v2/users"))
+        (str "https://pigeon-scoops.us.auth0.com/api/v2/users"))
        (m/decode-response-body)))
 
 (defn get-role-ids [token role-names]

@@ -1,4 +1,4 @@
-name: Clojure CI Tests
+name: Clojure CI Lint
 
 on:
   push:
@@ -29,15 +29,7 @@ jobs:
           lein version  # Verify installation
       - name: Install dependencies
         run: lein deps
-      - name: Run tests
-        env:
-          MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
-          MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
-          TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-        run: lein test
-      - name: Cleanup test users
-        env:
-          MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
-          MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
-          TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-        run: lein with-profile +dev run -m pigeon-scoops-backend.cleanup
+      - name: Formatting
+        run: lein cljfmt check
+      - name: Linting
+        run: lein clj-kondo
