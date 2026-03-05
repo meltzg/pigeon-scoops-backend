@@ -14,5 +14,5 @@ pom.xml.asc
 .idea/
 dev/resources/server-config.edn
 dev/resources/db.sqlite
-dev/resources/test-users.edn
+dev/resources/*-users.edn
 .clj-kondo/
