@@ -68,7 +68,7 @@
   (-> (sql/update! db :recipe (-> recipe
                                   (apply-keyword->db-str :recipe/amount-unit)
                                   (update :recipe/instructions (partial into-array String)))
-                   (select-keys recipe [:id]))
+                   (select-keys recipe [:recipe/id]))
       ::jdbc/update-count
       (pos?)))
 
