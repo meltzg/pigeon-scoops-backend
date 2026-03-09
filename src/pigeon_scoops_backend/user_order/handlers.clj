@@ -23,9 +23,9 @@
           uid (-> request :claims :sub)
           order (-> request :parameters :body)]
       (order-db/insert-order! db (assoc order
-                                   :id order-id
-                                   :user-id uid
-                                   :status :status/draft))
+                                        :user-order/id order-id
+                                        :user-order/user-id uid
+                                        :user-order/status :status/draft))
       (rr/created (str responses/base-url "/orders/" order-id)
                   {:id order-id}))))
 
@@ -43,7 +43,7 @@
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
           order (-> request :parameters :body)
-          successful? (order-db/update-order! db (assoc order :id order-id))]
+          successful? (order-db/update-order! db (assoc order :user-order/id order-id))]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "order-not-found"
@@ -76,15 +76,15 @@
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
               uid (-> request :claims :sub)
-              {:keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
+              {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
               recipe (recipe-db/find-recipe-by-id conn-opts recipe-id)
               recipe-owner? (= uid (:recipe/user-id recipe))
               order-item-id (UUID/randomUUID)
               active-items (get
-                             (group-by
-                               :menu-item/recipe-id
-                               (menu-db/find-active-menu-items conn-opts))
-                             recipe-id)
+                            (group-by
+                             :menu-item/recipe-id
+                             (menu-db/find-active-menu-items conn-opts))
+                            recipe-id)
               active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
                                                           (map :menu-item/id active-items)))]
           (cond
@@ -93,10 +93,10 @@
                              :message "recipe is not in an active menu"
                              :data    (str "recipe-id " recipe-id)})
             (and (not recipe-owner?) (not-any? #(zero?
-                                                  (first
-                                                    (units/reduce-amounts mod amount amount-unit
-                                                                          (:menu-item-size/amount %)
-                                                                          (:menu-item-size/amount-unit %))))
+                                                 (first
+                                                  (units/reduce-amounts mod amount amount-unit
+                                                                        (:menu-item-size/amount %)
+                                                                        (:menu-item-size/amount-unit %))))
                                                active-item-sizes))
             (rr/bad-request {:type    "no-valid-size-order-amount"
                              :message "order amount cannot be made from any active item size"
@@ -104,12 +104,11 @@
             :else
             (do
               (order-db/insert-order-item! conn-opts (assoc order-item
-                                                       :order-id order-id
-                                                       :id order-item-id
-                                                       :status :status/draft))
+                                                            :order-item/order-id order-id
+                                                            :order-item/id order-item-id
+                                                            :order-item/status :status/draft))
               (rr/created (str responses/base-url "/orders/" order-id)
                           {:id order-item-id}))))))))
-
 
 (defn update-order-item! [db]
   (fn [request]
@@ -118,14 +117,14 @@
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
               uid (-> request :claims :sub)
-              {:keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
+              {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
               recipe (recipe-db/find-recipe-by-id conn-opts recipe-id)
               recipe-owner? (= uid (:recipe/user-id recipe))
               active-items (get
-                             (group-by
-                               :menu-item/recipe-id
-                               (menu-db/find-active-menu-items conn-opts))
-                             recipe-id)
+                            (group-by
+                             :menu-item/recipe-id
+                             (menu-db/find-active-menu-items conn-opts))
+                            recipe-id)
               active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
                                                           (map :menu-item/id active-items)))]
           (cond
@@ -134,16 +133,16 @@
                              :message "recipe is not in an active menu"
                              :data    (str "recipe-id " recipe-id)})
             (and (not recipe-owner?) (not-any? #(zero?
-                                                  (first
-                                                    (units/reduce-amounts mod amount amount-unit
-                                                                          (:menu-item-size/amount %)
-                                                                          (:menu-item-size/amount-unit %))))
+                                                 (first
+                                                  (units/reduce-amounts mod amount amount-unit
+                                                                        (:menu-item-size/amount %)
+                                                                        (:menu-item-size/amount-unit %))))
                                                active-item-sizes))
             (rr/bad-request {:type    "no-valid-size-order-amount"
                              :message "order amount cannot be made from any active item size"
                              :data    active-item-sizes})
             :else
-            (if (order-db/update-order-item! conn-opts (assoc order-item :order-id order-id))
+            (if (order-db/update-order-item! conn-opts (assoc order-item :order-item/order-id order-id))
               (rr/status 204)
               (rr/bad-request (select-keys order-item [:id])))))))))
 
@@ -153,7 +152,7 @@
       db
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
-              order-item-id (-> request :parameters :body :id)
+              order-item-id (-> request :parameters :body :order-item/id)
               order-item-status (->> order-item-id
                                      (order-db/find-order-item-by-id conn-opts)
                                      :order-item/status)]
@@ -180,9 +179,9 @@
                                                                              :recipe/amount-unit (:order-item/amount-unit %)}))
                                (combine-ingredients)
                                (map #(update (grocery-for-amount
-                                               (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
-                                               (:ingredient/amount %)
-                                               (:ingredient/amount-unit %))
+                                              (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
+                                              (:ingredient/amount %)
+                                              (:ingredient/amount-unit %))
                                              :grocery/units
                                              vec)))]
           (rr/response (vec grocery-bom)))))))

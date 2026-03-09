@@ -17,17 +17,17 @@
 
 (defn combine-ingredients [ingredients]
   (as-> ingredients ?
-        (group-by (comp #(update % :ingredient/amount-unit namespace)
-                        #(select-keys % [:ingredient/amount-unit
-                                         :ingredient/ingredient-grocery-id
-                                         :ingredient/ingredient-recipe-id]))
-                  ?)
-        (update-vals ? (partial reduce
-                                (fn [{sink-amount-unit :ingredient/amount-unit :as acc}
-                                     {:ingredient/keys [amount amount-unit]}]
-                                  (let [scaled-amount (common/convert amount amount-unit sink-amount-unit)]
-                                    (update acc :ingredient/amount + scaled-amount)))))
-        (vals ?)))
+    (group-by (comp #(update % :ingredient/amount-unit namespace)
+                    #(select-keys % [:ingredient/amount-unit
+                                     :ingredient/ingredient-grocery-id
+                                     :ingredient/ingredient-recipe-id]))
+              ?)
+    (update-vals ? (partial reduce
+                            (fn [{sink-amount-unit :ingredient/amount-unit :as acc}
+                                 {:ingredient/keys [amount amount-unit]}]
+                              (let [scaled-amount (common/convert amount amount-unit sink-amount-unit)]
+                                (update acc :ingredient/amount + scaled-amount)))))
+    (vals ?)))
 
 (defn anonymize-mystery-recipe [user-id recipe]
   (if (and (:recipe/is-mystery recipe) (not= (:recipe/user-id recipe) user-id))

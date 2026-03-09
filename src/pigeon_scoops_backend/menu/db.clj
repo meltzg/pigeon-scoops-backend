@@ -47,23 +47,21 @@
      db
      (fn [conn-opts]
        (->> (sql/find-by-keys
-              conn-opts
-              :menu
-              (if
-                (and include-inactive? include-deleted?)
-                :all
-                (cond-> {}
-                        (not include-inactive?) (assoc :active true)
-                        (not include-deleted?) (assoc :deleted false))))
+             conn-opts
+             :menu
+             (if
+              (and include-inactive? include-deleted?)
+               :all
+               (cond-> {}
+                 (not include-inactive?) (assoc :active true)
+                 (not include-deleted?) (assoc :deleted false))))
             (map #(apply-db-str->keyword % :menu/duration-type)))))))
-
-
 
 (defn insert-menu! [db menu]
   (sql/insert! db :menu
                (-> menu
-                   (apply-keyword->db-str :duration-type)
-                   (update :end-time #(when % (Timestamp/from (.toInstant %)))))))
+                   (apply-keyword->db-str :menu/duration-type)
+                   (update :menu/end-time #(when % (Timestamp/from (.toInstant %)))))))
 
 (defn find-menu-by-id [db menu-id]
   (with-connection
@@ -77,9 +75,9 @@
 (defn update-menu! [db menu]
   (-> (sql/update! db :menu
                    (-> menu
-                       (apply-keyword->db-str :duration-type)
-                       (update :end-time #(when % (Timestamp/from (.toInstant %)))))
-                   (select-keys menu [:id]))
+                       (apply-keyword->db-str :menu/duration-type)
+                       (update :menu/end-time #(when % (Timestamp/from (.toInstant %)))))
+                   (select-keys menu [:menu/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -92,7 +90,7 @@
   (sql/insert! db :menu-item menu-item))
 
 (defn update-menu-item! [db menu-item]
-  (-> (sql/update! db :menu-item menu-item (select-keys menu-item [:id :menu-id]))
+  (-> (sql/update! db :menu-item menu-item (select-keys menu-item [:menu-item/id :menu-item/menu-id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -102,12 +100,12 @@
       (pos?)))
 
 (defn insert-menu-item-size! [db menu-item-size]
-  (sql/insert! db :menu-item-size (apply-keyword->db-str menu-item-size :amount-unit)))
+  (sql/insert! db :menu-item-size (apply-keyword->db-str menu-item-size :menu-item-size/amount-unit)))
 
 (defn update-menu-item-size! [db menu-item-size]
   (-> (sql/update! db :menu-item-size
-                   (apply-keyword->db-str menu-item-size :amount-unit)
-                   (select-keys menu-item-size [:id :menu-id :menu-item-id]))
+                   (apply-keyword->db-str menu-item-size :menu-item-size/amount-unit)
+                   (select-keys menu-item-size [:menu-item-size/id :menu-item-size/menu-id :menu-item-size/menu-item-id]))
       ::jdbc/update-count
       (pos?)))
 

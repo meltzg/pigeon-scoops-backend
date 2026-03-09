@@ -22,7 +22,7 @@
           uid (-> request :claims :sub)
           recipe (-> request :parameters :body)]
       (recipe-db/insert-recipe! db (assoc recipe :id recipe-id
-                                                 :user-id uid))
+                                          :user-id uid))
       (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:id recipe-id}))))
 
@@ -34,8 +34,8 @@
                                            :query)
           uid (-> request :claims :sub)
           recipe (transforms/anonymize-mystery-recipe
-                   uid
-                   (recipe-db/find-recipe-by-id db recipe-id))
+                  uid
+                  (recipe-db/find-recipe-by-id db recipe-id))
           scaled-recipe (transforms/scale-recipe recipe amount amount-unit)]
       (cond (not= (nil? amount) (nil? amount-unit))
             (rr/bad-request {:type    "invalid-amount"
@@ -54,12 +54,11 @@
             (rr/response (update (or scaled-recipe recipe)
                                  :recipe/ingredients vec))))))
 
-
 (defn update-recipe! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           recipe (-> request :parameters :body)
-          successful? (recipe-db/update-recipe! db (assoc recipe :id recipe-id))]
+          successful? (recipe-db/update-recipe! db (assoc recipe :recipe/id recipe-id))]
       (if successful?
         (rr/status 204)
         (rr/not-found {:type    "recipe-not-found"
@@ -99,8 +98,8 @@
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)
           ingredient-id (UUID/randomUUID)]
-      (recipe-db/insert-ingredient! db (assoc ingredient :recipe-id recipe-id
-                                                         :id ingredient-id))
+      (recipe-db/insert-ingredient! db (assoc ingredient :ingredient/recipe-id recipe-id
+                                              :ingredient/id ingredient-id))
       (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:id ingredient-id}))))
 
@@ -109,7 +108,7 @@
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)]
       (if (-> ingredient
-              (select-keys [:ingredient-recipe-id :ingredient-grocery-id])
+              (select-keys [:ingredient/ingredient-recipe-id :ingredient/ingredient-grocery-id])
               (vals)
               ((partial remove nil?))
               (count)
@@ -126,8 +125,8 @@
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
           ingredient (-> request :parameters :body)
-          successful? (recipe-db/delete-ingredient! db (assoc (select-keys ingredient [:id])
-                                                         :recipe-id recipe-id))]
+          successful? (recipe-db/delete-ingredient! db (assoc (select-keys ingredient [:ingredient/id])
+                                                              :recipe-id recipe-id))]
       (if successful?
         (rr/status 204)
         (rr/bad-request (select-keys ingredient [:id]))))))
@@ -145,9 +144,9 @@
                                                                   :recipe/amount      amount
                                                                   :recipe/amount-unit amount-unit})
               grocery-bom (map #(update (grocery-for-amount
-                                          (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
-                                          (:ingredient/amount %)
-                                          (:ingredient/amount-unit %))
+                                         (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
+                                         (:ingredient/amount %)
+                                         (:ingredient/amount-unit %))
                                         :grocery/units
                                         vec)
                                ingredient-bom)]

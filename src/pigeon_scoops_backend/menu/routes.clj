@@ -16,12 +16,12 @@
                :summary   "list of menus"}
         :post {:handler    (menu/create-menu! db)
                :middleware [[(mw/wrap-with-permission :create/menu)]]
-               :parameters {:body {:name             string?
-                                   (ds/opt :repeats) boolean?
-                                   (ds/opt :active)  boolean?
-                                   :duration         number?
-                                   :duration-type    (s/and keyword?
-                                                            responses/durations)}}
+               :parameters {:body {:menu/name             string?
+                                   (ds/opt :menu/repeats) boolean?
+                                   (ds/opt :menu/active)  boolean?
+                                   :menu/duration         number?
+                                   :menu/duration-type    (s/and keyword?
+                                                                 responses/durations)}}
                :summary    "create menu"}}]
    ["/:menu-id" {:parameters {:path {:menu-id uuid?}}}
     ["" {:get    {:handler   (menu/retrieve-menu db)
@@ -29,12 +29,12 @@
                   :summary   "retrieve menu"}
          :put    {:handler    (menu/update-menu! db)
                   :middleware [[(mw/wrap-with-permission :edit/menu)]]
-                  :parameters {:body {:name          string?
-                                      :repeats       boolean?
-                                      :active        boolean?
-                                      :duration      number?
-                                      :duration-type (s/and keyword?
-                                                            responses/durations)}}
+                  :parameters {:body {:menu/name          string?
+                                      :menu/repeats       boolean?
+                                      :menu/active        boolean?
+                                      :menu/duration      number?
+                                      :menu/duration-type (s/and keyword?
+                                                                 responses/durations)}}
                   :summary    "Create menu"}
          :delete {:handler    (menu/delete-menu! db)
                   :middleware [[(mw/wrap-with-permission :delete/menu)]]
@@ -42,37 +42,37 @@
                   :summary    "Delete menu"}}]
     ["/items" {:middleware [[(mw/wrap-with-permission :edit/menu)]]}
      ["" {:post   {:handler    (menu/create-menu-item! db)
-                   :parameters {:body {:recipe-id uuid?}}
+                   :parameters {:body {:menu-item/recipe-id uuid?}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create menu-item"}
           :put    {:handler    (menu/update-menu-item! db)
-                   :parameters {:body {:id        uuid?
-                                       :recipe-id uuid?}}
+                   :parameters {:body {:menu-item/id        uuid?
+                                       :menu-item/recipe-id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "Update menu-item"}
           :delete {:handler    (menu/delete-menu-item! db)
-                   :parameters {:body {:id uuid?}}
+                   :parameters {:body {:menu-item/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete menu-item"}}]]
     ["/sizes" {:middleware [[(mw/wrap-with-permission :edit/menu)]]}
      ["" {:post   {:handler    (menu/create-menu-item-size! db)
-                   :parameters {:body {:menu-item-id uuid?
-                                       :amount       number?
-                                       :amount-unit  (s/and keyword? (set (concat common/other-units
-                                                                                  (keys mass/conversion-map)
-                                                                                  (keys volume/conversion-map))))}}
+                   :parameters {:body {:menu-item-size/menu-item-id uuid?
+                                       :menu-item-size/amount       number?
+                                       :menu-item-size/amount-unit  (s/and keyword? (set (concat common/other-units
+                                                                                                 (keys mass/conversion-map)
+                                                                                                 (keys volume/conversion-map))))}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create menu-item size"}
           :put    {:handler    (menu/update-menu-item-size! db)
-                   :parameters {:body {:id           uuid?
-                                       :menu-item-id uuid?
-                                       :amount       number?
-                                       :amount-unit  (s/and keyword? (set (concat common/other-units
-                                                                                  (keys mass/conversion-map)
-                                                                                  (keys volume/conversion-map))))}}
+                   :parameters {:body {:menu-item-size/id           uuid?
+                                       :menu-item-size/menu-item-id uuid?
+                                       :menu-item-size/amount       number?
+                                       :menu-item-size/amount-unit  (s/and keyword? (set (concat common/other-units
+                                                                                                 (keys mass/conversion-map)
+                                                                                                 (keys volume/conversion-map))))}}
                    :responses  {204 {:body nil?}}
                    :summary    "Update menu-item size"}
           :delete {:handler    (menu/delete-menu-item-size! db)
-                   :parameters {:body {:id uuid?}}
+                   :parameters {:body {:menu-item-size/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete menu-item size"}}]]]])

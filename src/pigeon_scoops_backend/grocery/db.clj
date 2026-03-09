@@ -33,10 +33,11 @@
               (assoc :grocery/units units)))))))
 
 (defn insert-grocery! [db grocery]
-  (sql/insert! db :grocery (apply-keyword->db-str grocery :department)))
+  (sql/insert! db :grocery (apply-keyword->db-str grocery :grocery/department)))
 
 (defn update-grocery! [db grocery]
-  (-> (sql/update! db :grocery (apply-keyword->db-str grocery :department) (select-keys grocery [:id]))
+  (-> (sql/update! db :grocery (apply-keyword->db-str grocery :grocery/department)
+                   (select-keys grocery [:grocery/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -47,18 +48,18 @@
 
 (defn insert-grocery-unit! [db unit]
   (sql/insert! db :grocery-unit (apply-keyword->db-str unit
-                                                       :unit-common-type
-                                                       :unit-mass-type
-                                                       :unit-volume-type)))
+                                                       :grocery-unit/unit-common-type
+                                                       :grocery-unit/unit-mass-type
+                                                       :grocery-unit/unit-volume-type)))
 
 (defn update-grocery-unit! [db unit]
   (-> unit
       (apply-keyword->db-str
-        :unit-common-type
-        :unit-mass-type
-        :unit-volume-type)
+       :grocery-unit/unit-common-type
+       :grocery-unit/unit-mass-type
+       :grocery-unit/unit-volume-type)
       (#(sql/update! db :grocery-unit %
-                     (select-keys % [:id])))
+                     (select-keys % [:grocery-unit/id])))
       ::jdbc/update-count
       (pos?)))
 

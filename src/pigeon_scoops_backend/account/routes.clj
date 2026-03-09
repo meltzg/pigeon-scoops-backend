@@ -1,7 +1,7 @@
 (ns pigeon-scoops-backend.account.routes
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.account.handlers :as account]
-            [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.middleware :as mw]))
 
 (def wrap-edit-roles

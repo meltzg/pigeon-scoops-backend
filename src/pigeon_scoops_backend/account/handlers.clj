@@ -1,6 +1,6 @@
 (ns pigeon-scoops-backend.account.handlers
   (:require [pigeon-scoops-backend.account.db :as account-db]
-            [pigeon-scoops-backend.auth0 :as auth0]
+            [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.utils :refer [with-connection]]
             [ring.util.response :as rr]))
 

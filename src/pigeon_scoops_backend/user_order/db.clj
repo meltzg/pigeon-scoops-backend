@@ -42,10 +42,10 @@
       (apply-db-str->keyword :order-item/status :order-item/amount-unit)))
 
 (defn insert-order! [db order]
-  (sql/insert! db :user-order (apply-keyword->db-str order :amount-unit :status)))
+  (sql/insert! db :user-order (apply-keyword->db-str order :user-order/amount-unit :user-order/status)))
 
 (defn update-order! [db order]
-  (-> (sql/update! db :user-order (apply-keyword->db-str order :amount-unit :status) (select-keys order [:id]))
+  (-> (sql/update! db :user-order (apply-keyword->db-str order :user-order/amount-unit :user-order/status) (select-keys order [:user-order/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -55,13 +55,13 @@
       (pos?)))
 
 (defn insert-order-item! [db item]
-  (sql/insert! db :order-item (apply-keyword->db-str item :status :amount-unit)))
+  (sql/insert! db :order-item (apply-keyword->db-str item :order-item/status :order-item/amount-unit)))
 
 (defn update-order-item! [db item]
   (-> item
-      (apply-keyword->db-str :status :amount-unit)
+      (apply-keyword->db-str :order-item/status :order-item/amount-unit)
       (#(sql/update! db :order-item %
-                     (select-keys % [:id])))
+                     (select-keys % [:order-item/id])))
       ::jdbc/update-count
       (pos?)))
 

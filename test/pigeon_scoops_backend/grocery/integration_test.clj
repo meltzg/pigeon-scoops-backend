@@ -1,25 +1,25 @@
 (ns pigeon-scoops-backend.grocery.integration-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing use-fixtures]]
             [pigeon-scoops-backend.test-system :as ts]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-groceries))
 
 (def grocery
-  {:name "orange" :department :department/produce})
+  {:grocery/name "orange" :grocery/department :department/produce})
 
 (def updated-grocery
-  (assoc grocery :name "lime"))
+  (assoc grocery :grocery/name "lime"))
 
 (def grocery-unit
-  {:source         "store"
-   :unit-cost      3.3
-   :unit-mass      420
-   :unit-mass-type :mass/kg})
+  {:grocery-unit/source         "store"
+   :grocery-unit/unit-cost      3.3
+   :grocery-unit/unit-mass      420
+   :grocery-unit/unit-mass-type :mass/kg})
 
 (def updated-grocery-unit
   (assoc grocery-unit
-    :unit-common-type :common/unit
-    :unit-common 1000))
+         :grocery-unit/unit-common-type :common/unit
+         :grocery-unit/unit-common 1000))
 
 (deftest groceries-list-test
   (testing "List groceries"
@@ -35,17 +35,17 @@
         (reset! grocery-id (:id body))
         (is (= status 201))))
     (testing "update grocery"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id) {:auth true :body updated-grocery})]
-        (is (= status 204))))
+      (let [{:keys [status body]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id) {:auth true :body updated-grocery})]
+        (is (= status 204) (str "oops " status " : " body))))
     (testing "create grocery-unit"
       (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/groceries/" @grocery-id "/units") {:auth true :body grocery-unit})]
         (reset! grocery-unit-id (:id body))
         (is (= status 201))))
     (testing "update grocery-unit"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id "/units") {:auth true :body (assoc updated-grocery-unit :id @grocery-unit-id)})]
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id "/units") {:auth true :body (assoc updated-grocery-unit :grocery-unit/id @grocery-unit-id)})]
         (is (= status 204))))
     (testing "delete grocery-unit"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id "/units") {:auth true :body {:id @grocery-unit-id}})]
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id "/units") {:auth true :body {:grocery-unit/id @grocery-unit-id}})]
         (is (= status 204))))
     (testing "delete grocery"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id) {:auth true})]

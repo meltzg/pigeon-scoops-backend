@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.util-api.handlers
-  (:require [pigeon-scoops-backend.auth0 :refer [roles]]
+  (:require [pigeon-scoops-backend.auth :refer [roles]]
             [pigeon-scoops-backend.grocery.responses :refer [departments]]
             [pigeon-scoops-backend.menu.responses :refer [durations]]
             [pigeon-scoops-backend.units.common :as common]

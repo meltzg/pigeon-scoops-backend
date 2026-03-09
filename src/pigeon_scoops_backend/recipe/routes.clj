@@ -24,16 +24,16 @@
                :summary   "list of recipes"}
         :post {:handler    (recipe/create-recipe! db)
                :middleware [[(mw/wrap-with-permission :create/recipe)]]
-               :parameters {:body {:name                         string?
-                                   (ds/opt :is-mystery)          boolean?
-                                   (ds/opt :description)         string?
-                                   (ds/opt :mystery-description) string?
-                                   :instructions                 [string?]
-                                   :amount                       number?
-                                   :amount-unit                  (s/and keyword? (set (concat common/other-units
-                                                                                              (keys mass/conversion-map)
-                                                                                              (keys volume/conversion-map))))
-                                   :source                       string?}}
+               :parameters {:body {:recipe/name                         string?
+                                   (ds/opt :recipe/is-mystery)          boolean?
+                                   (ds/opt :recipe/description)         string?
+                                   (ds/opt :recipe/mystery-description) string?
+                                   :recipe/instructions                 [string?]
+                                   :recipe/amount                       number?
+                                   :recipe/amount-unit                  (s/and keyword? (set (concat common/other-units
+                                                                                                     (keys mass/conversion-map)
+                                                                                                     (keys volume/conversion-map))))
+                                   :recipe/source                       string?}}
                :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
@@ -48,17 +48,17 @@
          :put    {:handler    (recipe/update-recipe! db)
                   :middleware [[wrap-recipe-owner db]
                                [(mw/wrap-with-permission :edit/recipe)]]
-                  :parameters {:body {:name                         string?
-                                      (ds/opt :is-mystery)          boolean?
-                                      (ds/opt :description)         string?
-                                      (ds/opt :mystery-description) string?
-                                      :instructions                 [string?]
-                                      :amount                       number?
-                                      :amount-unit                  (s/and keyword? (set (concat common/other-units
-                                                                                                 (keys mass/conversion-map)
-                                                                                                 (keys volume/conversion-map))))
-                                      :source                       string?
-                                      :public                       boolean?}}
+                  :parameters {:body {:recipe/name                         string?
+                                      (ds/opt :recipe/is-mystery)          boolean?
+                                      (ds/opt :recipe/description)         string?
+                                      (ds/opt :recipe/mystery-description) string?
+                                      :recipe/instructions                 [string?]
+                                      :recipe/amount                       number?
+                                      :recipe/amount-unit                  (s/and keyword? (set (concat common/other-units
+                                                                                                        (keys mass/conversion-map)
+                                                                                                        (keys volume/conversion-map))))
+                                      :recipe/source                       string?
+                                      :recipe/public                       boolean?}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update recipe"}
          :delete {:handler    (recipe/delete-recipe! db)
@@ -84,27 +84,27 @@
                                   [(mw/wrap-with-permission :edit/recipe)]]}
      ["" {:post   {:handler    (recipe/create-ingredient! db)
                    :middleware [[wrap-recipe-owner db]]
-                   :parameters {:body {(ds/opt :ingredient-grocery-id) uuid?
-                                       (ds/opt :ingredient-recipe-id)  uuid?
-                                       :amount                         number?
-                                       :amount-unit                    (s/and keyword? (set (concat common/other-units
-                                                                                                    (keys mass/conversion-map)
-                                                                                                    (keys volume/conversion-map))))}}
+                   :parameters {:body {(ds/opt :ingredient/ingredient-grocery-id) uuid?
+                                       (ds/opt :ingredient/ingredient-recipe-id)  uuid?
+                                       :ingredient/amount                         number?
+                                       :ingredient/amount-unit                    (s/and keyword? (set (concat common/other-units
+                                                                                                               (keys mass/conversion-map)
+                                                                                                               (keys volume/conversion-map))))}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create ingredient"}
           :put    {:handler    (recipe/update-ingredient! db)
                    :middleware [[wrap-recipe-owner db]]
-                   :parameters {:body {:id                             uuid?
-                                       (ds/opt :ingredient-grocery-id) uuid?
-                                       (ds/opt :ingredient-recipe-id)  uuid?
-                                       :amount                         number?
-                                       :amount-unit                    (s/and keyword? (set (concat common/other-units
-                                                                                                    (keys mass/conversion-map)
-                                                                                                    (keys volume/conversion-map))))}}
+                   :parameters {:body {:ingredient/id                             uuid?
+                                       (ds/opt :ingredient/ingredient-grocery-id) uuid?
+                                       (ds/opt :ingredient/ingredient-recipe-id)  uuid?
+                                       :ingredient/amount                         number?
+                                       :ingredient/amount-unit                    (s/and keyword? (set (concat common/other-units
+                                                                                                               (keys mass/conversion-map)
+                                                                                                               (keys volume/conversion-map))))}}
                    :responses  {204 {:body nil?}}
                    :summary    "Update ingredient"}
           :delete {:handler    (recipe/delete-ingredient! db)
                    :middleware [[wrap-recipe-owner db]]
-                   :parameters {:body {:id uuid?}}
+                   :parameters {:body {:ingredient/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete ingredient"}}]]]])
