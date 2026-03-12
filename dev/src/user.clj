@@ -43,7 +43,12 @@
          response (app (-> (mock/request method uri)
                            (cond-> (:auth opts) (mock/header :authorization (str "Bearer " (or (first @tokens) (get-token (conj auth (first @test-users))))))
                                    (:body opts) (mock/json-body (:body opts)))))
-         response (update response :body (partial m/decode "application/json"))]
+         response (update response :body #(try
+                                            (m/decode "application/json" %)
+                                            (catch Exception e
+                                              (pprint e)
+                                              %)))]
+
      response)))
 
 (defn make-test-users [n]
@@ -80,7 +85,14 @@
        (get-token)
        (vector)
        (reset! tokens))
-  (make-request :post "/v1/account" {:auth true}))
+  (loop [response (make-request :post "/v1/account" {:auth true})
+         attempts 0]
+    (if (= 401 (:status response))
+      (do
+        (println "attempt" attempts "failed")
+        (Thread/sleep 1000)
+        (recur (make-request :post "/v1/account" {:auth true})
+               (inc attempts))))))
 
 (defn load-seed-data []
   (let [grocery-map (->> "dev/resources/seed/groceries.json"
@@ -146,7 +158,8 @@
                                                                                                   {:amount      (:amount %)
                                                                                                    :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                                                          (:amount_unit %))
-                                                                                                   :source      ""})
+                                                                                                   :source      ""
+                                                                                                   :public true})
                                                                                            (fn [k] (keyword "recipe" (name k))))})
                                                          :body
                                                          :id)]

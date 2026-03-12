@@ -32,13 +32,13 @@
     (testing "with auth -- public and private"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/recipes" {:auth true})]
         (is (= 200 status))
-        (is (vector? (:public body)))
-        (is (vector? (:private body)))))
+        (is (vector? body))
+        (is (seq (remove :recipe/public body)))))
     (testing "without auth -- public"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/recipes" {:auth false})]
         (is (= 200 status))
-        (is (vector? (:public body)))
-        (is (nil? (:private body)))))))
+        (is (vector? body))
+        (is (not (seq (remove :recipe/public body))))))))
 
 (deftest recipes-crud-test
   (let [recipe-id (atom nil)
@@ -50,12 +50,6 @@
         (is (= status 201))))
     (testing "update recipe"
       (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id) {:auth true :body updated-recipe})]
-        (is (= status 204))))
-    (testing "favorite recipe"
-      (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
-        (is (= status 204))))
-    (testing "unfavorite recipe"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/favorite") {:auth true})]
         (is (= status 204))))
     (testing "create ingredient from recipe"
       (let [ingredient (assoc ingredient :ingredient/ingredient-recipe-id @recipe-id)

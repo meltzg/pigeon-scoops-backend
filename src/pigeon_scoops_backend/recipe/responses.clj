@@ -20,11 +20,9 @@
 
 (def recipe
   {:recipe/public                       boolean?
-   :recipe/favorite-count               int?
    :recipe/id                           uuid?
    :recipe/name                         string?
    :recipe/is-mystery                   boolean?
-   :recipe/user-id                      string?
    :recipe/amount                       number?
    :recipe/amount-unit                  (s/and keyword?
                                                (set (concat common/other-units
@@ -35,7 +33,3 @@
    (ds/opt :recipe/ingredients)         [ingredient]
    (ds/opt :recipe/description)         string?
    (ds/opt :recipe/mystery-description) string?})
-
-(def recipes
-  {:public           [recipe]
-   (ds/opt :private) [recipe]})

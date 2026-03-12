@@ -10,17 +10,14 @@
             [pigeon-scoops-backend.units.volume :as volume]
             [spec-tools.data-spec :as ds]))
 
-(def wrap-recipe-owner
-  (mw/wrap-owner :recipe-id :recipe recipe-db/find-recipe-by-id))
-
-(def wrap-recipe-public-access-owner
-  (mw/wrap-owner :recipe-id :recipe/public :recipe recipe-db/find-recipe-by-id))
+(def public-keys [:recipe/id :recipe/name :recipe/public :recipe/amount :recipe/amount-unit])
 
 (defn routes [{db :jdbc-url}]
   ["/recipes" {:openapi    {:tags ["recipes"]}
                :middleware [[mw/wrap-auth0]]}
    ["" {:get  {:handler   (recipe/list-all-recipes db)
-               :responses {200 {:body responses/recipes}}
+               :middleware [[(mw/wrap-with-permission :view/recipe public-keys)]]
+               :responses {200 {:body [responses/recipe]}}
                :summary   "list of recipes"}
         :post {:handler    (recipe/create-recipe! db)
                :middleware [[(mw/wrap-with-permission :create/recipe)]]
@@ -33,12 +30,13 @@
                                    :recipe/amount-unit                  (s/and keyword? (set (concat common/other-units
                                                                                                      (keys mass/conversion-map)
                                                                                                      (keys volume/conversion-map))))
-                                   :recipe/source                       string?}}
+                                   :recipe/source                       string?
+                                   (ds/opt :recipe/public) boolean?}}
                :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
     ["" {:get    {:handler    (recipe/retrieve-recipe db)
-                  :middleware [[wrap-recipe-public-access-owner db]]
+                  :middleware [[(mw/wrap-with-permission :view/recipe public-keys)]]
                   :parameters {:query {(ds/opt :amount)      number?
                                        (ds/opt :amount-unit) (s/and keyword? (set (concat common/other-units
                                                                                           (keys mass/conversion-map)
@@ -46,8 +44,7 @@
                   :responses  {200 {:body responses/recipe}}
                   :summary    "Retrieve recipe"}
          :put    {:handler    (recipe/update-recipe! db)
-                  :middleware [[wrap-recipe-owner db]
-                               [(mw/wrap-with-permission :edit/recipe)]]
+                  :middleware [[(mw/wrap-with-permission :edit/recipe)]]
                   :parameters {:body {:recipe/name                         string?
                                       (ds/opt :recipe/is-mystery)          boolean?
                                       (ds/opt :recipe/description)         string?
@@ -62,28 +59,19 @@
                   :responses  {204 {:body nil?}}
                   :summary    "Update recipe"}
          :delete {:handler    (recipe/delete-recipe! db)
-                  :middleware [[wrap-recipe-owner db]
-                               [(mw/wrap-with-permission :delete/recipe)]]
+                  :middleware [[(mw/wrap-with-permission :delete/recipe)]]
                   :response   {204 {:body nil?}}
                   :summary    "Delete recipe"}}]
     ["/bom" {:get {:handler    (recipe/retrieve-recipe-bom db)
-                   :middleware [[wrap-recipe-public-access-owner db]]
+                   :middleware [[(mw/wrap-with-permission :view/recipe public-keys)]]
                    :parameters {:query {:amount      number?
                                         :amount-unit (s/and keyword? (set (concat common/other-units
                                                                                   (keys mass/conversion-map)
                                                                                   (keys volume/conversion-map))))}}
                    :responses  {200 {:body [grocery-responses/grocery]}}
                    :summary    "Retrieve recipe bom"}}]
-    ["/favorite" {:post   {:handler   (recipe/favorite-recipe! db)
-                           :responses {204 {:body nil?}}
-                           :summary   "Favorite recipe"}
-                  :delete {:handler  (recipe/unfavorite-recipe! db)
-                           :response {204 {:body nil?}}
-                           :summary  "Unfavorite recipe"}}]
-    ["/ingredients" {:middleware [[wrap-recipe-owner db]
-                                  [(mw/wrap-with-permission :edit/recipe)]]}
+    ["/ingredients" {:middleware [[(mw/wrap-with-permission :edit/recipe)]]}
      ["" {:post   {:handler    (recipe/create-ingredient! db)
-                   :middleware [[wrap-recipe-owner db]]
                    :parameters {:body {(ds/opt :ingredient/ingredient-grocery-id) uuid?
                                        (ds/opt :ingredient/ingredient-recipe-id)  uuid?
                                        :ingredient/amount                         number?
@@ -93,7 +81,6 @@
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create ingredient"}
           :put    {:handler    (recipe/update-ingredient! db)
-                   :middleware [[wrap-recipe-owner db]]
                    :parameters {:body {:ingredient/id                             uuid?
                                        (ds/opt :ingredient/ingredient-grocery-id) uuid?
                                        (ds/opt :ingredient/ingredient-recipe-id)  uuid?
@@ -104,7 +91,6 @@
                    :responses  {204 {:body nil?}}
                    :summary    "Update ingredient"}
           :delete {:handler    (recipe/delete-ingredient! db)
-                   :middleware [[wrap-recipe-owner db]]
                    :parameters {:body {:ingredient/id uuid?}}
                    :responses  {204 {:body nil?}}
                    :summary    "delete ingredient"}}]]]])

@@ -2,7 +2,8 @@
   (:require [clojure.string :as str]
             [pigeon-scoops-backend.utils :refer [doall-deep remove-nil-keys]]
             [ring.middleware.jwt :as jwt]
-            [ring.util.response :as rr]))
+            [ring.util.response :as rr]
+            [clojure.pprint :refer [pprint]]))
 
 (def wrap-auth0
   {:name        ::auth0
@@ -26,10 +27,12 @@
 (defn wrap-owner
   ([id-key table find-by-id]
    (wrap-owner id-key nil table find-by-id))
-  ([id-key public-key table find-by-id]
+  ([id-key is-public-key table find-by-id]
+   (wrap-owner id-key is-public-key nil table find-by-id))
+  ([id-key is-public-key public-keys table find-by-id]
    {:name        (keyword (str *ns*) (str (name table)
-                                          (when public-key
-                                            (str "-" (name public-key)))))
+                                          (when is-public-key
+                                            (str "-" (name is-public-key)))))
     :description (str "Middleware to check if a request user is an" table " owner")
     :wrap        (fn [handler db]
                    (fn [request]
@@ -37,23 +40,42 @@
                            entity-id (-> request :parameters :path id-key)
                            entity (find-by-id db entity-id)]
                        (if (or (= ((keyword (name table) "user-id") entity) uid)
-                               (get entity public-key))
+                               (get entity is-public-key))
                          (handler request)
                          (-> (rr/response {:message (str "Operation requires " (name table) " ownership")
                                            :data    (str "entity-id " entity-id)
                                            :type    :authorization-required})
                              (rr/status 401))))))}))
 
-(defn wrap-with-permission [permission]
-  {:name        (keyword (str *ns*) (str permission))
-   :description (str "Middleware to check if a user has the " permission " permission")
-   :wrap        (fn [handler]
-                  (fn [request]
-                    (let [permissions (map #(keyword (str/replace % ":" "/"))
-                                           (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))]
-                      (if ((set permissions) permission)
-                        (handler request)
-                        (-> (rr/response {:message (str "Operation requires " permission " permission")
-                                          :data    (:uri request)
-                                          :type    :authorization-required})
-                            (rr/status 401))))))})
+(defn wrap-with-permission
+  ([permission]
+   (wrap-with-permission permission nil))
+  ([permission public-keys]
+   {:name        (keyword (str *ns*) (str permission))
+    :description (str "Middleware to check if a user has the " permission " permission")
+    :wrap        (fn [handler]
+                   (fn [request]
+                     (let [permissions (map #(keyword (str/replace % ":" "/"))
+                                            (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))]
+                       (cond
+                         ((set permissions) permission)
+                         (handler request)
+                         (seq public-keys)
+                         (let [response (handler request)]
+                           (update response :body #(cond
+                                                     (map? %)
+                                                     (select-keys % public-keys)
+                                                     (or (coll? %) (seq? %))
+                                                     (map (fn [elem] (select-keys elem public-keys)) %)
+                                                     :else
+                                                     (-> (rr/response {:message (str "Could not extract public keys. Operation requires " permission " permission")
+                                                                       :data    (:uri request)
+                                                                       :type    :authorization-required})
+                                                         (rr/status 401)))))
+
+                         :else
+                         (-> (rr/response {:message (str "Operation requires " permission " permission")
+                                           :data    (:uri request)
+                                           :type    :authorization-required})
+                             (rr/status 401))))))}))
+

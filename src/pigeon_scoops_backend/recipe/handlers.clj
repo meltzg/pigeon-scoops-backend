@@ -75,24 +75,6 @@
                        :message "Recipe not found"
                        :data    (str "recipe-id " recipe-id)})))))
 
-(defn favorite-recipe! [db]
-  (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
-          uid (-> request :claims :sub)]
-      (recipe-db/favorite-recipe! db {:recipe-id recipe-id :user-id uid})
-      (rr/status 204))))
-
-(defn unfavorite-recipe! [db]
-  (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
-          uid (-> request :claims :sub)
-          successful? (recipe-db/unfavorite-recipe! db {:recipe-id recipe-id :user-id uid})]
-      (if successful?
-        (rr/status 204)
-        (rr/not-found {:type    "recipe-not-found"
-                       :message "Recipe not found"
-                       :data    (str "recipe-id " recipe-id)})))))
-
 (defn create-ingredient! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)
