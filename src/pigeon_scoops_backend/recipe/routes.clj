@@ -2,7 +2,6 @@
   (:require [clojure.spec.alpha :as s]
             [pigeon-scoops-backend.grocery.responses :as grocery-responses]
             [pigeon-scoops-backend.middleware :as mw]
-            [pigeon-scoops-backend.recipe.db :as recipe-db]
             [pigeon-scoops-backend.recipe.handlers :as recipe]
             [pigeon-scoops-backend.recipe.responses :as responses]
             [pigeon-scoops-backend.units.common :as common]
@@ -10,13 +9,9 @@
             [pigeon-scoops-backend.units.volume :as volume]
             [spec-tools.data-spec :as ds]))
 
-(def public-keys [:recipe/id :recipe/name :recipe/public :recipe/amount :recipe/amount-unit])
-
 (defn routes [{db :jdbc-url}]
-  ["/recipes" {:openapi    {:tags ["recipes"]}
-               :middleware [[mw/wrap-auth0]]}
+  ["/recipes" {:openapi    {:tags ["recipes"]}}
    ["" {:get  {:handler   (recipe/list-all-recipes db)
-               :middleware [[(mw/wrap-with-permission :view/recipe public-keys)]]
                :responses {200 {:body [responses/recipe]}}
                :summary   "list of recipes"}
         :post {:handler    (recipe/create-recipe! db)
@@ -30,13 +25,11 @@
                                    :recipe/amount-unit                  (s/and keyword? (set (concat common/other-units
                                                                                                      (keys mass/conversion-map)
                                                                                                      (keys volume/conversion-map))))
-                                   :recipe/source                       string?
-                                   (ds/opt :recipe/public) boolean?}}
+                                   :recipe/source                       string?}}
                :responses  {201 {:body {:id uuid?}}}
                :summary    "Create recipe"}}]
    ["/:recipe-id" {:parameters {:path {:recipe-id uuid?}}}
     ["" {:get    {:handler    (recipe/retrieve-recipe db)
-                  :middleware [[(mw/wrap-with-permission :view/recipe public-keys)]]
                   :parameters {:query {(ds/opt :amount)      number?
                                        (ds/opt :amount-unit) (s/and keyword? (set (concat common/other-units
                                                                                           (keys mass/conversion-map)
@@ -54,8 +47,7 @@
                                       :recipe/amount-unit                  (s/and keyword? (set (concat common/other-units
                                                                                                         (keys mass/conversion-map)
                                                                                                         (keys volume/conversion-map))))
-                                      :recipe/source                       string?
-                                      :recipe/public                       boolean?}}
+                                      :recipe/source                       string?}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update recipe"}
          :delete {:handler    (recipe/delete-recipe! db)
@@ -63,7 +55,6 @@
                   :response   {204 {:body nil?}}
                   :summary    "Delete recipe"}}]
     ["/bom" {:get {:handler    (recipe/retrieve-recipe-bom db)
-                   :middleware [[(mw/wrap-with-permission :view/recipe public-keys)]]
                    :parameters {:query {:amount      number?
                                         :amount-unit (s/and keyword? (set (concat common/other-units
                                                                                   (keys mass/conversion-map)

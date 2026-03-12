@@ -87,12 +87,11 @@
        (reset! tokens))
   (loop [response (make-request :post "/v1/account" {:auth true})
          attempts 0]
-    (if (= 401 (:status response))
-      (do
-        (println "attempt" attempts "failed")
-        (Thread/sleep 1000)
-        (recur (make-request :post "/v1/account" {:auth true})
-               (inc attempts))))))
+    (when (= 401 (:status response))
+      (println "attempt" attempts "failed")
+      (Thread/sleep 1000)
+      (recur (make-request :post "/v1/account" {:auth true})
+             (inc attempts)))))
 
 (defn load-seed-data []
   (let [grocery-map (->> "dev/resources/seed/groceries.json"
@@ -158,8 +157,7 @@
                                                                                                   {:amount      (:amount %)
                                                                                                    :amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                                                          (:amount_unit %))
-                                                                                                   :source      ""
-                                                                                                   :public true})
+                                                                                                   :source      ""})
                                                                                            (fn [k] (keyword "recipe" (name k))))})
                                                          :body
                                                          :id)]
@@ -213,8 +211,7 @@
                                                          :order-item/amount      (:amount %)
                                                          :order-item/amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                           (:amount_unit %))}})
-                                   :body
-                                   :id)))]
+                                   :body)))]
     {:grocery-map   grocery-map
      :grocery-units units
      :recipe-map    recipe-map
@@ -277,6 +274,7 @@
   (make-test-users 2)
   (go)
   (go false)
+  (pprint @tokens)
   (halt)
   (reset)
   (reset-all))

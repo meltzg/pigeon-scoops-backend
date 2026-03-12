@@ -15,9 +15,11 @@
    (with-connection
      db
      (fn [conn-opts]
-       (let [condition (when-not include-deleted? {:deleted false})
-             recipes (sql/find-by-keys conn-opts :recipe condition)]
-         (map #(apply-db-str->keyword % :recipe/amount-unit) recipes))))))
+       (map #(apply-db-str->keyword % :recipe/amount-unit)
+            (sql/find-by-keys conn-opts :recipe
+                              (if include-deleted?
+                                :all
+                                {:deleted false})))))))
 
 (defn find-recipe-by-id [db recipe-id]
   (with-connection
@@ -39,7 +41,6 @@
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (-> recipe
                               (apply-keyword->db-str :recipe/amount-unit)
-                              (update :recipe/public true?)
                               (assoc :recipe/instructions (into-array String (:recipe/instructions recipe))))))
 
 (defn update-recipe! [db recipe]

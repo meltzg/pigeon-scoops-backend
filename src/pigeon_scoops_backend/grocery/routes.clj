@@ -11,8 +11,7 @@
 (def public-keys [:grocery/id :grocery/department :grocery/name])
 
 (defn routes [{db :jdbc-url}]
-  ["/groceries" {:openapi    {:tags ["groceries"]}
-                 :middleware [[mw/wrap-auth0]]}
+  ["/groceries" {:openapi    {:tags ["groceries"]}}
    ["" {:get  {:handler    (grocery/list-all-groceries db)
                :middleware [[(mw/wrap-with-permission :view/grocery public-keys)]]
                :responses  {200 {:body [responses/grocery]}}

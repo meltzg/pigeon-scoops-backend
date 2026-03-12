@@ -2,8 +2,7 @@
   (:require [clojure.string :as str]
             [pigeon-scoops-backend.utils :refer [doall-deep remove-nil-keys]]
             [ring.middleware.jwt :as jwt]
-            [ring.util.response :as rr]
-            [clojure.pprint :refer [pprint]]))
+            [ring.util.response :as rr]))
 
 (def wrap-auth0
   {:name        ::auth0
@@ -25,27 +24,20 @@
                         (update :body (comp doall-deep remove-nil-keys)))))})
 
 (defn wrap-owner
-  ([id-key table find-by-id]
-   (wrap-owner id-key nil table find-by-id))
-  ([id-key is-public-key table find-by-id]
-   (wrap-owner id-key is-public-key nil table find-by-id))
-  ([id-key is-public-key public-keys table find-by-id]
-   {:name        (keyword (str *ns*) (str (name table)
-                                          (when is-public-key
-                                            (str "-" (name is-public-key)))))
-    :description (str "Middleware to check if a request user is an" table " owner")
-    :wrap        (fn [handler db]
-                   (fn [request]
-                     (let [uid (-> request :claims :sub)
-                           entity-id (-> request :parameters :path id-key)
-                           entity (find-by-id db entity-id)]
-                       (if (or (= ((keyword (name table) "user-id") entity) uid)
-                               (get entity is-public-key))
-                         (handler request)
-                         (-> (rr/response {:message (str "Operation requires " (name table) " ownership")
-                                           :data    (str "entity-id " entity-id)
-                                           :type    :authorization-required})
-                             (rr/status 401))))))}))
+  [id-key table find-by-id]
+  {:name        (keyword (str *ns*) (str (name table)))
+   :description (str "Middleware to check if a request user is an" table " owner")
+   :wrap        (fn [handler db]
+                  (fn [request]
+                    (let [uid (-> request :claims :sub)
+                          entity-id (-> request :parameters :path id-key)
+                          entity (find-by-id db entity-id)]
+                      (if (= ((keyword (name table) "user-id") entity) uid)
+                        (handler request)
+                        (-> (rr/response {:message (str "Operation requires " (name table) " ownership")
+                                          :data    (str "entity-id " entity-id)
+                                          :type    :authorization-required})
+                            (rr/status 401))))))})
 
 (defn wrap-with-permission
   ([permission]

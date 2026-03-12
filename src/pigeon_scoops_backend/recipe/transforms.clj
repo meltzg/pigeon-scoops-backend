@@ -29,8 +29,8 @@
                                 (update acc :ingredient/amount + scaled-amount)))))
     (vals ?)))
 
-(defn anonymize-mystery-recipe [user-id recipe]
-  (if (and (:recipe/is-mystery recipe) (not= (:recipe/user-id recipe) user-id))
+(defn anonymize-mystery-recipe [recipe]
+  (if (:recipe/is-mystery recipe)
     (-> recipe
         (assoc :recipe/name "?????"
                :recipe/description "?????")

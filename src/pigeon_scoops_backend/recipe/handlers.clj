@@ -11,18 +11,15 @@
 (defn list-all-recipes [db]
   (fn [request]
     (let [uid (-> request :claims :sub)
-          recipes (-> (recipe-db/find-all-recipes db uid)
-                      (update-vals #(map (partial transforms/anonymize-mystery-recipe uid) %))
-                      (update-vals vec))]
-      (rr/response recipes))))
+          recipes (->> (recipe-db/find-all-recipes db uid)
+                       (map transforms/anonymize-mystery-recipe))]
+      (rr/response (doall recipes)))))
 
 (defn create-recipe! [db]
   (fn [request]
     (let [recipe-id (UUID/randomUUID)
-          uid (-> request :claims :sub)
           recipe (-> request :parameters :body)]
-      (recipe-db/insert-recipe! db (assoc recipe :id recipe-id
-                                          :user-id uid))
+      (recipe-db/insert-recipe! db (assoc recipe :id recipe-id))
       (rr/created (str responses/base-url "/recipes/" recipe-id)
                   {:id recipe-id}))))
 
@@ -32,9 +29,7 @@
           {:keys [amount amount-unit]} (-> request
                                            :parameters
                                            :query)
-          uid (-> request :claims :sub)
           recipe (transforms/anonymize-mystery-recipe
-                  uid
                   (recipe-db/find-recipe-by-id db recipe-id))
           scaled-recipe (transforms/scale-recipe recipe amount amount-unit)]
       (cond (not= (nil? amount) (nil? amount-unit))
@@ -42,7 +37,7 @@
                              :message "Both amount and amount-unit must be specified or nil"
                              :data    {:amount amount :amount-unit amount-unit}})
             (not recipe)
-            (rr/not-found {:type    "recipe-not-found"
+            (rr/not-found {:tyananonymize-mystery-recipeoanonymize-mystery-recipenanonymize-mystery-recipeanonymize-mystery-recipeymize-mystery-recipepe    "recipe-not-found"
                            :message "Recipe not found"
                            :data    (str "recipe-id " recipe-id)})
             (and (every? some? [amount amount-unit])

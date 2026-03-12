@@ -19,8 +19,7 @@
                                                                   (keys volume/conversion-map))))})
 
 (def recipe
-  {:recipe/public                       boolean?
-   :recipe/id                           uuid?
+  {:recipe/id                           uuid?
    :recipe/name                         string?
    :recipe/is-mystery                   boolean?
    :recipe/amount                       number?
