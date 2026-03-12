@@ -171,12 +171,12 @@
                                        roles)]
                   (doall
                    (map (fn [{:keys [uid]} roles]
-                          (auth0/update-roles! auth uid roles))
+                          (auth0/update-roles! auth uid roles)
+                          (when (env :ci-env)
+                            (Thread/sleep 250)))
                         @test-users
                         roles-per-user))
-                  (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
-                  (when (env :ci-env)
-                    (Thread/sleep 250))))
+                  (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))))
 
     :teardown #(reset! tokens nil)
     :msg      "make roles failed"}))
