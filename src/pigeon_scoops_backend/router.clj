@@ -35,6 +35,7 @@
                             wrap-params
                             coercion/coerce-request-middleware
                             coercion/coerce-response-middleware
+                            mw/wrap-auth0
                             mw/wrap-remove-nil-keys]}})
 
 (def openapi-docs

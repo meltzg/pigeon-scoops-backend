@@ -165,8 +165,18 @@
 (defn make-roles-fixture [& roles]
   (strict-fixture
    {:setup    (fn []
-                (let [auth (:auth/auth0 state/system)]
-                  (mapv #(auth0/update-roles! auth (:uid %) roles) @test-users)
+                (let [auth (:auth/auth0 state/system)
+                      roles-per-user (if (keyword? (first roles))
+                                       (repeat (count @test-users) roles)
+                                       roles)]
+                  (doall
+                   (map (fn [{:keys [uid]} roles]
+                          (auth0/update-roles! auth uid roles)
+                          (when (env :ci-env)
+                            (Thread/sleep 250)))
+                        @test-users
+                        roles-per-user))
                   (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))))
+
     :teardown #(reset! tokens nil)
     :msg      "make roles failed"}))

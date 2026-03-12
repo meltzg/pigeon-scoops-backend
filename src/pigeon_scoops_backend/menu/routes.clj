@@ -9,8 +9,7 @@
             [spec-tools.data-spec :as ds]))
 
 (defn routes [{db :jdbc-url}]
-  ["/menus" {:openapi    {:tags ["menus"]}
-             :middleware [[mw/wrap-auth0]]}
+  ["/menus" {:openapi    {:tags ["menus"]}}
    ["" {:get  {:handler   (menu/list-all-menus db)
                :responses {200 {:body [responses/menu]}}
                :summary   "list of menus"}

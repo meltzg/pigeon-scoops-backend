@@ -75,10 +75,9 @@
       db
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
-              uid (-> request :claims :sub)
+              perms (set (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))
+              production-manager? (perms "manage:production")
               {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
-              recipe (recipe-db/find-recipe-by-id conn-opts recipe-id)
-              recipe-owner? (= uid (:recipe/user-id recipe))
               order-item-id (UUID/randomUUID)
               active-items (get
                             (group-by
@@ -88,16 +87,16 @@
               active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
                                                           (map :menu-item/id active-items)))]
           (cond
-            (not (or recipe-owner? (seq active-items)))
+            (not (or production-manager? (seq active-items)))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
                              :message "recipe is not in an active menu"
                              :data    (str "recipe-id " recipe-id)})
-            (and (not recipe-owner?) (not-any? #(zero?
-                                                 (first
-                                                  (units/reduce-amounts mod amount amount-unit
-                                                                        (:menu-item-size/amount %)
-                                                                        (:menu-item-size/amount-unit %))))
-                                               active-item-sizes))
+            (and (not production-manager?) (not-any? #(zero?
+                                                       (first
+                                                        (units/reduce-amounts mod amount amount-unit
+                                                                              (:menu-item-size/amount %)
+                                                                              (:menu-item-size/amount-unit %))))
+                                                     active-item-sizes))
             (rr/bad-request {:type    "no-valid-size-order-amount"
                              :message "order amount cannot be made from any active item size"
                              :data    active-item-sizes})
@@ -116,10 +115,9 @@
       db
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
-              uid (-> request :claims :sub)
+              perms (set (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))
+              production-manager? (perms "manage:production")
               {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
-              recipe (recipe-db/find-recipe-by-id conn-opts recipe-id)
-              recipe-owner? (= uid (:recipe/user-id recipe))
               active-items (get
                             (group-by
                              :menu-item/recipe-id
@@ -128,16 +126,16 @@
               active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
                                                           (map :menu-item/id active-items)))]
           (cond
-            (not (or recipe-owner? (seq active-items)))
+            (not (or production-manager? (seq active-items)))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
                              :message "recipe is not in an active menu"
                              :data    (str "recipe-id " recipe-id)})
-            (and (not recipe-owner?) (not-any? #(zero?
-                                                 (first
-                                                  (units/reduce-amounts mod amount amount-unit
-                                                                        (:menu-item-size/amount %)
-                                                                        (:menu-item-size/amount-unit %))))
-                                               active-item-sizes))
+            (and (not production-manager?) (not-any? #(zero?
+                                                       (first
+                                                        (units/reduce-amounts mod amount amount-unit
+                                                                              (:menu-item-size/amount %)
+                                                                              (:menu-item-size/amount-unit %))))
+                                                     active-item-sizes))
             (rr/bad-request {:type    "no-valid-size-order-amount"
                              :message "order amount cannot be made from any active item size"
                              :data    active-item-sizes})

@@ -6,7 +6,7 @@
             [pigeon-scoops-backend.user-order.responses :refer [status terminal?]])
   (:import (java.util UUID)))
 
-(use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes :manage-orders :manage-menus))
+(use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture [:manage-recipes :manage-orders :manage-menus :manage-production] [:manage-recipes :manage-orders :manage-menus]))
 
 (def order
   {:user-order/note "my order"})

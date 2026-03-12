@@ -8,36 +8,18 @@
                                                  apply-keyword->db-str
                                                  with-connection]]))
 
-(defn find-recipe-favorite-counts [db recipe-ids]
-  (when (seq recipe-ids)
-    (->> (sql/query db (-> (h/select :recipe-id :%count.*)
-                           (h/from :recipe-favorite)
-                           (h/where [:in :recipe-id recipe-ids])
-                           (h/group-by :recipe-id)
-                           (hsql/format)))
-         (map (comp vec vals))
-         (into {}))))
-
 (defn find-all-recipes
-  ([db uid]
-   (find-all-recipes db uid false))
-  ([db uid include-deleted?]
+  ([db]
+   (find-all-recipes db false))
+  ([db include-deleted?]
    (with-connection
      db
      (fn [conn-opts]
-       (let [condition (when-not include-deleted? {:deleted false})
-             public (sql/find-by-keys conn-opts :recipe (merge condition {:public true}))
-             private (when uid (sql/find-by-keys conn-opts :recipe (merge condition {:user-id uid
-                                                                                     :public  false})))
-             favorite-counts (find-recipe-favorite-counts conn-opts (concat (map :recipe/id public)
-                                                                            (map :recipe/id private)))]
-         (merge {:public (map #(apply-db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                                      :recipe/amount-unit)
-                              public)}
-                (when private
-                  {:private (map #(apply-db-str->keyword (assoc % :recipe/favorite-count (or (get favorite-counts (:recipe/id %)) 0))
-                                                         :recipe/amount-unit)
-                                 private)})))))))
+       (map #(apply-db-str->keyword % :recipe/amount-unit)
+            (sql/find-by-keys conn-opts :recipe
+                              (if include-deleted?
+                                :all
+                                {:deleted false})))))))
 
 (defn find-recipe-by-id [db recipe-id]
   (with-connection
@@ -49,20 +31,17 @@
                                                  (h/left-join :recipe [:= :ingredient/ingredient-recipe-id :recipe/id])
                                                  (h/left-join :grocery [:= :ingredient/ingredient-grocery-id :grocery/id])
                                                  (h/where [:= :ingredient/recipe-id recipe-id])
-                                                 (hsql/format)))
-            favorite-count (count (sql/find-by-keys conn-opts :recipe-favorite {:recipe-id recipe-id}))]
+                                                 (hsql/format)))]
         (when (seq recipe)
           (-> recipe
               (apply-db-str->keyword :recipe/amount-unit)
               (assoc
-               :recipe/ingredients (map #(apply-db-str->keyword % :ingredient/amount-unit) ingredients)
-               :recipe/favorite-count favorite-count)))))))
+               :recipe/ingredients (map #(apply-db-str->keyword % :ingredient/amount-unit) ingredients))))))))
 
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (-> recipe
                               (apply-keyword->db-str :recipe/amount-unit)
-                              (assoc :recipe/public false
-                                     :recipe/instructions (into-array String (:recipe/instructions recipe))))))
+                              (assoc :recipe/instructions (into-array String (:recipe/instructions recipe))))))
 
 (defn update-recipe! [db recipe]
   (-> (sql/update! db :recipe (-> recipe
@@ -76,12 +55,6 @@
   (-> (sql/update! db :recipe {:deleted true} {:id recipe-id})
       ::jdbc/update-count
       (pos?)))
-
-(defn favorite-recipe! [db data]
-  (sql/insert! db :recipe-favorite data (:options db)))
-
-(defn unfavorite-recipe! [db data]
-  (sql/delete! db :recipe-favorite data (:options db)))
 
 (defn insert-ingredient! [db ingredient]
   (sql/insert! db, :ingredient (apply-keyword->db-str ingredient :ingredient/amount-unit)))
