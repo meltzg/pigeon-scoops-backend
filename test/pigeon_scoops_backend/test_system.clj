@@ -174,6 +174,9 @@
                           (auth0/update-roles! auth uid roles))
                         @test-users
                         roles-per-user))
-                  (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))))
+                  (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
+                  (when (env :ci-env)
+                    (Thread/sleep 250))))
+
     :teardown #(reset! tokens nil)
     :msg      "make roles failed"}))
