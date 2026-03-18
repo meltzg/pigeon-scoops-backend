@@ -24,8 +24,7 @@
           order (-> request :parameters :body)]
       (order-db/insert-order! db (assoc order
                                         :user-order/id order-id
-                                        :user-order/user-id uid
-                                        :user-order/status :status/draft))
+                                        :user-order/user-id uid))
       (rr/created (str responses/base-url "/orders/" order-id)
                   {:id order-id}))))
 
@@ -104,8 +103,7 @@
             (do
               (order-db/insert-order-item! conn-opts (assoc order-item
                                                             :order-item/order-id order-id
-                                                            :order-item/id order-item-id
-                                                            :order-item/status :status/draft))
+                                                            :order-item/id order-item-id))
               (rr/created (str responses/base-url "/orders/" order-id)
                           {:id order-item-id}))))))))
 

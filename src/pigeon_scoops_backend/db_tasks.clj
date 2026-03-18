@@ -3,7 +3,6 @@
   (:require [clojure.java.io :as io]
             [clojure.tools.cli :as cli]
             [integrant.core :as ig]
-            [next.jdbc :as jdbc]
             [pigeon-scoops-backend.db :as config]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.db :as order-db]
@@ -33,23 +32,20 @@
       jdbc-url
       (fn [conn-opts]
         (let [expired-menus (->> (menu-db/find-all-menus conn-opts)
-                                 (filter #(> (ZonedDateTime/now) (:menu/end-time %)))
-                                 (map :menu/id))
+                                 (filter #(> (.toEpochSecond (ZonedDateTime/now))
+                                             (.getEpochSecond (.toInstant (:menu/end-time %))))))
               recipes-to-accept (->> (menu-db/find-active-menu-items conn-opts)
-                                     (filter #(some (set expired-menus) (:menu-item/menu-id %)))
+                                     (filter #((set (map :menu/id expired-menus)) (:menu-item/menu-id %)))
                                      (mapv :menu-item/recipe-id))]
-          (jdbc/with-transaction
-            [tx conn-opts]
-            (when (seq recipes-to-accept)
-              (apply (partial order-db/accept-orders! tx) recipes-to-accept))
-            (dorun (->> expired-menus
-                        (filter :menu/repeats)
-                        (map #(menu-db/update-menu! tx {:id % :active false}))))
-            (dorun (->> expired-menus
-                        (remove :menu/repeats)
-                        (map #(menu-db/update-menu! tx {:id       %
-                                                        :end-time (end-time (:menu/duration %)
-                                                                            (:menu/duration-type %))}))))))))))
+          (when (seq recipes-to-accept)
+            (apply (partial order-db/accept-orders! conn-opts) recipes-to-accept))
+          (dorun (->> expired-menus
+                      (remove :menu/repeats)
+                      (map #(menu-db/update-menu! conn-opts (assoc % :menu/active false)))))
+          (dorun (->> expired-menus
+                      (filter :menu/repeats)
+                      (map #(menu-db/update-menu! conn-opts (assoc % :menu/end-time (end-time (:menu/duration %)
+                                                                                              (:menu/duration-type %))))))))))))
 
 (defn -main
   [& args]

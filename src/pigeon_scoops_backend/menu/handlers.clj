@@ -6,8 +6,8 @@
   (:import (java.util UUID)))
 
 (defn list-all-menus [db]
-  (fn [_]
-    (rr/response (vec (menu-db/find-all-menus db)))))
+  (fn [request]
+    (rr/response (vec (menu-db/find-all-menus db (-> request :parameters :query :include-inactive))))))
 
 (defn create-menu! [db]
   (fn [request]

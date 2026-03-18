@@ -9,14 +9,16 @@
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture [:manage-recipes :manage-orders :manage-menus :manage-production] [:manage-recipes :manage-orders :manage-menus]))
 
 (def order
-  {:user-order/note "my order"})
+  {:user-order/note "my order"
+   :user-order/status :status/draft})
 
 (def updated-order
   (assoc order :user-order/status :status/complete))
 
 (def order-item
   {:order-item/amount      1
-   :order-item/amount-unit :volume/qt})
+   :order-item/amount-unit :volume/qt
+   :order-item/status :status/draft})
 
 (def updated-order-item
   (assoc order-item :order-item/status :status/complete))
