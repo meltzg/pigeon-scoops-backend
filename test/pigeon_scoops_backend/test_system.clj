@@ -44,10 +44,14 @@
          token (or (if (:use-other-user opts) (second @tokens) (first @tokens))
                    (if (:use-other-user opts) (get-test-token (conj auth (second @test-users)))
                        (get-test-token (conj auth (first @test-users)))))
-         response (app (-> (mock/request method uri (:params opts))
-                           (cond-> (:auth opts) (mock/header :authorization (str "Bearer " token))
-                                   (:body opts) (mock/json-body (:body opts)))))
-         response (update response :body (partial m/decode "application/json"))]
+         request (-> (mock/request method uri (:params opts))
+                     (cond-> (:auth opts) (mock/header :authorization (str "Bearer " token))
+                             (:body opts) (mock/json-body (:body opts))))
+         response (update (app request) :body #(try
+                                                 (m/decode "application/json" %)
+                                                 (catch Exception e
+                                                   (println "FAILED TO DECODE" % "FROM REQUEST" request)
+                                                   (throw e))))]
      (println method uri opts response)
      response)))
 

@@ -11,6 +11,7 @@
 (defn routes [{db :jdbc-url}]
   ["/menus" {:openapi    {:tags ["menus"]}}
    ["" {:get  {:handler   (menu/list-all-menus db)
+               :parameters {:query {(ds/opt :include-inactive)      boolean?}}
                :responses {200 {:body [responses/menu]}}
                :summary   "list of menus"}
         :post {:handler    (menu/create-menu! db)

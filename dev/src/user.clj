@@ -46,8 +46,9 @@
          response (update response :body #(try
                                             (m/decode "application/json" %)
                                             (catch Exception e
-                                              (pprint e)
-                                              %)))]
+                                              (pprint {:body (:body response)
+                                                       :cause (:cause e)})
+                                              nil)))]
 
      response)))
 
@@ -87,7 +88,7 @@
        (reset! tokens))
   (loop [response (make-request :post "/v1/account" {:auth true})
          attempts 0]
-    (when (= 401 (:status response))
+    (when (nil? response)
       (println "attempt" attempts "failed")
       (Thread/sleep 1000)
       (recur (make-request :post "/v1/account" {:auth true})
@@ -190,14 +191,29 @@
                                           :menu/active        true
                                           :menu/repeats       false
                                           :menu/duration      3
-                                          :menu/duration-type :duration/day}}))
-
+                                          :menu/duration-type :duration/day}})
+                    :body
+                    :id)
+        menu-item-id (-> (make-request :post (str "/v1/menus/" menu-id "/items")
+                                       {:auth true
+                                        :body {:menu-item/recipe-id (first (vals recipe-map))}})
+                         :body
+                         :id)
+        menu-item-size-ids (doall
+                            (map #(-> (make-request :post (str "/v1/menus/" menu-id "/sizes")
+                                                    {:auth true
+                                                     :body {:menu-item-size/menu-item-id menu-item-id
+                                                            :menu-item-size/amount %
+                                                            :menu-item-size/amount-unit :volume/qt}})
+                                      :body
+                                      :id)
+                                 (range 1 5)))
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
                        (map #(vector (:id %) (-> (make-request :post "/v1/orders"
                                                                {:auth true
-                                                                :body (update-keys (select-keys % [:note])
+                                                                :body (update-keys (assoc (select-keys % [:note]) :user-order/status :status/submitted)
                                                                                    (fn [k] (keyword "user-order" (name k))))})
                                                  :body
                                                  :id)))
@@ -208,6 +224,7 @@
                          (map #(-> (make-request :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
                                                  {:auth true
                                                   :body {:order-item/recipe-id   (get recipe-map (:flavor_id %))
+                                                         :order-item/status :status/submitted
                                                          :order-item/amount      (:amount %)
                                                          :order-item/amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                           (:amount_unit %))}})
@@ -219,7 +236,9 @@
      :ingredients   ingredients
      :order-map     order-map
      :order-items   order-items
-     :menu-id       menu-id}))
+     :menu-id       menu-id
+     :menu-item-id menu-item-id
+     :mnu-item-size-ids menu-item-size-ids}))
 
 (defn init-app []
   (if (.exists (io/file users-config))
@@ -238,9 +257,11 @@
                             (.start))))
    (let [task-system (-> "resources/db-task-config.edn"
                          (db/load-config)
-                         (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
-                                                                 "&user=" (.getUsername @db-container)
-                                                                 "&password=" (.getPassword @db-container)))
+                         (update-in [:db/postgres :jdbc-url] #(if (nil? %)
+                                                                (str (.getJdbcUrl @db-container)
+                                                                     "&user=" (.getUsername @db-container)
+                                                                     "&password=" (.getPassword @db-container))
+                                                                %))
                          (db/init-system))
          migration-task (:db-tasks/migration task-system)]
      (migration-task)
@@ -248,9 +269,11 @@
    (-> "dev/resources/server-config.edn"
        slurp
        ig/read-string
-       (assoc-in [:db/postgres :jdbc-url] (str (.getJdbcUrl @db-container)
-                                               "&user=" (.getUsername @db-container)
-                                               "&password=" (.getPassword @db-container)))
+       (update-in [:db/postgres :jdbc-url] #(if (nil? %)
+                                              (str (.getJdbcUrl @db-container)
+                                                   "&user=" (.getUsername @db-container)
+                                                   "&password=" (.getPassword @db-container))
+                                              %))
        (ig/expand))))
 
 (defn go
@@ -274,8 +297,7 @@
                (auth0/get-users (:auth/auth0 state/system))))
   (make-test-users 2)
   (go)
-  (go false) ["eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkNCV1c1NlhKTDRORDVWME5DdWd2TiJ9.eyJodHRwczovL2FwaS5waWdlb24tc2Nvb3BzLmNvbS9lbWFpbCI6InJlcGwtdXNlcjdlOGMxYjM3LTBjN2UtNDY5YS1iMDk2LWJiMTdlMzIwODA0MkBwaWdlb24tc2Nvb3BzLmNvbSIsImh0dHBzOi8vYXBpLnBpZ2Vvbi1zY29vcHMuY29tL3JvbGVzIjpbIm1hbmFnZS1ncm9jZXJpZXMiLCJtYW5hZ2UtbWVudXMiLCJtYW5hZ2Utb3JkZXJzIiwibWFuYWdlLXJlY2lwZXMiXSwiaHR0cHM6Ly9hcGkucGlnZW9uLXNjb29wcy5jb20vcGVybXMiOlsiY3JlYXRlOmdyb2NlcnkiLCJjcmVhdGU6bWVudSIsImNyZWF0ZTpvcmRlciIsImNyZWF0ZTpyZWNpcGUiLCJkZWxldGU6Z3JvY2VyeSIsImRlbGV0ZTptZW51IiwiZGVsZXRlOm9yZGVyIiwiZGVsZXRlOnJlY2lwZSIsImVkaXQ6Z3JvY2VyeSIsImVkaXQ6bWVudSIsImVkaXQ6b3JkZXIiLCJlZGl0OnJlY2lwZSIsInZpZXc6Z3JvY2VyeSIsInZpZXc6cmVjaXBlIl0sImlzcyI6Imh0dHBzOi8vcGlnZW9uLXNjb29wcy51cy5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NjlhOGRlMDI0Y2ZjM2M4MDliZWZhY2RkIiwiYXVkIjpbImh0dHBzOi8vcGlnZW9uLXNjb29wcy51cy5hdXRoMC5jb20vYXBpL3YyLyIsImh0dHBzOi8vcGlnZW9uLXNjb29wcy51cy5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNzczMzI4NjEwLCJleHAiOjE3NzM0MTUwMTAsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwgcmVhZDpjdXJyZW50X3VzZXIgdXBkYXRlOmN1cnJlbnRfdXNlcl9tZXRhZGF0YSBkZWxldGU6Y3VycmVudF91c2VyX21ldGFkYXRhIGNyZWF0ZTpjdXJyZW50X3VzZXJfbWV0YWRhdGEgY3JlYXRlOmN1cnJlbnRfdXNlcl9kZXZpY2VfY3JlZGVudGlhbHMgZGVsZXRlOmN1cnJlbnRfdXNlcl9kZXZpY2VfY3JlZGVudGlhbHMgdXBkYXRlOmN1cnJlbnRfdXNlcl9pZGVudGl0aWVzIiwiZ3R5IjoicGFzc3dvcmQiLCJhenAiOiJBb1U5TG5HV1FsQ2JTVXZqZ1hkSGY0TlpQSmgwVkhZRCJ9.O8p7RHQlfLhdAcETyct-q13WE9aO9VfsnRtOt3SHC-QiGz5TU0Q5n5ovKT9PNlx_bMQ2JCbb8DsGIxiywmUIYueWTsQkeCtyVHCvyIQ6fGZVgdF9chNg0G_OGl9vqFj8eRjrwatdA6TfbDZfiM5YU5yLOo5PmhJadiJSvwyLnB9mxmxzs7KQL669j6bdcO34Aw90i7isRndiXHcAvBNRf0B7nLUsUHk-S3ND7TX9tqQlc14cT2bm1qPiB4JPpCQtzHa-VJHfxIv5dDfG3GRt5XhpLxI3gr0Gl96znLS1xrSjGrumCmF24gbmy-C9tiVuf960TzKIC9NAJtmPvAqF7w"]
-
+  (go false)
   (pprint @tokens)
   (halt)
   (reset)

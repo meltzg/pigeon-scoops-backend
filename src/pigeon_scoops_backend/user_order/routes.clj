@@ -16,7 +16,8 @@
                :summary   "list of orders"}
         :post {:handler    (order/create-order! db)
                :middleware [[(mw/wrap-with-permission :create/order)]]
-               :parameters {:body {:user-order/note string?}}
+               :parameters {:body {:user-order/note string?
+                                   :user-order/status (s/and keyword? responses/status)}}
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:order-id" {:parameters {:path {:order-id uuid?}}
                   :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id) db]]}
@@ -42,7 +43,8 @@
                                        :order-item/amount      number?
                                        :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                             (keys mass/conversion-map)
-                                                                                            (keys volume/conversion-map))))}}
+                                                                                            (keys volume/conversion-map))))
+                                       :order-item/status      (s/and keyword? responses/status)}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create order-item"}
           :put    {:handler    (order/update-order-item! db)
