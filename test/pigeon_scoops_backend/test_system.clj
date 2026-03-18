@@ -41,7 +41,6 @@
   ([method uri opts]
    (let [app (-> state/system :server/routes)
          auth (-> state/system :auth/auth0)
-         _ (println "USE OTHER" (:use-other-user opts) @tokens)
          token (or (if (:use-other-user opts) (second @tokens) (first @tokens))
                    (if (:use-other-user opts) (get-test-token (conj auth (second @test-users)))
                        (get-test-token (conj auth (first @test-users)))))
@@ -53,7 +52,6 @@
                                                  (catch Exception e
                                                    (println "FAILED TO DECODE" % "FROM REQUEST" request)
                                                    (throw e))))]
-     (swap! tokens #(assoc % (if (:use-other-user opts) 1 0) token))
      (println method uri opts response)
      response)))
 
