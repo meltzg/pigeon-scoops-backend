@@ -1,6 +1,9 @@
 (ns pigeon-scoops-backend.account.db
   (:require [next.jdbc.sql :as sql]))
 
+(defn find-all-accounts! [db]
+  (sql/find-by-keys db :account :all))
+
 (defn create-account! [db account]
   (sql/insert! db :account account))
 
