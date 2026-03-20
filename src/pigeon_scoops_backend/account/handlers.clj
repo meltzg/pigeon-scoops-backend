@@ -2,7 +2,25 @@
   (:require [pigeon-scoops-backend.account.db :as account-db]
             [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.utils :refer [with-connection]]
-            [ring.util.response :as rr]))
+            [ring.util.response :as rr]
+            [ring.util.codec :refer [form-decode]]))
+
+(defn get-accounts! [auth db]
+  (fn [_]
+    (with-connection
+      db
+      (fn [conn-opts]
+        (let [accounts (account-db/find-all-accounts! conn-opts)
+              roles->uids (update-vals (auth0/get-roles->uids! auth) set)]
+          (rr/response
+           (map (fn [acct]
+                  (assoc acct :account/roles
+                         (remove nil?
+                                 (map (fn [[role uids]]
+                                        (when (uids (:account/id acct))
+                                          role))
+                                      roles->uids))))
+                accounts)))))))
 
 (defn create-account! [db]
   (fn [request]
@@ -31,6 +49,8 @@
 
 (defn update-roles! [auth]
   (fn [request]
-    (let [uid (-> request :parameters :path :user-id)
+    (let [uid (-> request :parameters :path :user-id form-decode)
           roles (-> request :parameters :body :roles)]
-      (auth0/update-roles! auth uid roles))))
+      (if (auth0/update-roles! auth uid roles)
+        (rr/status 204)
+        (rr/status 500)))))

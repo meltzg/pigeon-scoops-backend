@@ -151,19 +151,7 @@
                    (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
                    (when manage-user?
                      (mapv #(test-endpoint :post "/v1/account" {:auth true :use-other-user %}) [true false]))))
-     :teardown (fn []
-                 (let [auth (:auth/auth0 state/system)
-                       local-users (when (.exists (io/file test-users-file))
-                                     (-> test-users-file
-                                         (slurp)
-                                         (edn/read-string)))]
-                   (when manage-user?
-                     (mapv #(do
-                              (test-endpoint :delete "/v1/account" {:auth true :use-other-user %})
-                              (when (nil? local-users)
-                                (auth0/delete-user! auth (:uid (if % (second @test-users)
-                                                                   (first @test-users))))))
-                           [true false]))))
+     :teardown #(Thread/sleep 2000)
      :msg      "account fixture failed"})))
 
 (defn make-roles-fixture [& roles]
@@ -175,9 +163,9 @@
                                        roles)]
                   (doall
                    (map (fn [{:keys [uid]} roles]
-                          (auth0/update-roles! auth uid roles)
+                          (println "ROLES" roles (auth0/update-roles! auth uid roles))
                           (when (env :ci-env)
-                            (Thread/sleep 250)))
+                            (Thread/sleep 500)))
                         @test-users
                         roles-per-user))
                   (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))))

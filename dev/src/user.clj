@@ -295,6 +295,8 @@
   (map #(auth0/delete-user! (:auth/auth0 state/system) (:user_id %))
        (filter #(str/starts-with? (:email %) "integration-test")
                (auth0/get-users (:auth/auth0 state/system))))
+  (make-request :get "/v1/account"
+                {:auth true})
   (make-test-users 2)
   (go)
   (go false)

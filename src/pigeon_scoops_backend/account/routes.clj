@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.account.routes
   (:require [clojure.spec.alpha :as s]
+            [pigeon-scoops-backend.account.responses :as responses]
             [pigeon-scoops-backend.account.handlers :as account]
             [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.middleware :as mw]))
@@ -9,7 +10,11 @@
 
 (defn routes [{:keys [auth] db :jdbc-url}]
   ["/account" {:openapi    {:tags ["account"]}}
-   ["" {:post   {:handler   (account/create-account! db)
+   ["" {:get {:handler (account/get-accounts! auth db)
+              :middleware [[wrap-edit-roles]]
+              :responses {200 {:body [responses/account]}}
+              :summary "Get account information"}
+        :post   {:handler   (account/create-account! db)
                  :responses {201 {:body nil?}}
                  :summary   "Create account"}
         :delete {:handler   (account/delete-account! auth db)
