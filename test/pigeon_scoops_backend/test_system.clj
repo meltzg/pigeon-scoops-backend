@@ -175,7 +175,7 @@
                                        roles)]
                   (doall
                    (map (fn [{:keys [uid]} roles]
-                          (auth0/update-roles! auth uid roles)
+                          (println "ROLES" roles (auth0/update-roles! auth uid roles))
                           (when (env :ci-env)
                             (Thread/sleep 250)))
                         @test-users
