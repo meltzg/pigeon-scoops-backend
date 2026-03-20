@@ -3,7 +3,8 @@
             [environ.core :refer [env]]
             [clj-http.client :as http]
             [integrant.core :as ig]
-            [muuntaja.core :as m]))
+            [muuntaja.core :as m]
+            [clojure.pprint :refer [pprint]]))
 
 (def roles #{:manage-roles
              :manage-recipes
@@ -95,8 +96,8 @@
         to-delete (set/difference (set current-roles)
                                   (set roles))
         to-add (set/difference (set roles)
-                               (set current-roles))]
-    (every? true? (map (fn [[method roles]]
+                               (set current-roles))
+        responses (map (fn [[method roles]]
                          (if (seq roles)
                            (->> {:headers          {"Authorization" (str "Bearer " token)}
                                  :cookie-policy    :standard
@@ -104,9 +105,9 @@
                                  :throw-exceptions false
                                  :body             (m/encode "application/json"
                                                              {:roles (get-role-ids token (map name roles))})}
-                                (method (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles"))
-                                :status
-                                (= 204))
-                           true))
+                                (method (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles")))
+                           {:status 204}))
                        {http/delete to-delete
-                        http/post to-add}))))
+                        http/post to-add})]
+    (pprint responses)
+    (every? (comp true? (partial = 204) :status) responses)))
