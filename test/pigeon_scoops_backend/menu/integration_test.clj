@@ -122,9 +122,8 @@
                                                                                                     :body {:menu-item/id @menu-item-id}})]
           (is (= status 400)))))
     (testing "delete menu item size"
-      (let [{:keys [status body]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/sizes") {:auth true
-                                                                                                  :body {:menu-item-size/id @menu-item-size-id}})]
-        (is (= status 204) (str "AAA" body))))
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/sizes") {:auth true :body {:menu-item-size/id @menu-item-size-id}})]
+        (is (= status 204))))
     (testing "delete menu item"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/menus/" @menu-id "/items") {:auth true
                                                                                              :body {:menu-item/id @menu-item-id}})]

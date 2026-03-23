@@ -165,25 +165,31 @@
                                                       :menu-item-size/amount       1
                                                       :menu-item-size/amount-unit  :volume/pt}})
                 menu-item-ids)
-        order-id (UUID/fromString (get-in (ts/test-endpoint :post "/v1/orders" {:auth true :body order}) [:body :id]))
+        order-id (UUID/fromString (get-in (ts/test-endpoint :post "/v1/orders" {:auth true :use-other-user true :body order}) [:body :id]))
         order-item-map (into {} (map #(let [order-item-body (assoc order-item :order-item/recipe-id %)]
                                         [(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
                                                                    {:auth true :use-other-user true :body order-item-body})
                                                  [:body :id])
                                          order-item-body])
                                      recipe-ids))]
-    (testing "unsubmitted orders are not moved to in-progress"
+    (testing "unsubmitted orders are canceled"
       (order-db/accept-orders! db (first recipe-ids))
-      (is (every? #(= (:order-item/status %) :status/draft)
-                  (order-db/find-all-order-items db order-id))))
+      (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
+                            (order-db/find-all-order-items db order-id))]
+        (is (every? #(= (:order-item/status %) :status/canceled)
+                    (get items true)))
+        (is (every? #(= (:order-item/status %) :status/draft)
+                    (get items false)))))
     (testing "submitted orders are moved to in-progress"
       (dorun
        (map (fn [[item-id body]]
-              (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
-                                {:auth true
-                                 :use-other-user true
-                                 :body (assoc body :order-item/status :status/submitted
-                                              :order-item/id item-id)}))
+              (when
+               (= (:order-item/recipe-id body) (first recipe-ids))
+                (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
+                                  {:auth true
+                                   :use-other-user true
+                                   :body (assoc body :order-item/status :status/submitted
+                                                :order-item/id item-id)})))
             order-item-map))
       (order-db/accept-orders! db (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
@@ -195,11 +201,13 @@
     (testing "completed orders are not moved to in-progress"
       (dorun
        (map (fn [[item-id body]]
-              (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
-                                {:auth true
-                                 :use-other-user true
-                                 :body (assoc body :order-item/status :status/completed
-                                              :order-item/id item-id)}))
+              (when
+               (= (:order-item/recipe-id body) (first recipe-ids))
+                (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
+                                  {:auth true
+                                   :use-other-user true
+                                   :body (assoc body :order-item/status :status/complete
+                                                :order-item/id item-id)})))
             order-item-map))
       (order-db/accept-orders! db (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))

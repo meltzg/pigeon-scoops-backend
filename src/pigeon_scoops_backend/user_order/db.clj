@@ -71,10 +71,17 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn accept-orders! [db recipe-id & rids]
-  (sql/query db (-> (h/update :order-item)
-                    (h/set {:status (keyword->db-str :status/in-progress)})
-                    (h/where [:in :recipe-id (conj rids recipe-id)]
-                             [:= :status (keyword->db-str :status/submitted)])
-                    (hsql/format))))
+(defn accept-orders! [db & recipe-ids]
+  (jdbc/with-transaction
+    [tx db]
+    (sql/query tx (-> (h/update :order-item)
+                      (h/set {:ourder-item/status (keyword->db-str :status/in-progress)})
+                      (h/where [:in :order-item/recipe-id recipe-ids]
+                               [:= :order-item/status (keyword->db-str :status/submitted)])
+                      (hsql/format)))
+    (sql/query tx (-> (h/update :order-item)
+                      (h/set {:ourder-item/status (keyword->db-str :status/canceled)})
+                      (h/where [:in :order-item/recipe-id recipe-ids]
+                               [:= :order-item/status (keyword->db-str :status/draft)])
+                      (hsql/format)))))
 

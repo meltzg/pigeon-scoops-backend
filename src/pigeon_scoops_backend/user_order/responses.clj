@@ -9,7 +9,8 @@
   [:status/draft
    :status/submitted
    :status/in-progress
-   :status/complete])
+   :status/complete
+   :status/canceled])
 
 (defn terminal? [s]
   (#{:status/complete :status/in-progress} s))
@@ -20,6 +21,7 @@
    :recipe/name                     string?
    :order-item/order-id             uuid?
    :order-item/status               (s/and keyword? (set status))
+   :order-item/created-at           inst?
    (ds/opt :order-item/amount)      number?
    (ds/opt :order-item/amount-unit) (s/and keyword?
                                            (set (concat common/other-units
