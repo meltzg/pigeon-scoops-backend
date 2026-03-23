@@ -49,25 +49,6 @@
                        :message "order not found"
                        :data    (str "order-id " order-id)})))))
 
-(defn delete-order! [db]
-  (fn [request]
-    (with-connection
-      db
-      (fn [conn-opts]
-        (let [order-id (-> request :parameters :path :order-id)
-              order-status (->> order-id
-                                (order-db/find-order-by-id conn-opts)
-                                :user-order/status)]
-          (cond
-            (terminal? order-status)
-            (rr/bad-request {:type    "non-deletable-status"
-                             :message (str "Cannot delete an order in a terminal state. " order-status " is not terminal")
-                             :data    (:user-order/status order-status)})
-            (order-db/delete-order! conn-opts order-id)
-            (rr/status 204)
-            :else
-            (rr/bad-request (-> request :parameters :body))))))))
-
 (defn create-order-item! [db]
   (fn [request]
     (with-connection

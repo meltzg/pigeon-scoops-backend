@@ -213,8 +213,7 @@
                        (m/decode "application/json")
                        (map #(vector (:id %) (-> (make-request :post "/v1/orders"
                                                                {:auth true
-                                                                :body (update-keys (assoc (select-keys % [:note]) :user-order/status :status/submitted)
-                                                                                   (fn [k] (keyword "user-order" (name k))))})
+                                                                :body (update-keys % (fn [k] (keyword "user-order" (name k))))})
                                                  :body
                                                  :id)))
                        (into {}))

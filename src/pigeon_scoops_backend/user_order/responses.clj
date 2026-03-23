@@ -6,10 +6,10 @@
             [spec-tools.data-spec :as ds]))
 
 (def status
-  #{:status/draft
-    :status/submitted
-    :status/in-progress
-    :status/complete})
+  [:status/draft
+   :status/submitted
+   :status/in-progress
+   :status/complete])
 
 (defn terminal? [s]
   (#{:status/complete :status/in-progress} s))
@@ -19,7 +19,7 @@
    :order-item/recipe-id            uuid?
    :recipe/name                     string?
    :order-item/order-id             uuid?
-   :order-item/status               (s/and keyword? status)
+   :order-item/status               (s/and keyword? (set status))
    (ds/opt :order-item/amount)      number?
    (ds/opt :order-item/amount-unit) (s/and keyword?
                                            (set (concat common/other-units
@@ -30,5 +30,5 @@
   {:user-order/id             uuid?
    :user-order/note           string?
    :user-order/user-id        string?
-   :user-order/status         (s/and keyword? status)
+   :user-order/status         (s/and keyword? (set status))
    (ds/opt :user-order/items) [order-item]})

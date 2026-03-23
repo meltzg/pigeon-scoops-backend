@@ -16,8 +16,7 @@
                :summary   "list of orders"}
         :post {:handler    (order/create-order! db)
                :middleware [[(mw/wrap-with-permission :create/order)]]
-               :parameters {:body {:user-order/note string?
-                                   :user-order/status (s/and keyword? responses/status)}}
+               :parameters {:body {:user-order/note string?}}
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:order-id" {:parameters {:path {:order-id uuid?}}
                   :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id) db]]}
@@ -26,14 +25,9 @@
                   :summary   "Retrieve order"}
          :put    {:handler    (order/update-order! db)
                   :middleware [[(mw/wrap-with-permission :edit/order)]]
-                  :parameters {:body {:user-order/note   string?
-                                      :user-order/status (s/and keyword? responses/status)}}
+                  :parameters {:body {:user-order/note   string?}}
                   :responses  {204 {:body nil?}}
-                  :summary    "Update order"}
-         :delete {:handler    (order/delete-order! db)
-                  :middleware [[(mw/wrap-with-permission :delete/order)]]
-                  :response   {204 {:body nil?}}
-                  :summary    "Delete order"}}]
+                  :summary    "Update order"}}]
     ["/bom" {:get {:handler   (order/retrieve-order-bom db)
                    :responses {200 {:body [grocery-responses/grocery]}}
                    :summary   "Retrieve order bom"}}]
@@ -44,7 +38,7 @@
                                        :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                             (keys mass/conversion-map)
                                                                                             (keys volume/conversion-map))))
-                                       :order-item/status      (s/and keyword? responses/status)}}
+                                       :order-item/status      (s/and keyword? (set responses/status))}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create order-item"}
           :put    {:handler    (order/update-order-item! db)
@@ -54,7 +48,7 @@
                                        :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                             (keys mass/conversion-map)
                                                                                             (keys volume/conversion-map))))
-                                       :order-item/status      (s/and keyword? responses/status)}}
+                                       :order-item/status      (s/and keyword? (set responses/status))}}
                    :responses  {204 {:body nil?}}
                    :summary    "Update order-item"}
           :delete {:handler    (order/delete-order-item! db)

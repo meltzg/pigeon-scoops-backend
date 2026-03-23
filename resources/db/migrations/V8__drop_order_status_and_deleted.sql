@@ -1,0 +1,3 @@
+ALTER TABLE user_order
+    DROP COLUMN IF EXISTS status,
+    DROP COLUMN IF EXISTS deleted;
