@@ -42,18 +42,18 @@
                                                                                             (keys volume/conversion-map))))
                                        :order-item/status      (s/and keyword? (set responses/status))}}
                    :responses  {201 {:body {:id uuid?}}}
-                   :summary    "Create order-item"}
-          :put    {:handler    (order/update-order-item! db)
-                   :parameters {:body {:order-item/id          uuid?
-                                       :order-item/recipe-id   uuid?
-                                       :order-item/amount      number?
-                                       :order-item/amount-unit (s/and keyword? (set (concat common/other-units
-                                                                                            (keys mass/conversion-map)
-                                                                                            (keys volume/conversion-map))))
-                                       :order-item/status      (s/and keyword? (set responses/status))}}
-                   :responses  {204 {:body nil?}}
-                   :summary    "Update order-item"}
-          :delete {:handler    (order/delete-order-item! db)
-                   :parameters {:body {:order-item/id uuid?}}
-                   :responses  {204 {:body nil?}}
-                   :summary    "delete order-item"}}]]]])
+                   :summary    "Create order-item"}}]
+     ["/:order-item-id"
+      {:parameters {:path {:order-item-id uuid?}}
+       :put    {:handler    (order/update-order-item! db)
+                :parameters {:body {:order-item/recipe-id   uuid?
+                                    :order-item/amount      number?
+                                    :order-item/amount-unit (s/and keyword? (set (concat common/other-units
+                                                                                         (keys mass/conversion-map)
+                                                                                         (keys volume/conversion-map))))
+                                    :order-item/status      (s/and keyword? (set responses/status))}}
+                :responses  {204 {:body nil?}}
+                :summary    "Update order-item"}
+       :delete {:handler    (order/delete-order-item! db)
+                :responses  {204 {:body nil?}}
+                :summary    "delete order-item"}}]]]])

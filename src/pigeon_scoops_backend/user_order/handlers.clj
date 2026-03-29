@@ -98,11 +98,17 @@
     (with-connection
       db
       (fn [conn-opts]
-        (let [order-id (-> request :parameters :path :order-id)
+        (let [{:keys [order-id order-item-id]} (-> request
+                                                   :parameters
+                                                   :path
+                                                   (select-keys [:order-id :order-item-id]))
               perms (set (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))
               production-manager? (perms "manage:production")
-              {:order-item/keys [recipe-id amount amount-unit] item-id :order-item/id :as order-item} (-> request :parameters :body)
-              curr-item-status (->> item-id
+              {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
+              order-item (assoc order-item
+                                :order-item/id order-item-id
+                                :order-item/order-id order-id)
+              curr-item-status (->> order-item-id
                                     (order-db/find-order-item-by-id db)
                                     :order-item/status)
               active-items (get
@@ -132,17 +138,19 @@
                              :message "order amount cannot be made from any active item size"
                              :data    active-item-sizes})
             :else
-            (if (order-db/update-order-item! conn-opts (assoc order-item :order-item/order-id order-id))
+            (if (order-db/update-order-item! conn-opts order-item)
               (rr/status 204)
-              (rr/bad-request (select-keys order-item [item-id])))))))))
+              (rr/bad-request order-item))))))))
 
 (defn delete-order-item! [db]
   (fn [request]
     (with-connection
       db
       (fn [conn-opts]
-        (let [order-id (-> request :parameters :path :order-id)
-              order-item-id (-> request :parameters :body :order-item/id)
+        (let [{:keys [order-id order-item-id]} (-> request
+                                                   :parameters
+                                                   :path
+                                                   (select-keys [:order-id :order-item-id]))
               order-item-status (->> order-item-id
                                      (order-db/find-order-item-by-id conn-opts)
                                      :order-item/status)]
