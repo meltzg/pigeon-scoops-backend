@@ -14,7 +14,12 @@
 
 (defn list-all-orders [db]
   (fn [request]
-    (let [uid (-> request :claims :sub)]
+    (let [perms (set (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))
+          production-manager? (perms "manage:production")
+          admin-request? (-> request :parameters :query :admin)
+          uid (when-not (and admin-request?
+                             production-manager?)
+                (-> request :claims :sub))]
       (rr/response (vec (order-db/find-all-orders db uid))))))
 
 (defn create-order! [db]

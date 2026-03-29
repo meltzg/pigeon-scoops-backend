@@ -47,6 +47,7 @@
                                             (m/decode "application/json" %)
                                             (catch Exception e
                                               (pprint {:body (:body response)
+                                                       :status (:status response)
                                                        :cause (:cause e)})
                                               nil)))]
 
@@ -71,7 +72,13 @@
                                 [:manage-orders :manage-recipes :manage-groceries :manage-menus :manage-production])
           @test-users)
     (reset! tokens (mapv #(get-token (conj auth %)) @test-users))
-    (make-request :post "/v1/account" {:auth true})
+    (loop [response (make-request :post "/v1/account" {:auth true})
+           attempts 0]
+      (when (= (:status response) 401)
+        (println "attempt" attempts "failed")
+        (Thread/sleep 1000)
+        (recur (make-request :post "/v1/account" {:auth true})
+               (inc attempts))))
     (spit users-config (with-out-str
                          (pprint @test-users)))))
 
@@ -86,10 +93,12 @@
        (get-token)
        (vector)
        (reset! tokens))
+  (println "tokens" @tokens)
   (loop [response (make-request :post "/v1/account" {:auth true})
          attempts 0]
-    (when (nil? response)
+    (when (= (:status response) 401)
       (println "attempt" attempts "failed")
+      (println (select-keys response [:body :status]))
       (Thread/sleep 1000)
       (recur (make-request :post "/v1/account" {:auth true})
              (inc attempts)))))

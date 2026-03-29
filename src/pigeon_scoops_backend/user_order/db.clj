@@ -19,17 +19,19 @@
                          (hsql/format)))))
 
 (defn find-all-orders
-  ([db user-id]
-   (find-all-orders db user-id false))
-  ([db user-id include-deleted?]
-   (with-connection
-     db (fn [conn-opts]
-          (->> (sql/find-by-keys conn-opts :user-order (merge {:user-id user-id}
-                                                              (when-not include-deleted?
-                                                                {:deleted false})))
-               (map #(assoc % :user-order/status
-                            (infer-order-status (find-all-order-items conn-opts (:user-order/id %)))))
-               (map #(apply-db-str->keyword % :user-order/amount-unit :user-order/status)))))))
+  [db user-id]
+  (with-connection
+    db (fn [conn-opts]
+         (->> (sql/find-by-keys
+               conn-opts
+               :user-order
+               (if user-id
+                 {:user-order/user-id user-id}
+                 :all))
+              (mapv #(assoc % :user-order/status
+                            (infer-order-status
+                             (find-all-order-items conn-opts (:user-order/id %)))))
+              (map #(apply-db-str->keyword % :user-order/amount-unit :user-order/status))))))
 
 (defn find-order-by-id [db order-id]
   (with-connection
@@ -75,12 +77,12 @@
   (jdbc/with-transaction
     [tx db]
     (sql/query tx (-> (h/update :order-item)
-                      (h/set {:ourder-item/status (keyword->db-str :status/in-progress)})
+                      (h/set {:order-item/status (keyword->db-str :status/in-progress)})
                       (h/where [:in :order-item/recipe-id recipe-ids]
                                [:= :order-item/status (keyword->db-str :status/submitted)])
                       (hsql/format)))
     (sql/query tx (-> (h/update :order-item)
-                      (h/set {:ourder-item/status (keyword->db-str :status/canceled)})
+                      (h/set {:order-item/status (keyword->db-str :status/canceled)})
                       (h/where [:in :order-item/recipe-id recipe-ids]
                                [:= :order-item/status (keyword->db-str :status/draft)])
                       (hsql/format)))))

@@ -36,10 +36,31 @@
    :menu/duration      3
    :menu/duration-type :duration/month})
 
-(deftest orders-list-test `(testing "List orders"
-                             (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true})]
-                               (is (= 200 status))
-                               (is (vector? body)))))
+(deftest orders-list-test
+  (let [admin-order-id (-> (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order})
+                           :body
+                           :id)
+        other-order-id (-> (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order :use-other-user true})
+                           :body
+                           :id)]
+    (testing "List orders"
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true})]
+        (is (= 200 status))
+        (is (vector? body))
+        (is ((set (map :user-order/id body)) admin-order-id))
+        (is (not ((set (map :user-order/id body)) other-order-id)))))
+    (testing "List orders. admins can get orders from all users"
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :params {:admin true}})]
+        (is (= 200 status))
+        (is (vector? body))
+        (is ((set (map :user-order/id body)) admin-order-id))
+        (is ((set (map :user-order/id body)) other-order-id))))
+    (testing "List orders. non admins cannot get orders from all users"
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :use-other-user true :params {:admin true}})]
+        (is (= 200 status))
+        (is (vector? body))
+        (is (not ((set (map :user-order/id body)) admin-order-id)))
+        (is ((set (map :user-order/id body)) other-order-id))))))
 
 (deftest orders-crud-test
   (let [order-id (atom nil)
@@ -105,14 +126,14 @@
           (reset! order-item-id (:id body))
           (is (= status 201))))
       (testing "other user cannot create order-item for recipe not in an active menu"
-        (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                 {:auth           true
-                                                  :use-other-user true
-                                                  :body           (assoc order-item :order-item/recipe-id other-recipe-id)})]
-          (is (= status 400))))
+        (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                                      {:use-auth?           true
+                                                       :use-other-user true
+                                                       :body           (assoc order-item :order-item/recipe-id other-recipe-id)})]
+          (is (= status 400) (str body))))
       (testing "other user cannot create order-item for an invalid size"
         (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                 {:auth           true
+                                                 {:use-auth?           true
                                                   :use-other-user true
                                                   :body           (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)})]
           (is (= status 400))))
@@ -183,14 +204,13 @@
     (testing "submitted orders are moved to in-progress"
       (dorun
        (map (fn [[item-id body]]
-              (when
-               (= (:order-item/recipe-id body)
-                  (first recipe-ids)
+              (when (= (:order-item/recipe-id body) (first recipe-ids))
                 (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
                                   {:use-auth? true
                                    :use-other-user true
-                                   :body (assoc body :order-item/status :status/submitted
-                                                :order-item/id item-id)}))))
+                                   :body (assoc body
+                                                :order-item/status :status/submitted
+                                                :order-item/id item-id)})))
             order-item-map))
       (order-db/accept-orders! db (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
@@ -202,13 +222,13 @@
     (testing "completed orders are not moved to in-progress"
       (dorun
        (map (fn [[item-id body]]
-              (when
-               (= (:order-item/recipe-id body) (first recipe-ids)
+              (when (= (:order-item/recipe-id body) (first recipe-ids))
                 (ts/test-endpoint :put (str "/v1/orders/" order-id "/items")
-                                   {:use-auth? true
-                                    :use-other-user true
-                                    :body (assoc body :order-item/status :status/complete
-                                                 :order-item/id item-id)}))))
+                                  {:use-auth? true
+                                   :use-other-user true
+                                   :body (assoc body
+                                                :order-item/status :status/complete
+                                                :order-item/id item-id)})))
             order-item-map))
       (order-db/accept-orders! db (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))

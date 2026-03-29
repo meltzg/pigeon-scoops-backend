@@ -7,13 +7,15 @@
             [pigeon-scoops-backend.units.volume :as volume]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.handlers :as order]
-            [pigeon-scoops-backend.user-order.responses :as responses]))
+            [pigeon-scoops-backend.user-order.responses :as responses]
+            [spec-tools.data-spec :as ds]))
 
 (defn routes [{db :jdbc-url}]
   ["/orders" {:openapi    {:tags ["orders"]}}
    ["" {:get  {:handler   (order/list-all-orders db)
+               :parameters {:query {(ds/opt :admin) boolean?}}
                :responses {200 {:body [responses/order]}}
-               :summary   "list of orders"}
+               :summary "list of orders"}
         :post {:handler    (order/create-order! db)
                :middleware [[(mw/wrap-with-permission :create/order)]]
                :parameters {:body {:user-order/note string?}}

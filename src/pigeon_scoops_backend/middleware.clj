@@ -42,31 +42,39 @@
 (defn wrap-with-permission
   ([permission]
    (wrap-with-permission permission nil))
-  ([permission public-keys]
-   {:name        (keyword (str *ns*) (str permission))
-    :description (str "Middleware to check if a user has the " permission " permission")
+  ([permissions public-keys]
+   {:name        (keyword (str *ns*) (str permissions))
+    :description (str "Middleware to check if a user has the " permissions " permission")
     :wrap        (fn [handler]
                    (fn [request]
-                     (let [permissions (map #(keyword (str/replace % ":" "/"))
-                                            (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))]
+                     (let [expected-permissions (if (keyword? permissions)
+                                                  [permissions]
+                                                  permissions)
+                           user-permissions (set (map #(keyword (str/replace % ":" "/"))
+                                                      (get-in request [:claims "https://api.pigeon-scoops.com/perms"])))]
                        (cond
-                         ((set permissions) permission)
+                         (some? (map #(user-permissions %) expected-permissions))
                          (handler request)
                          (seq public-keys)
                          (let [response (handler request)]
-                           (update response :body #(cond
-                                                     (map? %)
-                                                     (select-keys % public-keys)
-                                                     (or (coll? %) (seq? %))
-                                                     (map (fn [elem] (select-keys elem public-keys)) %)
-                                                     :else
-                                                     (-> (rr/response {:message (str "Could not extract public keys. Operation requires " permission " permission")
-                                                                       :data    (:uri request)
-                                                                       :type    :authorization-required})
-                                                         (rr/status 401)))))
+                           (update
+                            response
+                            :body
+                            #(cond
+                               (map? %)
+                               (select-keys % public-keys)
+                               (or (coll? %) (seq? %))
+                               (map (fn [elem] (select-keys elem public-keys)) %)
+                               :else
+                               (-> (rr/response {:message (str "Could not extract public keys. Operation requires "
+                                                               expected-permissions
+                                                               " permission")
+                                                 :data    (:uri request)
+                                                 :type    :authorization-required})
+                                   (rr/status 401)))))
 
                          :else
-                         (-> (rr/response {:message (str "Operation requires " permission " permission")
+                         (-> (rr/response {:message (str "Operation requires an of " permissions " permission")
                                            :data    (:uri request)
                                            :type    :authorization-required})
                              (rr/status 401))))))}))
