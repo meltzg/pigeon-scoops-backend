@@ -25,4 +25,4 @@
                               :middleware [[wrap-edit-roles]]
                               :parameters {:body {:roles [(s/and keyword? auth0/roles)]}}
                               :responses  {204 {:body nil?}}
-                              :summary    "Update user role to cook"}}]])
+                              :summary    "Update user roles"}}]])

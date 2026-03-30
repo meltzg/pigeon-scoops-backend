@@ -209,10 +209,9 @@
                          :body
                          :id)
         menu-item-size-ids (doall
-                            (map #(-> (make-request :post (str "/v1/menus/" menu-id "/sizes")
+                            (map #(-> (make-request :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
                                                     {:auth true
-                                                     :body {:menu-item-size/menu-item-id menu-item-id
-                                                            :menu-item-size/amount %
+                                                     :body {:menu-item-size/amount %
                                                             :menu-item-size/amount-unit :volume/qt}})
                                       :body
                                       :id)
