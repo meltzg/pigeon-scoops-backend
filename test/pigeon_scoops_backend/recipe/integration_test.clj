@@ -57,18 +57,16 @@
         (reset! ingredient-id (:id body))
         (is (= status 201))))
     (testing "update ingredient"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients")
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id)
                                                {:use-auth? true :body (assoc ingredient
-                                                                             :ingredient/id @ingredient-id
                                                                              :ingredient/amount 3000
                                                                              :ingredient/ingredient-recipe-id @recipe-id)})]
         (is (= status 204))))
     (testing "switching from recipe to grocery ingredient"
       (let [ingredient (-> ingredient
-                           (assoc :ingredient/ingredient-grocery-id grocery-id
-                                  :ingredient/id @ingredient-id)
+                           (assoc :ingredient/ingredient-grocery-id grocery-id)
                            (dissoc :ingredient/ingredient-recipe-id))
-            {:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients") {:use-auth? true :body ingredient})]
+            {:keys [status]} (ts/test-endpoint :put (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id) {:use-auth? true :body ingredient})]
         (is (= status 204))))
     (testing "create ingredient from grocery"
       (let [ingredient (assoc ingredient :ingredient/ingredient-grocery-id grocery-id)
@@ -84,7 +82,7 @@
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/recipes/" @recipe-id "/bom") {:use-auth? true :params {:amount 5 :amount-unit "mass/g"}})]
         (is (= status 200))))
     (testing "delete ingredient"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients") {:use-auth? true :body {:ingredient/id @ingredient-id}})]
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id "/ingredients/" @ingredient-id) {:use-auth? true})]
         (is (= status 204))))
     (testing "delete recipe"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/recipes/" @recipe-id) {:use-auth? true})]

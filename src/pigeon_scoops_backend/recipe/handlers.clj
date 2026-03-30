@@ -82,8 +82,15 @@
 
 (defn update-ingredient! [db]
   (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
-          ingredient (-> request :parameters :body)]
+    (let [{:keys [recipe-id ingredient-id]} (-> request
+                                                :parameters
+                                                :path
+                                                (select-keys [:recipe-id :ingredient-id]))
+          ingredient (-> request
+                         :parameters
+                         :body
+                         (assoc :ingredient/id ingredient-id
+                                :ingredient/recipe-id recipe-id))]
       (if (-> ingredient
               (select-keys [:ingredient/ingredient-recipe-id :ingredient/ingredient-grocery-id])
               (vals)
@@ -93,20 +100,22 @@
         (rr/bad-request {:type    "invalid-type"
                          :message "Ingredient must be either a grocery or recipe ingredient, exclusive"
                          :data    ingredient})
-        (let [successful? (recipe-db/update-ingredient! db (assoc ingredient :recipe-id recipe-id))]
+        (let [successful? (recipe-db/update-ingredient! db ingredient)]
           (if successful?
             (rr/status 204)
             (rr/bad-request (select-keys ingredient [:id]))))))))
 
 (defn delete-ingredient! [db]
   (fn [request]
-    (let [recipe-id (-> request :parameters :path :recipe-id)
-          ingredient (-> request :parameters :body)
-          successful? (recipe-db/delete-ingredient! db (assoc (select-keys ingredient [:ingredient/id])
-                                                              :recipe-id recipe-id))]
+    (let [{:keys [recipe-id ingredient-id]} (-> request
+                                                :parameters
+                                                :path
+                                                (select-keys [:recipe-id :ingredient-id]))
+          successful? (recipe-db/delete-ingredient! db {:ingredient/id ingredient-id
+                                                        :ingredient/recipe-id recipe-id})]
       (if successful?
         (rr/status 204)
-        (rr/bad-request (select-keys ingredient [:id]))))))
+        (rr/bad-request {:ingredient/id ingredient-id})))))
 
 (defn retrieve-recipe-bom [db]
   (fn [request]
