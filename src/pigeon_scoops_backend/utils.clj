@@ -52,3 +52,10 @@
         (mapv doall-deep value)
         :else
         value))
+
+(defn production-manager? [request]
+  (-> request
+      (get-in [:claims "https://api.pigeon-scoops.com/perms"])
+      (set)
+      (#(% "manage:production"))))
+

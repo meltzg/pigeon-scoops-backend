@@ -8,14 +8,13 @@
             [pigeon-scoops-backend.units.common :as units]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.responses :refer [terminal?]]
-            [pigeon-scoops-backend.utils :refer [with-connection]]
+            [pigeon-scoops-backend.utils :refer [with-connection production-manager?]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
 (defn list-all-orders [db]
   (fn [request]
-    (let [perms (set (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))
-          production-manager? (perms "manage:production")
+    (let [production-manager? (production-manager? request)
           admin-request? (-> request :parameters :query :admin)
           uid (when-not (and admin-request?
                              production-manager?)
@@ -60,8 +59,7 @@
       db
       (fn [conn-opts]
         (let [order-id (-> request :parameters :path :order-id)
-              perms (set (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))
-              production-manager? (perms "manage:production")
+              production-manager? (production-manager? request)
               {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
               order-item-id (UUID/randomUUID)
               active-items (get
@@ -88,6 +86,7 @@
             :else
             (do
               (order-db/insert-order-item! conn-opts (assoc order-item
+                                                            :order-item/status :status/draft
                                                             :order-item/order-id order-id
                                                             :order-item/id order-item-id))
               (rr/created (str responses/base-url "/orders/" order-id)
@@ -102,8 +101,7 @@
                                                    :parameters
                                                    :path
                                                    (select-keys [:order-id :order-item-id]))
-              perms (set (get-in request [:claims "https://api.pigeon-scoops.com/perms"]))
-              production-manager? (perms "manage:production")
+              production-manager? (production-manager? request)
               {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
               order-item (assoc order-item
                                 :order-item/id order-item-id
@@ -119,10 +117,10 @@
               active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
                                                           (map :menu-item/id active-items)))]
           (cond
-            ;(not= curr-item-status :status/draft)
-            ;(rr/bad-request {:type "recipe-not-editable"
-            ;                 :message "only draft order items can be changed"
-            ;                 :data (str "status " curr-item-status)})
+            (not= curr-item-status :status/draft)
+            (rr/bad-request {:type "recipe-not-editable"
+                             :message "only draft order items can be changed"
+                             :data (str "status " curr-item-status)})
             (not (or production-manager? (seq active-items)))
             (rr/bad-request {:type    "recipe-not-in-active-menu"
                              :message "recipe is not in an active menu"
@@ -141,6 +139,44 @@
             (if (order-db/update-order-item! conn-opts order-item)
               (rr/status 204)
               (rr/bad-request order-item))))))))
+
+(defn update-order-item-status! [db]
+  (fn [request]
+    (with-connection
+      db
+      (fn [db]
+        (let [{:keys [order-id order-item-id]} (-> request
+                                                   :parameters
+                                                   :path
+                                                   (select-keys [:order-id :order-item-id]))
+              new-status (-> request
+                             :parameters
+                             :body
+                             :order-item/status)
+              production-manager? (production-manager? request)
+              curr-item-status (->> order-item-id
+                                    (order-db/find-order-item-by-id db)
+                                    :order-item/status)
+              patch {:order-item/id order-item-id
+                     :order-item/order-id order-id
+                     :order-item/status new-status}]
+          (cond
+            (and (not production-manager?)
+                 (not (#{:status/draft :status/submitted :status/canceled} new-status)))
+            (-> (rr/response {:message (str "only production managers can set the status to " new-status)
+                              :data    patch
+                              :type    :authorization-required})
+                (rr/status 401))
+            (and (not production-manager?)
+                 (#{:status/in-progress :status/complete :status/canceled} curr-item-status))
+            (-> (rr/response {:message (str "only production managers can change the status of items in " curr-item-status)
+                              :data    patch
+                              :type    :authorization-required})
+                (rr/status 401))
+            :else
+            (if (order-db/update-order-item! db patch)
+              (rr/status 204)
+              (rr/bad-request patch))))))))
 
 (defn delete-order-item! [db]
   (fn [request]

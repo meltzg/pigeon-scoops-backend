@@ -7,7 +7,7 @@
             [pigeon-scoops-backend.units.volume :as volume]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.handlers :as order]
-            [pigeon-scoops-backend.user-order.responses :as responses]
+            [pigeon-scoops-backend.user-order.responses :as responses :refer [status]]
             [spec-tools.data-spec :as ds]))
 
 (defn routes [{db :jdbc-url}]
@@ -39,21 +39,23 @@
                                        :order-item/amount      number?
                                        :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                             (keys mass/conversion-map)
-                                                                                            (keys volume/conversion-map))))
-                                       :order-item/status      (s/and keyword? (set responses/status))}}
+                                                                                            (keys volume/conversion-map))))}}
                    :responses  {201 {:body {:id uuid?}}}
                    :summary    "Create order-item"}}]
      ["/:order-item-id"
-      {:parameters {:path {:order-item-id uuid?}}
-       :put    {:handler    (order/update-order-item! db)
-                :parameters {:body {:order-item/recipe-id   uuid?
-                                    :order-item/amount      number?
-                                    :order-item/amount-unit (s/and keyword? (set (concat common/other-units
-                                                                                         (keys mass/conversion-map)
-                                                                                         (keys volume/conversion-map))))
-                                    :order-item/status      (s/and keyword? (set responses/status))}}
-                :responses  {204 {:body nil?}}
-                :summary    "Update order-item"}
-       :delete {:handler    (order/delete-order-item! db)
-                :responses  {204 {:body nil?}}
-                :summary    "delete order-item"}}]]]])
+      {:parameters {:path {:order-item-id uuid?}}}
+      ["" {:patch    {:handler    (order/update-order-item! db)
+                      :parameters {:body {:order-item/recipe-id   uuid?
+                                          :order-item/amount      number?
+                                          :order-item/amount-unit (s/and keyword? (set (concat common/other-units
+                                                                                               (keys mass/conversion-map)
+                                                                                               (keys volume/conversion-map))))}}
+                      :responses  {204 {:body nil?}}
+                      :summary    "Update order-item"}
+           :delete {:handler    (order/delete-order-item! db)
+                    :responses  {204 {:body nil?}}
+                    :summary    "delete order-item"}}]
+      ["/status" {:patch    {:handler    (order/update-order-item-status! db)
+                             :parameters {:body {:order-item/status   (s/and keyword? (set responses/status))}}
+                             :responses  {204 {:body nil?}}
+                             :summary    "Update order-item stus"}}]]]]])

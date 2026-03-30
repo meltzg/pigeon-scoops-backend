@@ -16,11 +16,10 @@
 
 (def order-item
   {:order-item/amount      1
-   :order-item/amount-unit :volume/qt
-   :order-item/status :status/draft})
+   :order-item/amount-unit :volume/qt})
 
 (def updated-order-item
-  (assoc order-item :order-item/status :status/complete))
+  (assoc order-item :order-item/amount 3))
 
 (def recipe
   {:recipe/name         "a spicy meatball"
@@ -97,21 +96,19 @@
                                                {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)})]
         (is (= status 201))))
     (testing "update order-item"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items/" @order-item-id)
+      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
                                                {:use-auth? true :body (assoc updated-order-item
                                                                              :order-item/recipe-id recipe-id)})]
         (is (= status 204))))
     (testing "recipe owner can update order-item for recipe not in an active menu"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items/" @order-item-id)
+      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
                                                {:use-auth? true :body (assoc order-item
-                                                                             :order-item/recipe-id other-recipe-id
-                                                                             :order-item/status :status/in-progress)})]
+                                                                             :order-item/recipe-id other-recipe-id)})]
         (is (= status 204))))
     (testing "recipe owner can update order-item for an invalid size"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items/" @order-item-id)
+      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
                                                {:use-auth? true :body (assoc order-item
                                                                              :order-item/recipe-id recipe-id
-                                                                             :order-item/status :status/in-progress
                                                                              :order-item/amount-unit :volume/c)})]
         (is (= status 204))))
     (let [{:keys [body]} (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order})
@@ -137,13 +134,11 @@
       (testing "other user cannot update order-item for recipe not in an active menu"
         (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items/" @order-item-id)
                                                  {:use-auth? true :use-other-user true :body (assoc order-item
-                                                                                                    :order-item/status :status/in-progress
                                                                                                     :order-item/recipe-id other-recipe-id)})]
           (is (= status 400))))
       (testing "other user cannot update order-item for an invalid size"
         (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items/" @order-item-id)
                                                  {:use-auth? true :use-other-user true :body (assoc order-item
-                                                                                                    :order-item/status :status/in-progress
                                                                                                     :order-item/recipe-id recipe-id
                                                                                                     :order-item/amount-unit :volume/c)})]
           (is (= status 400)))))
