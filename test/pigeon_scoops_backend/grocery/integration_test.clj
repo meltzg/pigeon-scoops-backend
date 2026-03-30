@@ -42,10 +42,10 @@
         (reset! grocery-unit-id (:id body))
         (is (= status 201))))
     (testing "update grocery-unit"
-      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id "/units") {:use-auth? true :body (assoc updated-grocery-unit :grocery-unit/id @grocery-unit-id)})]
+      (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/groceries/" @grocery-id "/units/" @grocery-unit-id) {:use-auth? true :body updated-grocery-unit})]
         (is (= status 204))))
     (testing "delete grocery-unit"
-      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id "/units") {:use-auth? true :body {:grocery-unit/id @grocery-unit-id}})]
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id "/units/" @grocery-unit-id) {:use-auth? true})]
         (is (= status 204))))
     (testing "delete grocery"
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/groceries/" @grocery-id) {:use-auth? true})]
