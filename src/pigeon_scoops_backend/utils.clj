@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.utils
-  (:require [next.jdbc :as jdbc])
+  (:require [next.jdbc :as jdbc]
+            [pigeon-scoops-backend.units.common :as common])
   (:import (java.time Duration ZonedDateTime)))
 
 (defn keyword->db-str [k]
@@ -59,3 +60,17 @@
       (set)
       (#(% "manage:production"))))
 
+(defn combine-amounts [amounts amount-key amount-unit-key & type-discriminant-keys]
+  (as-> amounts ?
+        (group-by (comp #(update % amount-unit-key namespace)
+                        #(select-keys % (concat [amount-unit-key]
+                                                type-discriminant-keys)))
+                  ?)
+        (update-vals ? (partial reduce
+                                (fn [{sink-amount-unit amount-unit-key :as acc}
+                                     entity]
+                                  (let [scaled-amount (common/convert (get entity amount-key)
+                                                                      (get entity amount-unit-key)
+                                                                      sink-amount-unit)]
+                                    (update acc amount-key + scaled-amount)))))
+        (vals ?)))

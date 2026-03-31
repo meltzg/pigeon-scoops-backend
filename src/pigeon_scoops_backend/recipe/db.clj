@@ -6,7 +6,8 @@
             [pigeon-scoops-backend.recipe.transforms :as transforms]
             [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
                                                  apply-keyword->db-str
-                                                 with-connection]]))
+                                                 with-connection
+                                                 combine-amounts]]))
 
 (defn find-all-recipes
   ([db]
@@ -85,7 +86,11 @@
                                        :ingredient/amount-unit          amount-unit}]
              curr-grocery-ingredients []]
         (if-not (seq curr-recipe-ingredients)
-          (transforms/combine-ingredients curr-grocery-ingredients)
+          (combine-amounts curr-grocery-ingredients
+                           :ingredient/amount
+                           :ingredient/amount-unit
+                           :ingredient/ingredient-grocery-id
+                           :ingredient/ingredient-recipe-id)
           (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
                 {:keys [recipe-ingredients grocery-ingredients]}
                 (->> (transforms/scale-recipe

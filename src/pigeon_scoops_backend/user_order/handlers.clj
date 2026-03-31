@@ -3,12 +3,11 @@
             [pigeon-scoops-backend.grocery.transforms :refer [grocery-for-amount]]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.recipe.db :as recipe-db]
-            [pigeon-scoops-backend.recipe.transforms :refer [combine-ingredients]]
             [pigeon-scoops-backend.responses :as responses]
             [pigeon-scoops-backend.units.common :as units]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.responses :refer [terminal?]]
-            [pigeon-scoops-backend.utils :refer [with-connection production-manager?]]
+            [pigeon-scoops-backend.utils :refer [with-connection production-manager? combine-amounts]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
@@ -211,7 +210,11 @@
                                (mapcat #(recipe-db/ingredient-bom db {:recipe/id          (:order-item/recipe-id %)
                                                                       :recipe/amount      (:order-item/amount %)
                                                                       :recipe/amount-unit (:order-item/amount-unit %)}))
-                               (combine-ingredients)
+                               (#(combine-amounts %
+                                                  :ingredient/amount
+                                                  :ingredient/amount-unit
+                                                  :ingredient/ingredient-recipe-id
+                                                  :ingredient/ingredient-grocery-id))
                                (map #(update (grocery-for-amount
                                               (find-grocery-by-id db (:ingredient/ingredient-grocery-id %))
                                               (:ingredient/amount %)

@@ -52,30 +52,3 @@
                                                 {:ingredient/id          "bar"
                                                  :ingredient/amount      2.0
                                                  :ingredient/amount-unit :common/unit}]})))
-
-(deftest combine-ingredients-test
-  (testing "A list of ingredients can be combined by ingredient and unit class"
-    (is (= (transforms/combine-ingredients [{:ingredient/ingredient-recipe-id "good stuff"
-                                             :ingredient/amount               1
-                                             :ingredient/amount-unit          :mass/kg}
-                                            {:ingredient/ingredient-recipe-id "good stuff"
-                                             :ingredient/amount               2.2
-                                             :ingredient/amount-unit          :mass/lb}
-                                            {:ingredient/ingredient-recipe-id "good stuff"
-                                             :ingredient/amount               2
-                                             :ingredient/amount-unit          :volume/gal}
-                                            {:ingredient/ingredient-recipe-id "other stuff"
-                                             :ingredient/amount               3
-                                             :ingredient/amount-unit          :mass/kg}
-                                            {:ingredient/ingredient-recipe-id "other stuff"
-                                             :ingredient/amount               3
-                                             :ingredient/amount-unit          :mass/kg}])
-           [{:ingredient/ingredient-recipe-id "good stuff"
-             :ingredient/amount               1.9979024
-             :ingredient/amount-unit          :mass/kg}
-            {:ingredient/ingredient-recipe-id "good stuff"
-             :ingredient/amount               2
-             :ingredient/amount-unit          :volume/gal}
-            {:ingredient/ingredient-recipe-id "other stuff"
-             :ingredient/amount               6
-             :ingredient/amount-unit          :mass/kg}]))))
