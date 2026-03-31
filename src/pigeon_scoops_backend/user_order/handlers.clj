@@ -57,7 +57,7 @@
   (fn [request]
     (with-connection
       db
-      (fn [conn-opts]
+      (fn [db]
         (let [order-id (-> request :parameters :path :order-id)
               production-manager? (production-manager? request)
               {:order-item/keys [recipe-id amount amount-unit] :as order-item} (-> request :parameters :body)
@@ -65,9 +65,9 @@
               active-items (get
                             (group-by
                              :menu-item/recipe-id
-                             (menu-db/find-active-menu-items conn-opts))
+                             (menu-db/find-active-menu-items db))
                             recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes db)
                                                           (map :menu-item/id active-items)))]
           (cond
             (not (or production-manager? (seq active-items)))
@@ -85,10 +85,10 @@
                              :data    active-item-sizes})
             :else
             (do
-              (order-db/insert-order-item! conn-opts (assoc order-item
-                                                            :order-item/status :status/draft
-                                                            :order-item/order-id order-id
-                                                            :order-item/id order-item-id))
+              (order-db/insert-order-item! db (assoc order-item
+                                                     :order-item/status :status/draft
+                                                     :order-item/order-id order-id
+                                                     :order-item/id order-item-id))
               (rr/created (str responses/base-url "/orders/" order-id)
                           {:id order-item-id}))))))))
 
@@ -96,7 +96,7 @@
   (fn [request]
     (with-connection
       db
-      (fn [conn-opts]
+      (fn [db]
         (let [{:keys [order-id order-item-id]} (-> request
                                                    :parameters
                                                    :path
@@ -112,9 +112,9 @@
               active-items (get
                             (group-by
                              :menu-item/recipe-id
-                             (menu-db/find-active-menu-items conn-opts))
+                             (menu-db/find-active-menu-items db))
                             recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes conn-opts)
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes db)
                                                           (map :menu-item/id active-items)))]
           (cond
             (not= curr-item-status :status/draft)
@@ -136,7 +136,7 @@
                              :message "order amount cannot be made from any active item size"
                              :data    active-item-sizes})
             :else
-            (if (order-db/update-order-item! conn-opts order-item)
+            (if (order-db/update-order-item! db order-item)
               (rr/status 204)
               (rr/bad-request order-item))))))))
 
@@ -182,20 +182,20 @@
   (fn [request]
     (with-connection
       db
-      (fn [conn-opts]
+      (fn [db]
         (let [{:keys [order-id order-item-id]} (-> request
                                                    :parameters
                                                    :path
                                                    (select-keys [:order-id :order-item-id]))
               order-item-status (->> order-item-id
-                                     (order-db/find-order-item-by-id conn-opts)
+                                     (order-db/find-order-item-by-id db)
                                      :order-item/status)]
           (cond
             (terminal? order-item-status)
             (rr/bad-request {:type    "non-deletable-status"
                              :message (str "Cannot delete an order item in a terminal state. " order-item-status " is not terminal")
                              :data    order-item-status})
-            (order-db/delete-order-item! conn-opts {:id order-item-id :order-id order-id})
+            (order-db/delete-order-item! db {:id order-item-id :order-id order-id})
             (rr/status 204)
             :else
             (rr/bad-request (-> request :parameters :body))))))))
@@ -204,16 +204,16 @@
   (fn [request]
     (with-connection
       db
-      (fn [conn-opts]
+      (fn [db]
         (let [order-id (-> request :parameters :path :order-id)
               {:user-order/keys [items]} (order-db/find-order-by-id db order-id)
               grocery-bom (->> items
-                               (mapcat #(recipe-db/ingredient-bom conn-opts {:recipe/id          (:order-item/recipe-id %)
-                                                                             :recipe/amount      (:order-item/amount %)
-                                                                             :recipe/amount-unit (:order-item/amount-unit %)}))
+                               (mapcat #(recipe-db/ingredient-bom db {:recipe/id          (:order-item/recipe-id %)
+                                                                      :recipe/amount      (:order-item/amount %)
+                                                                      :recipe/amount-unit (:order-item/amount-unit %)}))
                                (combine-ingredients)
                                (map #(update (grocery-for-amount
-                                              (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
+                                              (find-grocery-by-id db (:ingredient/ingredient-grocery-id %))
                                               (:ingredient/amount %)
                                               (:ingredient/amount-unit %))
                                              :grocery/units

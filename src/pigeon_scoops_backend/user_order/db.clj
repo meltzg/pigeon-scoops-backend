@@ -21,23 +21,23 @@
 (defn find-all-orders
   [db user-id]
   (with-connection
-    db (fn [conn-opts]
+    db (fn [db]
          (->> (sql/find-by-keys
-               conn-opts
+               db
                :user-order
                (if user-id
                  {:user-order/user-id user-id}
                  :all))
               (mapv #(assoc % :user-order/status
                             (infer-order-status
-                             (find-all-order-items conn-opts (:user-order/id %)))))
+                             (find-all-order-items db (:user-order/id %)))))
               (map #(apply-db-str->keyword % :user-order/amount-unit :user-order/status))))))
 
 (defn find-order-by-id [db order-id]
   (with-connection
-    db (fn [conn-opts]
-         (let [[order] (sql/find-by-keys conn-opts :user-order {:id order-id})
-               items (find-all-order-items conn-opts order-id)]
+    db (fn [db]
+         (let [[order] (sql/find-by-keys db :user-order {:id order-id})
+               items (find-all-order-items db order-id)]
            (when (seq order)
              (-> order
                  (assoc :user-order/status (infer-order-status items))

@@ -9,8 +9,8 @@
   (fn [_]
     (with-connection
       db
-      (fn [conn-opts]
-        (let [accounts (account-db/find-all-accounts! conn-opts)
+      (fn [db]
+        (let [accounts (account-db/find-all-accounts! db)
               roles->uids (update-vals (auth0/get-roles->uids! auth) set)]
           (rr/response
            (map (fn [acct]
@@ -26,13 +26,13 @@
   (fn [request]
     (with-connection
       db
-      (fn [conn-opts]
+      (fn [db]
         (let [{:keys [sub picture] :as claims} (:claims request)
-              existing-account (account-db/find-account-by-id conn-opts sub)]
+              existing-account (account-db/find-account-by-id db sub)]
           (if existing-account
             (rr/status 204)
             (do
-              (account-db/create-account! conn-opts {:id sub :name (get claims "https://api.pigeon-scoops.com/email") :picture picture})
+              (account-db/create-account! db {:id sub :name (get claims "https://api.pigeon-scoops.com/email") :picture picture})
               (rr/status 201))))))))
 
 (defn delete-account! [auth db]

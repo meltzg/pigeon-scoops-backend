@@ -121,16 +121,16 @@
   (fn [request]
     (with-connection
       db
-      (fn [conn-opts]
+      (fn [db]
         (let [recipe-id (-> request :parameters :path :recipe-id)
               {:keys [amount amount-unit]} (-> request
                                                :parameters
                                                :query)
-              ingredient-bom (recipe-db/ingredient-bom conn-opts {:recipe/id          recipe-id
-                                                                  :recipe/amount      amount
-                                                                  :recipe/amount-unit amount-unit})
+              ingredient-bom (recipe-db/ingredient-bom db {:recipe/id          recipe-id
+                                                           :recipe/amount      amount
+                                                           :recipe/amount-unit amount-unit})
               grocery-bom (map #(update (grocery-for-amount
-                                         (find-grocery-by-id conn-opts (:ingredient/ingredient-grocery-id %))
+                                         (find-grocery-by-id db (:ingredient/ingredient-grocery-id %))
                                          (:ingredient/amount %)
                                          (:ingredient/amount-unit %))
                                         :grocery/units

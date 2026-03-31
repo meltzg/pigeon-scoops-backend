@@ -24,9 +24,9 @@
 (defn find-grocery-by-id [db grocery-id]
   (with-connection
     db
-    (fn [conn-opts]
-      (let [[grocery] (sql/find-by-keys conn-opts :grocery {:id grocery-id})
-            units (find-all-grocery-units conn-opts grocery-id)]
+    (fn [db]
+      (let [[grocery] (sql/find-by-keys db :grocery {:id grocery-id})
+            units (find-all-grocery-units db grocery-id)]
         (when (seq grocery)
           (-> grocery
               (apply-db-str->keyword :grocery/department)

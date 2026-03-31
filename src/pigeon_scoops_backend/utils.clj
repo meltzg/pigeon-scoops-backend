@@ -21,8 +21,8 @@
 (defn with-connection [db f]
   (try
     (with-open [conn (jdbc/get-connection db)]
-      (let [conn-opts (jdbc/with-options conn (:options db))]
-        (f conn-opts)))
+      (let [db (jdbc/with-options conn (:options db))]
+        (f db)))
     (catch IllegalArgumentException _
       (f db))))
 
