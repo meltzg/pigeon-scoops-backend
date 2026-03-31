@@ -192,7 +192,7 @@
                  (is (= status 400))))
             status))))
 
-(deftest accept-orders!-test
+(deftest bulk-status-update!-test
   (let [db (:db/postgres state/system)
         recipe-ids (doall (repeatedly 3 #(UUID/fromString (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
         ;; Create an active menu and add the recipe to it
@@ -214,7 +214,9 @@
                                          order-item-body])
                                      recipe-ids))]
     (testing "unsubmitted orders are canceled"
-      (order-db/accept-orders! db (first recipe-ids))
+      (order-db/bulk-status-update! db {:status/submitted :status/in-progress
+                                        :status/draft :status/canceled}
+                                    (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
                             (order-db/find-all-order-items db order-id))]
         (is (every? #(= (:order-item/status %) :status/canceled)
@@ -230,7 +232,9 @@
                                    :use-other-user true
                                    :body {:order-item/status :status/submitted}})))
             order-item-map))
-      (order-db/accept-orders! db (first recipe-ids))
+      (order-db/bulk-status-update! db {:status/submitted :status/in-progress
+                                        :status/draft :status/canceled}
+                                    (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
                             (order-db/find-all-order-items db order-id))]
         (is (every? #(= (:order-item/status %) :status/in-progress)
@@ -247,7 +251,9 @@
                                    :body (assoc body
                                                 :order-item/status :status/complete)})))
             order-item-map))
-      (order-db/accept-orders! db (first recipe-ids))
+      (order-db/bulk-status-update! db {:status/submitted :status/in-progress
+                                        :status/draft :status/canceled}
+                                    (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
                             (order-db/find-all-order-items db order-id))]
         (is (every? #(= (:order-item/status %) :status/complete)

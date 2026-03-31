@@ -12,10 +12,17 @@
 (defn find-all-order-items [db order-id]
   (map #(apply-db-str->keyword %
                                :order-item/status :order-item/amount-unit)
-       (sql/query db (-> (h/select :order-item/* :recipe/name)
+       (sql/query db (-> (h/select :order-item/*)
                          (h/from :order-item)
-                         (h/left-join :recipe [:= :order-item/recipe-id :recipe/id])
                          (h/where [:= :order-item/order-id order-id])
+                         (hsql/format)))))
+
+(defn find-all-items-by-status [db status]
+  (map #(apply-db-str->keyword %
+                               :order-item/status :order-item/amount-unit)
+       (sql/query db (-> (h/select :order-item/*)
+                         (h/from :order-item)
+                         (h/where [:= :order-item/status (keyword->db-str status)])
                          (hsql/format)))))
 
 (defn find-all-orders
@@ -73,17 +80,14 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn accept-orders! [db & recipe-ids]
+(defn bulk-status-update! [db status-update-map & recipe-ids]
   (jdbc/with-transaction
     [tx db]
-    (sql/query tx (-> (h/update :order-item)
-                      (h/set {:order-item/status (keyword->db-str :status/in-progress)})
-                      (h/where [:in :order-item/recipe-id recipe-ids]
-                               [:= :order-item/status (keyword->db-str :status/submitted)])
-                      (hsql/format)))
-    (sql/query tx (-> (h/update :order-item)
-                      (h/set {:order-item/status (keyword->db-str :status/canceled)})
-                      (h/where [:in :order-item/recipe-id recipe-ids]
-                               [:= :order-item/status (keyword->db-str :status/draft)])
-                      (hsql/format)))))
+    (mapv (fn [[from to]]
+            (sql/query tx (-> (h/update :order-item)
+                              (h/set {:order-item/status (keyword->db-str to)})
+                              (h/where [:in :order-item/recipe-id recipe-ids]
+                                       [:= :order-item/status (keyword->db-str from)])
+                              (hsql/format))))
+          status-update-map)))
 

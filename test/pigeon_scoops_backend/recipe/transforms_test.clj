@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.recipe.transforms-test
-  (:require [clojure.test :refer [are deftest is testing]]
+  (:require [clojure.test :refer [are deftest testing]]
             [pigeon-scoops-backend.recipe.transforms :as transforms]))
 
 (def recipe

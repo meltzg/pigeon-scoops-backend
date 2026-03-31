@@ -62,15 +62,15 @@
 
 (defn combine-amounts [amounts amount-key amount-unit-key & type-discriminant-keys]
   (as-> amounts ?
-        (group-by (comp #(update % amount-unit-key namespace)
-                        #(select-keys % (concat [amount-unit-key]
-                                                type-discriminant-keys)))
-                  ?)
-        (update-vals ? (partial reduce
-                                (fn [{sink-amount-unit amount-unit-key :as acc}
-                                     entity]
-                                  (let [scaled-amount (common/convert (get entity amount-key)
-                                                                      (get entity amount-unit-key)
-                                                                      sink-amount-unit)]
-                                    (update acc amount-key + scaled-amount)))))
-        (vals ?)))
+    (group-by (comp #(update % amount-unit-key namespace)
+                    #(select-keys % (concat [amount-unit-key]
+                                            type-discriminant-keys)))
+              ?)
+    (update-vals ? (partial reduce
+                            (fn [{sink-amount-unit amount-unit-key :as acc}
+                                 entity]
+                              (let [scaled-amount (common/convert (get entity amount-key)
+                                                                  (get entity amount-unit-key)
+                                                                  sink-amount-unit)]
+                                (update acc amount-key + scaled-amount)))))
+    (vals ?)))

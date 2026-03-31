@@ -18,7 +18,6 @@
 (def order-item
   {:order-item/id                   uuid?
    :order-item/recipe-id            uuid?
-   :recipe/name                     string?
    :order-item/order-id             uuid?
    :order-item/status               (s/and keyword? (set status))
    :order-item/created-at           inst?

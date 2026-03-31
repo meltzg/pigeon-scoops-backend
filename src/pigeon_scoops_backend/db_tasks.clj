@@ -38,7 +38,9 @@
                                      (filter #((set (map :menu/id expired-menus)) (:menu-item/menu-id %)))
                                      (mapv :menu-item/recipe-id))]
           (when (seq recipes-to-accept)
-            (apply (partial order-db/accept-orders! db) recipes-to-accept))
+            (apply (partial order-db/bulk-status-update! db {:status/submitted :status/in-progress
+                                                             :status/draft :status/canceled})
+                   recipes-to-accept))
           (dorun (->> expired-menus
                       (remove :menu/repeats)
                       (map #(menu-db/update-menu! db (assoc % :menu/active false)))))
