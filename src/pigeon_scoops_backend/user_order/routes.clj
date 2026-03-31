@@ -7,7 +7,8 @@
             [pigeon-scoops-backend.units.volume :as volume]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.handlers :as order]
-            [pigeon-scoops-backend.user-order.responses :as responses :refer [status]]
+            [pigeon-scoops-backend.user-order.responses :as responses]
+            [pigeon-scoops-backend.utils :refer [production-manager?]]
             [spec-tools.data-spec :as ds]))
 
 (defn routes [{db :jdbc-url}]
@@ -21,7 +22,7 @@
                :parameters {:body {:user-order/note string?}}
                :responses  {201 {:body {:id uuid?}}}}}]
    ["/:order-id" {:parameters {:path {:order-id uuid?}}
-                  :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id) db]]}
+                  :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id production-manager?) db]]}
     ["" {:get    {:handler   (order/retrieve-order db)
                   :responses {200 {:body responses/order}}
                   :summary   "Retrieve order"}

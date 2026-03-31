@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.user-order.integration-test
-  (:require [clojure.test :refer [deftest is testing use-fixtures]]
+  (:require [clojure.test :refer [are deftest is testing use-fixtures]]
             [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
             [pigeon-scoops-backend.user-order.db :as order-db]
@@ -87,11 +87,11 @@
                                                     {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})]
         (reset! order-item-id (:id body))
         (is (= status 201))))
-    (testing "recipe owner can create order-item for recipe not in an active menu"
+    (testing "production manager can create order-item for recipe not in an active menu"
       (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                {:use-auth? true :body (assoc order-item :order-item/recipe-id other-recipe-id)})]
         (is (= status 201))))
-    (testing "recipe owner can create order-item for an invalid size"
+    (testing "production manager can create order-item for an invalid size"
       (let [{:keys [status]} (ts/test-endpoint :post (str "/v1/orders/" @order-id "/items")
                                                {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)})]
         (is (= status 201))))
@@ -100,16 +100,20 @@
                                                {:use-auth? true :body (assoc updated-order-item
                                                                              :order-item/recipe-id recipe-id)})]
         (is (= status 204))))
-    (testing "recipe owner can update order-item for recipe not in an active menu"
+    (testing "production manager can update order-item for recipe not in an active menu"
       (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
                                                {:use-auth? true :body (assoc order-item
                                                                              :order-item/recipe-id other-recipe-id)})]
         (is (= status 204))))
-    (testing "recipe owner can update order-item for an invalid size"
+    (testing "production manager can update order-item for an invalid size"
       (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id)
                                                {:use-auth? true :body (assoc order-item
                                                                              :order-item/recipe-id recipe-id
                                                                              :order-item/amount-unit :volume/c)})]
+        (is (= status 204))))
+    (testing "update order-item status"
+      (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id "/status")
+                                               {:use-auth? true :body {:order-item/status :status/complete}})]
         (is (= status 204))))
     (let [{:keys [body]} (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order})
           order-id (:id body)
@@ -132,16 +136,44 @@
                                                   :body           (assoc order-item :order-item/recipe-id recipe-id :order-item/amount-unit :volume/c)})]
           (is (= status 400))))
       (testing "other user cannot update order-item for recipe not in an active menu"
-        (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items/" @order-item-id)
+        (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id)
                                                  {:use-auth? true :use-other-user true :body (assoc order-item
                                                                                                     :order-item/recipe-id other-recipe-id)})]
           (is (= status 400))))
       (testing "other user cannot update order-item for an invalid size"
-        (let [{:keys [status]} (ts/test-endpoint :put (str "/v1/orders/" order-id "/items/" @order-item-id)
+        (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id)
                                                  {:use-auth? true :use-other-user true :body (assoc order-item
                                                                                                     :order-item/recipe-id recipe-id
                                                                                                     :order-item/amount-unit :volume/c)})]
-          (is (= status 400)))))
+          (is (= status 400))))
+      (testing "non production manager can't move items into in progress/completed"
+        (are [status]
+             (= (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                                           {:use-auth? true :use-other-user true :body {:order-item/status status}}))
+                401)
+          :status/in-progress
+          :status/complete))
+      (testing "non production manager can't change the status of items that are in progress, completed or canceled"
+        (are [status]
+             (do
+               (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                                 {:use-auth? true :body {:order-item/status status}})
+               (= (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                                             {:use-auth? true :use-other-user true :body {:order-item/status :status/draft}}))
+                  401))
+          :status/canceled
+          :status/complete
+          :status/in-progress))
+      (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                        {:use-auth? true :body {:order-item/status :status/draft}})
+      (testing "non production manager can change the status of items that are not in progress, completed or canceled"
+        (are [status]
+             (= (:status (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" @order-item-id "/status")
+                                           {:use-auth? true :use-other-user true :body {:order-item/status status}}))
+                204)
+          :status/submitted
+          :status/draft
+          :status/canceled)))
     (testing "retrieve order bom"
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/orders/" @order-id "/bom")
                                                {:use-auth? true})]
@@ -151,10 +183,8 @@
                                                        {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})
                                      :body
                                      :id)
-                   _ (ts/test-endpoint :put (str "/v1/orders/" @order-id "/items/" order-item-id)
-                                       {:use-auth? true :body (assoc order-item
-                                                                     :order-item/recipe-id recipe-id
-                                                                     :order-item/status %)})
+                   _ (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" order-item-id "/status")
+                                       {:use-auth? true :body {:order-item/status %}})
                    {:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items/" order-item-id)
                                                       {:use-auth? true :body {:order-item/id order-item-id}})]
                (if-not (terminal? %)
@@ -195,11 +225,10 @@
       (dorun
        (map (fn [[item-id body]]
               (when (= (:order-item/recipe-id body) (first recipe-ids))
-                (ts/test-endpoint :put (str "/v1/orders/" order-id "/items/" item-id)
+                (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" item-id "/status")
                                   {:use-auth? true
                                    :use-other-user true
-                                   :body (assoc body
-                                                :order-item/status :status/submitted)})))
+                                   :body {:order-item/status :status/submitted}})))
             order-item-map))
       (order-db/accept-orders! db (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
@@ -212,7 +241,7 @@
       (dorun
        (map (fn [[item-id body]]
               (when (= (:order-item/recipe-id body) (first recipe-ids))
-                (ts/test-endpoint :put (str "/v1/orders/" order-id "/items/" item-id)
+                (ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" item-id "/status")
                                   {:use-auth? true
                                    :use-other-user true
                                    :body (assoc body

@@ -163,13 +163,13 @@
           (cond
             (and (not production-manager?)
                  (not (#{:status/draft :status/submitted :status/canceled} new-status)))
-            (-> (rr/response {:message (str "only production managers can set the status to " new-status)
+            (-> (rr/response {:message (str "only s can set the status to " new-status)
                               :data    patch
                               :type    :authorization-required})
                 (rr/status 401))
             (and (not production-manager?)
                  (#{:status/in-progress :status/complete :status/canceled} curr-item-status))
-            (-> (rr/response {:message (str "only production managers can change the status of items in " curr-item-status)
+            (-> (rr/response {:message (str "only s can change the status of items in " curr-item-status)
                               :data    patch
                               :type    :authorization-required})
                 (rr/status 401))
