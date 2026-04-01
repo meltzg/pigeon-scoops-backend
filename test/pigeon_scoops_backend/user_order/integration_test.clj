@@ -192,7 +192,7 @@
                  (is (= status 400))))
             status))))
 
-(deftest bulk-status-update!-test
+(deftest bulk-status-update-test
   (let [db (:db/postgres state/system)
         recipe-ids (doall (repeatedly 3 #(UUID/fromString (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
         ;; Create an active menu and add the recipe to it
@@ -261,5 +261,23 @@
         (is (every? #(= (:order-item/status %) :status/draft)
                     (get items false)))))))
 
-
-
+(deftest list-in-progress-items-test
+  (let [db (:db/postgres state/system)
+        recipe-ids (doall (repeatedly 2 #(UUID/fromString (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
+        order-id (UUID/fromString (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order}) [:body :id]))]
+    (mapv #(let [order-item-body (assoc order-item :order-item/recipe-id %)]
+             [(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
+                                        {:use-auth? true :body order-item-body})
+                      [:body :id])
+              order-item-body])
+          (apply concat (repeat 2 recipe-ids)))
+    (order-db/bulk-status-update! db {:status/draft :status/in-progress}
+                                  (first recipe-ids))
+    (testing "in progress items are consolidated and returned"
+      (let [consolidated-items (:body (ts/test-endpoint :get "/v1/production" {:use-auth? true}))]
+        (is (= (count consolidated-items) 1))
+        (is (= (parse-uuid (:order-item/recipe-id (first consolidated-items))) (first recipe-ids)))
+        (is (= (:order-item/amount (first consolidated-items))
+               (->> order-item
+                    :order-item/amount
+                    (* 2.0))))))))

@@ -225,12 +225,14 @@
 
 (defn list-in-progress-items [db]
   (fn [_]
-    (->> (order-db/find-all-items-by-status db :status/in-progress)
-         (combine-amounts :order-item/amount
-                          :order-item/amount-unit
-                          :order-item/recipe-id))))
+    (-> (order-db/find-all-items-by-status db :status/in-progress)
+        (combine-amounts :order-item/amount
+                         :order-item/amount-unit
+                         :order-item/recipe-id)
+        (rr/response))))
 
 (defn complete-orders-for-recipe [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)]
-      (order-db/bulk-status-update! db {:status/in-progress :status/complete} recipe-id))))
+      (order-db/bulk-status-update! db {:status/in-progress :status/complete} recipe-id))
+    (rr/status 204)))
