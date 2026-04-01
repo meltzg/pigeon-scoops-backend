@@ -18,6 +18,7 @@
                :response [responses/order-item]
                :summary "consolidate and list order items for in-progress orders"}}]
     ["/:recipe-id" {:post {:handler (order/complete-orders-for-recipe db)
+                           :parameters {:path {:recipe-id uuid?}}
                            :responses {204 {:body nil?}}
                            :summary "mark all in progress items for this recipe as complete"}}]]
    ["/orders" {:openapi    {:tags ["orders"]}}

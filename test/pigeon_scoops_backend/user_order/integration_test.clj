@@ -3,8 +3,7 @@
             [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]])
-  (:import (java.util UUID)))
+            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture [:manage-recipes :manage-orders :manage-menus :manage-production] [:manage-recipes :manage-orders :manage-menus]))
 
@@ -194,7 +193,7 @@
 
 (deftest bulk-status-update-test
   (let [db (:db/postgres state/system)
-        recipe-ids (doall (repeatedly 3 #(UUID/fromString (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
+        recipe-ids (doall (repeatedly 3 #(parse-uuid (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
         ;; Create an active menu and add the recipe to it
         menu-id (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu}) [:body :id])
         menu-item-ids (mapv #(get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
@@ -206,7 +205,7 @@
                                                            :menu-item-size/amount       1
                                                            :menu-item-size/amount-unit  :volume/pt}})
                 menu-item-ids)
-        order-id (UUID/fromString (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order}) [:body :id]))
+        order-id (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order}) [:body :id]))
         order-item-map (into {} (map #(let [order-item-body (assoc order-item :order-item/recipe-id %)]
                                         [(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
                                                                    {:use-auth? true :use-other-user true :body order-item-body})
@@ -263,8 +262,8 @@
 
 (deftest list-in-progress-items-test
   (let [db (:db/postgres state/system)
-        recipe-ids (doall (repeatedly 2 #(UUID/fromString (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
-        order-id (UUID/fromString (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order}) [:body :id]))]
+        recipe-ids (doall (repeatedly 2 #(parse-uuid (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id]))))
+        order-id (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order}) [:body :id]))]
     (mapv #(let [order-item-body (assoc order-item :order-item/recipe-id %)]
              [(get-in (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
                                         {:use-auth? true :body order-item-body})
@@ -281,3 +280,30 @@
                (->> order-item
                     :order-item/amount
                     (* 2.0))))))))
+
+(deftest complete-orders-for-recipe-test
+  (let [db (:db/postgres state/system)
+        recipe-id (-> (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe})
+                      :body
+                      :id
+                      parse-uuid)
+        order-id (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order}) [:body :id]))
+        order-item-ids (repeatedly 3 #(-> (ts/test-endpoint
+                                            :post (str "/v1/orders/" order-id "/items")
+                                            {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})
+                                          :body
+                                          :id
+                                          (parse-uuid)))]
+    (mapv #(ts/test-endpoint :patch (str "/v1/orders/" order-id "/items/" % "/status")
+                             {:use-auth? true :body {:order-item/status :status/in-progress}})
+          (take 2 order-item-ids))
+
+    (testing "in progress are moved to complete. Other items are not"
+      (is (= (:status (ts/test-endpoint :post (str "/v1/production/" recipe-id) {:use-auth? true}))
+             204))
+      (let [updated-items (map (partial order-db/find-order-item-by-id db) order-item-ids)]
+        (are [updated-item expected-status]
+          (= (:order-item/status updated-item) expected-status)
+          (first updated-items) :status/complete
+          (second updated-items) :status/complete
+          (last updated-items) :status/draft)))))
