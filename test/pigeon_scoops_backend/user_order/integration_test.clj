@@ -289,8 +289,8 @@
                       parse-uuid)
         order-id (parse-uuid (get-in (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order}) [:body :id]))
         order-item-ids (repeatedly 3 #(-> (ts/test-endpoint
-                                            :post (str "/v1/orders/" order-id "/items")
-                                            {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})
+                                           :post (str "/v1/orders/" order-id "/items")
+                                           {:use-auth? true :body (assoc order-item :order-item/recipe-id recipe-id)})
                                           :body
                                           :id
                                           (parse-uuid)))]
@@ -303,7 +303,7 @@
              204))
       (let [updated-items (map (partial order-db/find-order-item-by-id db) order-item-ids)]
         (are [updated-item expected-status]
-          (= (:order-item/status updated-item) expected-status)
+             (= (:order-item/status updated-item) expected-status)
           (first updated-items) :status/complete
           (second updated-items) :status/complete
           (last updated-items) :status/draft)))))
