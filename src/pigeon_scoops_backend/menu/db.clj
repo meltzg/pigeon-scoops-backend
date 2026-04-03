@@ -49,12 +49,11 @@
        (->> (sql/find-by-keys
              db
              :menu
-             (if
-              (and include-inactive? include-deleted?)
-              :all
-              (cond-> {}
-                (not include-inactive?) (assoc :active true)
-                (not include-deleted?) (assoc :deleted false))))
+             (if (and include-inactive? include-deleted?)
+               :all
+               (cond-> {}
+                 (not include-inactive?) (assoc :active true)
+                 (not include-deleted?) (assoc :deleted false))))
             (map #(apply-db-str->keyword % :menu/duration-type)))))))
 
 (defn insert-menu! [db menu]
