@@ -304,6 +304,7 @@
                (auth0/get-users (:auth/auth0 state/system))))
   (make-request :get "/v1/account"
                 {:auth true})
+  (.getJdbcUrl (:connectable (:db/postgres state/system)))
   (make-test-users 2)
   (go)
   (go false)

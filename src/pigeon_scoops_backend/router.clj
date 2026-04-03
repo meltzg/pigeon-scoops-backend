@@ -28,7 +28,7 @@
                :middleware [[wrap-cors
                              :access-control-allow-origin [#"http://localhost:3000"
                                                            #"https://pigeon-scoops.com"]
-                             :access-control-allow-methods [:get :post :put :delete]]
+                             :access-control-allow-methods [:get :patch :post :put :delete]]
                             swagger/swagger-feature
                             muuntaja/format-middleware
                             exception/exception-middleware

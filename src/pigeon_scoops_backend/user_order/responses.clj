@@ -20,7 +20,6 @@
    :order-item/recipe-id            uuid?
    :order-item/order-id             uuid?
    :order-item/status               (s/and keyword? (set status))
-   :order-item/created-at           inst?
    (ds/opt :order-item/amount)      number?
    (ds/opt :order-item/amount-unit) (s/and keyword?
                                            (set (concat common/other-units
@@ -32,4 +31,5 @@
    :user-order/note           string?
    :user-order/user-id        string?
    :user-order/status         (s/and keyword? (set status))
+   :user-order/created-at     inst?
    (ds/opt :user-order/items) [order-item]})

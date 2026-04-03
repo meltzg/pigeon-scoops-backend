@@ -65,7 +65,7 @@
                                            (select-keys [:grocery-id :unit-id]))
           grocery-unit (-> request
                            :parameters
-                           :bod
+                           :body
                            (assoc :grocery-unit/id unit-id
                                   :grocery-unit/grocery-id grocery-id))
           successful? (grocery-db/update-grocery-unit! db grocery-unit)]

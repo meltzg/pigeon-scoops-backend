@@ -15,5 +15,5 @@
                                                   (keys volume/conversion-map))))]
    :constants/departments    [(s/and keyword? departments)]
    :constants/roles          [(s/and keyword? roles)]
-   :constants/order-statuses [(s/and keyword? status)]
+   :constants/order-statuses [(s/and keyword? (set status))]
    :constants/menu-durations [(s/and keyword? durations)]})
