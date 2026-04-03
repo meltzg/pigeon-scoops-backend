@@ -6,33 +6,48 @@
             [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
                                                  apply-keyword->db-str
                                                  keyword->db-str
-                                                 with-connection]]))
+                                                 with-connection]]
+            [pigeon-scoops-backend.user-order.transforms :refer [infer-order-status]]))
 
 (defn find-all-order-items [db order-id]
   (map #(apply-db-str->keyword %
                                :order-item/status :order-item/amount-unit)
-       (sql/query db (-> (h/select :order-item/* :recipe/name)
+       (sql/query db (-> (h/select :order-item/*)
                          (h/from :order-item)
-                         (h/left-join :recipe [:= :order-item/recipe-id :recipe/id])
                          (h/where [:= :order-item/order-id order-id])
                          (hsql/format)))))
 
+(defn find-all-items-by-status [db status]
+  (map #(apply-db-str->keyword %
+                               :order-item/status :order-item/amount-unit)
+       (sql/query db (-> (h/select :order-item/*)
+                         (h/from :order-item)
+                         (h/where [:= :order-item/status (keyword->db-str status)])
+                         (hsql/format)))))
+
 (defn find-all-orders
-  ([db user-id]
-   (find-all-orders db user-id false))
-  ([db user-id include-deleted?]
-   (map #(apply-db-str->keyword % :user-order/amount-unit :user-order/status)
-        (sql/find-by-keys db :user-order (merge {:user-id user-id}
-                                                (when-not include-deleted?
-                                                  {:deleted false}))))))
+  [db user-id]
+  (with-connection
+    db (fn [db]
+         (->> (sql/find-by-keys
+               db
+               :user-order
+               (if user-id
+                 {:user-order/user-id user-id}
+                 :all))
+              (mapv #(assoc % :user-order/status
+                            (infer-order-status
+                             (find-all-order-items db (:user-order/id %)))))
+              (map #(apply-db-str->keyword % :user-order/amount-unit :user-order/status))))))
 
 (defn find-order-by-id [db order-id]
   (with-connection
-    db (fn [conn-opts]
-         (let [[order] (sql/find-by-keys conn-opts :user-order {:id order-id})
-               items (find-all-order-items conn-opts order-id)]
+    db (fn [db]
+         (let [[order] (sql/find-by-keys db :user-order {:id order-id})
+               items (find-all-order-items db order-id)]
            (when (seq order)
              (-> order
+                 (assoc :user-order/status (infer-order-status items))
                  (apply-db-str->keyword :user-order/amount-unit :user-order/status)
                  (assoc :user-order/items items)))))))
 
@@ -42,15 +57,10 @@
       (apply-db-str->keyword :order-item/status :order-item/amount-unit)))
 
 (defn insert-order! [db order]
-  (sql/insert! db :user-order (apply-keyword->db-str order :user-order/amount-unit :user-order/status)))
+  (sql/insert! db :user-order (apply-keyword->db-str order :user-order/amount-unit)))
 
 (defn update-order! [db order]
-  (-> (sql/update! db :user-order (apply-keyword->db-str order :user-order/amount-unit :user-order/status) (select-keys order [:user-order/id]))
-      ::jdbc/update-count
-      (pos?)))
-
-(defn delete-order! [db order-id]
-  (-> (sql/update! db :user-order {:deleted true} {:id order-id})
+  (-> (sql/update! db :user-order (apply-keyword->db-str order :user-order/amount-unit) (select-keys order [:user-order/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -70,18 +80,14 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn accept-orders! [db recipe-id & rids]
+(defn bulk-status-update! [db status-update-map & recipe-ids]
   (jdbc/with-transaction
     [tx db]
-    (sql/query tx (-> (h/update :order-item)
-                      (h/set {:status (keyword->db-str :status/in-progress)})
-                      (h/where [:in :recipe-id (conj rids recipe-id)]
-                               [:= :status (keyword->db-str :status/submitted)])
-                      (hsql/format)))
-    (sql/query tx (-> (h/update :user-order)
-                      (h/set {:status (keyword->db-str :status/in-progress)})
-                      (h/where [:= :status (keyword->db-str :status/submitted)]
-                               [:in :id (-> (h/select-distinct :order-id)
-                                            (h/from :order-item)
-                                            (h/where [:= :status (keyword->db-str :status/in-progress)]))])
-                      (hsql/format)))))
+    (mapv (fn [[from to]]
+            (sql/query tx (-> (h/update :order-item)
+                              (h/set {:order-item/status (keyword->db-str to)})
+                              (h/where [:in :order-item/recipe-id recipe-ids]
+                                       [:= :order-item/status (keyword->db-str from)])
+                              (hsql/format))))
+          status-update-map)))
+

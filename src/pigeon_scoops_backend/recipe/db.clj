@@ -6,7 +6,8 @@
             [pigeon-scoops-backend.recipe.transforms :as transforms]
             [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
                                                  apply-keyword->db-str
-                                                 with-connection]]))
+                                                 with-connection
+                                                 combine-amounts]]))
 
 (defn find-all-recipes
   ([db]
@@ -14,9 +15,9 @@
   ([db include-deleted?]
    (with-connection
      db
-     (fn [conn-opts]
+     (fn [db]
        (map #(apply-db-str->keyword % :recipe/amount-unit)
-            (sql/find-by-keys conn-opts :recipe
+            (sql/find-by-keys db :recipe
                               (if include-deleted?
                                 :all
                                 {:deleted false})))))))
@@ -24,14 +25,14 @@
 (defn find-recipe-by-id [db recipe-id]
   (with-connection
     db
-    (fn [conn-opts]
-      (let [[recipe] (sql/find-by-keys conn-opts :recipe {:id recipe-id})
-            ingredients (sql/query conn-opts (-> (h/select :ingredient/* :recipe/name :grocery/name)
-                                                 (h/from :ingredient)
-                                                 (h/left-join :recipe [:= :ingredient/ingredient-recipe-id :recipe/id])
-                                                 (h/left-join :grocery [:= :ingredient/ingredient-grocery-id :grocery/id])
-                                                 (h/where [:= :ingredient/recipe-id recipe-id])
-                                                 (hsql/format)))]
+    (fn [db]
+      (let [[recipe] (sql/find-by-keys db :recipe {:id recipe-id})
+            ingredients (sql/query db (-> (h/select :ingredient/* :recipe/name :grocery/name)
+                                          (h/from :ingredient)
+                                          (h/left-join :recipe [:= :ingredient/ingredient-recipe-id :recipe/id])
+                                          (h/left-join :grocery [:= :ingredient/ingredient-grocery-id :grocery/id])
+                                          (h/where [:= :ingredient/recipe-id recipe-id])
+                                          (hsql/format)))]
         (when (seq recipe)
           (-> recipe
               (apply-db-str->keyword :recipe/amount-unit)
@@ -79,17 +80,21 @@
 (defn ingredient-bom [db {:recipe/keys [id amount amount-unit]}]
   (with-connection
     db
-    (fn [conn-opts]
+    (fn [db]
       (loop [curr-recipe-ingredients [{:ingredient/ingredient-recipe-id id
                                        :ingredient/amount               amount
                                        :ingredient/amount-unit          amount-unit}]
              curr-grocery-ingredients []]
         (if-not (seq curr-recipe-ingredients)
-          (transforms/combine-ingredients curr-grocery-ingredients)
+          (combine-amounts curr-grocery-ingredients
+                           :ingredient/amount
+                           :ingredient/amount-unit
+                           :ingredient/ingredient-grocery-id
+                           :ingredient/ingredient-recipe-id)
           (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
                 {:keys [recipe-ingredients grocery-ingredients]}
                 (->> (transforms/scale-recipe
-                      (find-recipe-by-id conn-opts ingredient-recipe-id)
+                      (find-recipe-by-id db ingredient-recipe-id)
                       amount
                       amount-unit)
                      :recipe/ingredients

@@ -47,6 +47,7 @@
                                             (m/decode "application/json" %)
                                             (catch Exception e
                                               (pprint {:body (:body response)
+                                                       :status (:status response)
                                                        :cause (:cause e)})
                                               nil)))]
 
@@ -71,7 +72,13 @@
                                 [:manage-orders :manage-recipes :manage-groceries :manage-menus :manage-production])
           @test-users)
     (reset! tokens (mapv #(get-token (conj auth %)) @test-users))
-    (make-request :post "/v1/account" {:auth true})
+    (loop [response (make-request :post "/v1/account" {:auth true})
+           attempts 0]
+      (when (= (:status response) 401)
+        (println "attempt" attempts "failed")
+        (Thread/sleep 1000)
+        (recur (make-request :post "/v1/account" {:auth true})
+               (inc attempts))))
     (spit users-config (with-out-str
                          (pprint @test-users)))))
 
@@ -86,10 +93,12 @@
        (get-token)
        (vector)
        (reset! tokens))
+  (println "tokens" @tokens)
   (loop [response (make-request :post "/v1/account" {:auth true})
          attempts 0]
-    (when (nil? response)
+    (when (= (:status response) 401)
       (println "attempt" attempts "failed")
+      (println (select-keys response [:body :status]))
       (Thread/sleep 1000)
       (recur (make-request :post "/v1/account" {:auth true})
              (inc attempts)))))
@@ -200,10 +209,9 @@
                          :body
                          :id)
         menu-item-size-ids (doall
-                            (map #(-> (make-request :post (str "/v1/menus/" menu-id "/sizes")
+                            (map #(-> (make-request :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
                                                     {:auth true
-                                                     :body {:menu-item-size/menu-item-id menu-item-id
-                                                            :menu-item-size/amount %
+                                                     :body {:menu-item-size/amount %
                                                             :menu-item-size/amount-unit :volume/qt}})
                                       :body
                                       :id)
@@ -213,8 +221,7 @@
                        (m/decode "application/json")
                        (map #(vector (:id %) (-> (make-request :post "/v1/orders"
                                                                {:auth true
-                                                                :body (update-keys (assoc (select-keys % [:note]) :user-order/status :status/submitted)
-                                                                                   (fn [k] (keyword "user-order" (name k))))})
+                                                                :body (update-keys % (fn [k] (keyword "user-order" (name k))))})
                                                  :body
                                                  :id)))
                        (into {}))
@@ -297,6 +304,7 @@
                (auth0/get-users (:auth/auth0 state/system))))
   (make-request :get "/v1/account"
                 {:auth true})
+  (.getJdbcUrl (:connectable (:db/postgres state/system)))
   (make-test-users 2)
   (go)
   (go false)

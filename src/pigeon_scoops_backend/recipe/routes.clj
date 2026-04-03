@@ -70,18 +70,18 @@
                                                                                                                (keys mass/conversion-map)
                                                                                                                (keys volume/conversion-map))))}}
                    :responses  {201 {:body {:id uuid?}}}
-                   :summary    "Create ingredient"}
-          :put    {:handler    (recipe/update-ingredient! db)
-                   :parameters {:body {:ingredient/id                             uuid?
-                                       (ds/opt :ingredient/ingredient-grocery-id) uuid?
-                                       (ds/opt :ingredient/ingredient-recipe-id)  uuid?
-                                       :ingredient/amount                         number?
-                                       :ingredient/amount-unit                    (s/and keyword? (set (concat common/other-units
-                                                                                                               (keys mass/conversion-map)
-                                                                                                               (keys volume/conversion-map))))}}
-                   :responses  {204 {:body nil?}}
-                   :summary    "Update ingredient"}
-          :delete {:handler    (recipe/delete-ingredient! db)
-                   :parameters {:body {:ingredient/id uuid?}}
-                   :responses  {204 {:body nil?}}
-                   :summary    "delete ingredient"}}]]]])
+                   :summary    "Create ingredient"}}]
+     ["/:ingredient-id"
+      {:parameters {:path {:ingredient-id uuid?}}
+       :put    {:handler    (recipe/update-ingredient! db)
+                :parameters {:body {(ds/opt :ingredient/ingredient-grocery-id) uuid?
+                                    (ds/opt :ingredient/ingredient-recipe-id)  uuid?
+                                    :ingredient/amount                         number?
+                                    :ingredient/amount-unit                    (s/and keyword? (set (concat common/other-units
+                                                                                                            (keys mass/conversion-map)
+                                                                                                            (keys volume/conversion-map))))}}
+                :responses  {204 {:body nil?}}
+                :summary    "Update ingredient"}
+       :delete {:handler    (recipe/delete-ingredient! db)
+                :responses  {204 {:body nil?}}
+                :summary    "delete ingredient"}}]]]])

@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.utils
-  (:require [next.jdbc :as jdbc])
+  (:require [next.jdbc :as jdbc]
+            [pigeon-scoops-backend.units.common :as common])
   (:import (java.time Duration ZonedDateTime)))
 
 (defn keyword->db-str [k]
@@ -21,8 +22,8 @@
 (defn with-connection [db f]
   (try
     (with-open [conn (jdbc/get-connection db)]
-      (let [conn-opts (jdbc/with-options conn (:options db))]
-        (f conn-opts)))
+      (let [db (jdbc/with-options conn (:options db))]
+        (f db)))
     (catch IllegalArgumentException _
       (f db))))
 
@@ -52,3 +53,24 @@
         (mapv doall-deep value)
         :else
         value))
+
+(defn production-manager? [request]
+  (-> request
+      (get-in [:claims "https://api.pigeon-scoops.com/perms"])
+      (set)
+      (#(% "manage:production"))))
+
+(defn combine-amounts [amounts amount-key amount-unit-key & type-discriminant-keys]
+  (as-> amounts ?
+    (group-by (comp #(update % amount-unit-key namespace)
+                    #(select-keys % (concat [amount-unit-key]
+                                            type-discriminant-keys)))
+              ?)
+    (update-vals ? (partial reduce
+                            (fn [{sink-amount-unit amount-unit-key :as acc}
+                                 entity]
+                              (let [scaled-amount (common/convert (get entity amount-key)
+                                                                  (get entity amount-unit-key)
+                                                                  sink-amount-unit)]
+                                (update acc amount-key + scaled-amount)))))
+    (vals ?)))

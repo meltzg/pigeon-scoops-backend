@@ -30,22 +30,24 @@
     (println "\nAccepting orders on expired menus")
     (with-connection
       jdbc-url
-      (fn [conn-opts]
-        (let [expired-menus (->> (menu-db/find-all-menus conn-opts)
+      (fn [db]
+        (let [expired-menus (->> (menu-db/find-all-menus db)
                                  (filter #(> (.toEpochSecond (ZonedDateTime/now))
                                              (.getEpochSecond (.toInstant (:menu/end-time %))))))
-              recipes-to-accept (->> (menu-db/find-active-menu-items conn-opts)
+              recipes-to-accept (->> (menu-db/find-active-menu-items db)
                                      (filter #((set (map :menu/id expired-menus)) (:menu-item/menu-id %)))
                                      (mapv :menu-item/recipe-id))]
           (when (seq recipes-to-accept)
-            (apply (partial order-db/accept-orders! conn-opts) recipes-to-accept))
+            (apply (partial order-db/bulk-status-update! db {:status/submitted :status/in-progress
+                                                             :status/draft :status/canceled})
+                   recipes-to-accept))
           (dorun (->> expired-menus
                       (remove :menu/repeats)
-                      (map #(menu-db/update-menu! conn-opts (assoc % :menu/active false)))))
+                      (map #(menu-db/update-menu! db (assoc % :menu/active false)))))
           (dorun (->> expired-menus
                       (filter :menu/repeats)
-                      (map #(menu-db/update-menu! conn-opts (assoc % :menu/end-time (end-time (:menu/duration %)
-                                                                                              (:menu/duration-type %))))))))))))
+                      (map #(menu-db/update-menu! db (assoc % :menu/end-time (end-time (:menu/duration %)
+                                                                                       (:menu/duration-type %))))))))))))
 
 (defn -main
   [& args]

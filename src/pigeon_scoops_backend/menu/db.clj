@@ -11,9 +11,9 @@
 (defn find-menu-items [db menu-id & menu-ids]
   (with-connection
     db
-    (fn [conn-opts]
+    (fn [db]
       (let [menu-ids (conj menu-ids menu-id)
-            menu-items (sql/query conn-opts
+            menu-items (sql/query db
                                   (-> (h/select :*)
                                       (h/from :menu-item)
                                       (h/where [:in :menu-id menu-ids])
@@ -23,7 +23,7 @@
                                        (h/from :menu-item-size)
                                        (h/where [:in :menu-item-id (map :menu-item/id menu-items)])
                                        (hsql/format))
-                                   (sql/query conn-opts)
+                                   (sql/query db)
                                    (map #(apply-db-str->keyword % :menu-item-size/amount-unit))
                                    (group-by :menu-item-size/menu-item-id)))]
         (->> menu-items
@@ -33,9 +33,9 @@
 (defn find-menu-item-by-id [db menu-item-id]
   (with-connection
     db
-    (fn [conn-opts]
-      (when-let [[item] (sql/find-by-keys conn-opts :menu-item {:id menu-item-id})]
-        (assoc item :menu-item/sizes (sql/find-by-keys conn-opts :menu-item-size {:menu-item-id menu-item-id}))))))
+    (fn [db]
+      (when-let [[item] (sql/find-by-keys db :menu-item {:id menu-item-id})]
+        (assoc item :menu-item/sizes (sql/find-by-keys db :menu-item-size {:menu-item-id menu-item-id}))))))
 
 (defn find-all-menus
   ([db]
@@ -45,12 +45,11 @@
   ([db include-inactive? include-deleted?]
    (with-connection
      db
-     (fn [conn-opts]
+     (fn [db]
        (->> (sql/find-by-keys
-             conn-opts
+             db
              :menu
-             (if
-              (and include-inactive? include-deleted?)
+             (if (and include-inactive? include-deleted?)
                :all
                (cond-> {}
                  (not include-inactive?) (assoc :active true)
@@ -66,10 +65,10 @@
 (defn find-menu-by-id [db menu-id]
   (with-connection
     db
-    (fn [conn-opts]
-      (when-let [[menu] (sql/find-by-keys conn-opts :menu {:menu/id menu-id})]
+    (fn [db]
+      (when-let [[menu] (sql/find-by-keys db :menu {:menu/id menu-id})]
         (-> menu
-            (assoc :menu/items (get (find-menu-items conn-opts menu-id) menu-id))
+            (assoc :menu/items (get (find-menu-items db menu-id) menu-id))
             (apply-db-str->keyword :menu/duration-type))))))
 
 (defn update-menu! [db menu]

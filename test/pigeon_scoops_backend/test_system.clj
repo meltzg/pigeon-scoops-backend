@@ -12,7 +12,8 @@
             [ring.mock.request :as mock]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [clojure.pprint :refer [pprint]])
+            [clojure.pprint :refer [pprint]]
+            [pigeon-scoops-backend.server])
   (:import (java.net Socket)
            (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
@@ -38,20 +39,29 @@
 (defn test-endpoint
   ([method uri]
    (test-endpoint method uri nil))
-  ([method uri opts]
+  ([method uri {:keys [use-other-user params use-auth? body retry-status] :as opts}]
    (let [app (-> state/system :server/routes)
          auth (-> state/system :auth/auth0)
-         token (or (if (:use-other-user opts) (second @tokens) (first @tokens))
-                   (if (:use-other-user opts) (get-test-token (conj auth (second @test-users)))
-                       (get-test-token (conj auth (first @test-users)))))
-         request (-> (mock/request method uri (:params opts))
-                     (cond-> (:auth opts) (mock/header :authorization (str "Bearer " token))
-                             (:body opts) (mock/json-body (:body opts))))
-         response (update (app request) :body #(try
-                                                 (m/decode "application/json" %)
-                                                 (catch Exception e
-                                                   (println "FAILED TO DECODE" % "FROM REQUEST" request)
-                                                   (throw e))))]
+         token (or (if use-other-user (second @tokens) (first @tokens))
+                   (if use-other-user
+                     (get-test-token (conj auth (second @test-users)))
+                     (get-test-token (conj auth (first @test-users)))))
+         request (-> (mock/request method uri params)
+                     (cond-> use-auth? (mock/header :authorization (str "Bearer " token))
+                             body (mock/json-body body)))
+         response (loop [resp (app request)]
+                    (if (or (not retry-status)
+                            (not= (:status resp) retry-status))
+                      resp
+                      (do
+                        (println "requst failed. retrying" resp)
+                        (Thread/sleep 1000)
+                        (recur (app request)))))
+         response (update response :body #(try
+                                            (m/decode "application/json" %)
+                                            (catch Exception e
+                                              (println "FAILED TO DECODE" % "RESPONSE" response)
+                                              (throw e))))]
      (println method uri opts response)
      response)))
 
@@ -150,7 +160,7 @@
                    (spit test-users-file (with-out-str (pprint @test-users)))
                    (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
                    (when manage-user?
-                     (mapv #(test-endpoint :post "/v1/account" {:auth true :use-other-user %}) [true false]))))
+                     (mapv #(test-endpoint :post "/v1/account" {:use-auth? true :retry-status 401 :use-other-user %}) [true false]))))
      :teardown #(Thread/sleep 2000)
      :msg      "account fixture failed"})))
 
