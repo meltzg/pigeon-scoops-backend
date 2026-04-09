@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.menu.integration-test
-  (:require [clojure.test :refer [deftest is testing use-fixtures]]
+  (:require [clojure.test :refer [are deftest is testing use-fixtures]]
             [pigeon-scoops-backend.test-system :as ts]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture :manage-recipes :manage-menus))
@@ -19,10 +19,35 @@
    :recipe/instructions ["make them"]})
 
 (deftest menus-list-test
-  (testing "List menus"
-    (let [{:keys [status body]} (ts/test-endpoint :get "/v1/menus" {:use-auth? true})]
-      (is (= 200 status))
-      (is (vector? body)))))
+  (let [active-menu-id (-> (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body (assoc menu :menu/active true)})
+                           :body
+                           :id
+                           (parse-uuid))
+        inactive-menu-id (-> (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body (assoc menu :menu/active false)})
+                             :body
+                             :id
+                             (parse-uuid))
+        recipe-id (-> (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe})
+                      :body
+                      :id)]
+    (mapv #(ts/test-endpoint :post (str "/v1/menus/" % "/items")
+                             {:use-auth? true :body {:menu-item/recipe-id recipe-id}})
+          [active-menu-id inactive-menu-id])
+    (testing "List menus"
+      (are [include-inactive? detailed?]
+        (let [{:keys [status body]} (ts/test-endpoint :get "/v1/menus" {:use-auth? true
+                                                                        :params {:include-inactive include-inactive?
+                                                                                 :detailed detailed?}})]
+          (and (= status 200)
+               (vector? body)
+               (some #(= (parse-uuid (:menu/id %)) active-menu-id) body)
+               (= include-inactive? (true? (some #(= (parse-uuid (:menu/id %)) inactive-menu-id) body)))
+               (every? #(= detailed? (not= (count (:menu/items %)) 0))
+                       body)))
+        true true
+        true false
+        false true
+        false false))))
 
 (deftest menus-crud-test
   (let [menu-id (atom nil)

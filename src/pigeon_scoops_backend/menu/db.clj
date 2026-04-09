@@ -27,7 +27,7 @@
                                    (map #(apply-db-str->keyword % :menu-item-size/amount-unit))
                                    (group-by :menu-item-size/menu-item-id)))]
         (->> menu-items
-             (map #(assoc % :menu-item/sizes (get menu-item-sizes (:menu-item/id %))))
+             (map #(assoc % :menu-item/sizes (get menu-item-sizes (:menu-item/id %) [])))
              (group-by :menu-item/menu-id))))))
 
 (defn find-menu-item-by-id [db menu-item-id]
@@ -39,22 +39,31 @@
 
 (defn find-all-menus
   ([db]
-   (find-all-menus db false false))
+   (find-all-menus db false false false))
   ([db include-inactive?]
-   (find-all-menus db include-inactive? false))
-  ([db include-inactive? include-deleted?]
+   (find-all-menus db include-inactive? false false))
+  ([db include-inactive? detailed?]
+   (find-all-menus db include-inactive? detailed? false))
+  ([db include-inactive? detailed? include-deleted?]
    (with-connection
      db
      (fn [db]
-       (->> (sql/find-by-keys
-             db
-             :menu
-             (if (and include-inactive? include-deleted?)
-               :all
-               (cond-> {}
-                 (not include-inactive?) (assoc :active true)
-                 (not include-deleted?) (assoc :deleted false))))
-            (map #(apply-db-str->keyword % :menu/duration-type)))))))
+       (let [menus (->> (sql/find-by-keys
+                         db
+                         :menu
+                         (if (and include-inactive? include-deleted?)
+                           :all
+                           (cond-> {}
+                             (not include-inactive?) (assoc :active true)
+                             (not include-deleted?) (assoc :deleted false))))
+                        (map #(apply-db-str->keyword % :menu/duration-type)))
+             menu-items (when detailed?
+                          (->> menus
+                               (map :menu/id)
+                               (apply (partial find-menu-items db))))]
+         (mapv #(assoc % :menu/items (get menu-items (:menu/id %)))
+               menus))))))
+
 
 (defn insert-menu! [db menu]
   (sql/insert! db :menu
