@@ -3,8 +3,7 @@
             [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]]
-            [clojure.pprint :refer [pprint]]))
+            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture [:manage-recipes :manage-orders :manage-menus :manage-production] [:manage-recipes :manage-orders :manage-menus]))
 
@@ -72,7 +71,6 @@
     (testing "List orders with details"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders?detailed=true&admin=true" {:use-auth? true})
             body (filter #(#{admin-order-id other-order-id} (parse-uuid (:user-order/id %))) body)]
-        (pprint body)
         (is (= 200 status))
         (is (pos? (count body)))
         (is ((set (map (comp parse-uuid :user-order/id) body)) admin-order-id))
