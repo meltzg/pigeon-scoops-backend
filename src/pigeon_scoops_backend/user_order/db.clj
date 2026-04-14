@@ -42,7 +42,7 @@
                                   (apply (partial find-all-order-items db))))]
            (->> orders
                 (mapv #(assoc % :user-order/status (infer-order-status (get order-items (:user-order/id %)))
-                                :user-order/items (get order-items (:user-order/id %))))
+                              :user-order/items (get order-items (:user-order/id %))))
                 (mapv #(apply-db-str->keyword % :user-order/amount-unit :user-order/status)))))))
 
 (defn find-order-by-id [db order-id]

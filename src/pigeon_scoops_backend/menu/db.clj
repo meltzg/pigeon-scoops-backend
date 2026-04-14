@@ -64,7 +64,6 @@
          (mapv #(assoc % :menu/items (get menu-items (:menu/id %)))
                menus))))))
 
-
 (defn insert-menu! [db menu]
   (sql/insert! db :menu
                (-> menu

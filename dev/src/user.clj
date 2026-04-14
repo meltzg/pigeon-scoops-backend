@@ -254,7 +254,6 @@
          :body)
     results))
 
-
 (defn init-app []
   (if (.exists (io/file users-config))
     (load-test-user)

@@ -35,17 +35,17 @@
           [active-menu-id inactive-menu-id])
     (testing "List menus"
       (are [include-inactive? detailed?]
-        (let [{:keys [status body]} (ts/test-endpoint :get "/v1/menus" {:use-auth? true
-                                                                        :params {:include-inactive include-inactive?
-                                                                                 :detailed detailed?}})
-              body (filter #(#{active-menu-id inactive-menu-id} (parse-uuid (:menu/id %))) body)
-              conditions {:status (= status 200)
-                          :not-empty (pos? (count body))
-                          :has-active (some #(= (parse-uuid (:menu/id %)) active-menu-id) body)
-                          :has-inactive (= include-inactive? (true? (some #(= (parse-uuid (:menu/id %)) inactive-menu-id) body)))
-                          :detailed (every? #(= detailed? (not= (count (:menu/items %)) 0))
-                                            body)}]
-          (every? true? (vals conditions)))
+           (let [{:keys [status body]} (ts/test-endpoint :get "/v1/menus" {:use-auth? true
+                                                                           :params {:include-inactive include-inactive?
+                                                                                    :detailed detailed?}})
+                 body (filter #(#{active-menu-id inactive-menu-id} (parse-uuid (:menu/id %))) body)
+                 conditions {:status (= status 200)
+                             :not-empty (pos? (count body))
+                             :has-active (some #(= (parse-uuid (:menu/id %)) active-menu-id) body)
+                             :has-inactive (= include-inactive? (true? (some #(= (parse-uuid (:menu/id %)) inactive-menu-id) body)))
+                             :detailed (every? #(= detailed? (not= (count (:menu/items %)) 0))
+                                               body)}]
+             (every? true? (vals conditions)))
         true true
         true false
         false true

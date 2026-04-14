@@ -3,7 +3,8 @@
             [integrant.repl.state :as state]
             [pigeon-scoops-backend.test-system :as ts]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]]))
+            [pigeon-scoops-backend.user-order.responses :refer [status terminal?]]
+            [clojure.pprint :refer [pprint]]))
 
 (use-fixtures :once ts/system-fixture (ts/make-account-fixture) (ts/make-roles-fixture [:manage-recipes :manage-orders :manage-menus :manage-production] [:manage-recipes :manage-orders :manage-menus]))
 
@@ -36,44 +37,57 @@
 
 (deftest orders-list-test
   (let [recipe-id (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id])
-        menu-id (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu}) [:body :id])
-        _ (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
-                            {:use-auth? true :body {:menu-item/recipe-id recipe-id}})
+        menu-id (-> (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu})
+                    :body
+                    :id)
+        menu-item-id (-> (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
+                                           {:use-auth? true :body {:menu-item/recipe-id recipe-id}})
+                         :body
+                         :id)
         admin-order-id (-> (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order})
                            :body
-                           :id)
+                           :id
+                           (parse-uuid))
         other-order-id (-> (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order :use-other-user true})
                            :body
-                           :id)]
+                           :id
+                           (parse-uuid))]
+    (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
+                      {:use-auth? true :body {:menu-item-size/amount 1
+                                              :menu-item-size/amount-unit :volume/qt}})
     (mapv (fn [[order-id use-other-user?]]
-            (ts/test-endpoint :post (str "/v1/orders/" order-id)
+            (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
                               {:use-auth? true
                                :use-other-user use-other-user?
                                :body (assoc order-item :order-item/recipe-id recipe-id)}))
           [[admin-order-id false] [other-order-id true]])
     (testing "List orders"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true})]
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true})
+            body (map #(update % :user-order/id parse-uuid) body)]
         (is (= 200 status))
         (is (pos? (count body)))
         (is ((set (map :user-order/id body)) admin-order-id))
         (is (not ((set (map :user-order/id body)) other-order-id)))
         (is (every? nil? (map :user-order/items body)))))
-    (testing "List orders with detauls"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders?detailed=true" {:use-auth? true})
+    (testing "List orders with details"
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders?detailed=true&admin=true" {:use-auth? true})
             body (filter #(#{admin-order-id other-order-id} (parse-uuid (:user-order/id %))) body)]
+        (pprint body)
         (is (= 200 status))
         (is (pos? (count body)))
-        (is ((set (map :user-order/id body)) admin-order-id))
-        (is (not ((set (map :user-order/id body)) other-order-id)))
+        (is ((set (map (comp parse-uuid :user-order/id) body)) admin-order-id))
+        (is ((set (map (comp parse-uuid :user-order/id) body)) other-order-id))
         (is (every? seq (map :user-order/items body)))))
     (testing "List orders. admins can get orders from all users"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :params {:admin true}})]
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :params {:admin true}})
+            body (map #(update % :user-order/id parse-uuid) body)]
         (is (= 200 status))
         (is (pos? (count body)))
         (is ((set (map :user-order/id body)) admin-order-id))
         (is ((set (map :user-order/id body)) other-order-id))))
     (testing "List orders. non admins cannot get orders from all users"
-      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :use-other-user true :params {:admin true}})]
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :use-other-user true :params {:admin true}})
+            body (map #(update % :user-order/id parse-uuid) body)]
         (is (= 200 status))
         (is (pos? (count body)))
         (is (not ((set (map :user-order/id body)) admin-order-id)))
