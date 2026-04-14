@@ -7,7 +7,8 @@
 
 (defn list-all-menus [db]
   (fn [request]
-    (rr/response (vec (menu-db/find-all-menus db (-> request :parameters :query :include-inactive))))))
+    (let [{:keys [detailed include-inactive]} (-> request :parameters :query)]
+      (rr/response (vec (menu-db/find-all-menus db include-inactive detailed))))))
 
 (defn create-menu! [db]
   (fn [request]

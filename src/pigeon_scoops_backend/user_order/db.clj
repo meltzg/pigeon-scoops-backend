@@ -9,13 +9,14 @@
                                                  with-connection]]
             [pigeon-scoops-backend.user-order.transforms :refer [infer-order-status]]))
 
-(defn find-all-order-items [db order-id]
-  (map #(apply-db-str->keyword %
-                               :order-item/status :order-item/amount-unit)
-       (sql/query db (-> (h/select :order-item/*)
-                         (h/from :order-item)
-                         (h/where [:= :order-item/order-id order-id])
-                         (hsql/format)))))
+(defn find-all-order-items [db order-id & order-ids]
+  (->> (conj order-ids order-id)
+       (#(sql/query db (-> (h/select :order-item/*)
+                           (h/from :order-item)
+                           (h/where [:in :order-item/order-id %])
+                           (hsql/format))))
+       (map #(apply-db-str->keyword % :order-item/status :order-item/amount-unit))
+       (group-by :order-item/order-id)))
 
 (defn find-all-items-by-status [db status]
   (map #(apply-db-str->keyword %
@@ -26,30 +27,35 @@
                          (hsql/format)))))
 
 (defn find-all-orders
-  [db user-id]
+  [db user-id detailed?]
   (with-connection
     db (fn [db]
-         (->> (sql/find-by-keys
-               db
-               :user-order
-               (if user-id
-                 {:user-order/user-id user-id}
-                 :all))
-              (mapv #(assoc % :user-order/status
-                            (infer-order-status
-                             (find-all-order-items db (:user-order/id %)))))
-              (map #(apply-db-str->keyword % :user-order/amount-unit :user-order/status))))))
+         (let [orders (sql/find-by-keys
+                       db
+                       :user-order
+                       (if user-id
+                         {:user-order/user-id user-id}
+                         :all))
+               order-items (when detailed?
+                             (->> orders
+                                  (map :user-order/id)
+                                  (apply (partial find-all-order-items db))))]
+           (->> orders
+                (mapv #(assoc % :user-order/status (infer-order-status (get order-items (:user-order/id %)))
+                              :user-order/items (get order-items (:user-order/id %))))
+                (mapv #(apply-db-str->keyword % :user-order/amount-unit :user-order/status)))))))
 
 (defn find-order-by-id [db order-id]
   (with-connection
     db (fn [db]
          (let [[order] (sql/find-by-keys db :user-order {:id order-id})
-               items (find-all-order-items db order-id)]
+               items (get (find-all-order-items db order-id)
+                          order-id)]
            (when (seq order)
              (-> order
-                 (assoc :user-order/status (infer-order-status items))
-                 (apply-db-str->keyword :user-order/amount-unit :user-order/status)
-                 (assoc :user-order/items items)))))))
+                 (assoc :user-order/status (infer-order-status items)
+                        :user-order/items items)
+                 (apply-db-str->keyword :user-order/amount-unit :user-order/status)))))))
 
 (defn find-order-item-by-id [db order-item-id]
   (-> (sql/find-by-keys db :order-item {:id order-item-id})

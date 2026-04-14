@@ -10,6 +10,7 @@
             [pigeon-scoops-backend.auth :as auth0]
             [pigeon-scoops-backend.db :as db]
             [pigeon-scoops-backend.db-tasks]
+            [pigeon-scoops-backend.user-order.db :as order-db]
             [ring.mock.request :as mock]
             [clojure.pprint :refer [pprint]])
   (:import (java.util UUID)
@@ -219,11 +220,13 @@
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
-                       (map #(vector (:id %) (-> (make-request :post "/v1/orders"
-                                                               {:auth true
-                                                                :body (update-keys % (fn [k] (keyword "user-order" (name k))))})
-                                                 :body
-                                                 :id)))
+                       (map #(let [pair (vector (:id %) (-> (make-request :post "/v1/orders"
+                                                                          {:auth true
+                                                                           :body (update-keys % (fn [k] (keyword "user-order" (name k))))})
+                                                            :body
+                                                            :id))]
+                               (Thread/sleep 500)
+                               pair))
                        (into {}))
         order-items (->> "dev/resources/seed/flavor_amounts.json"
                          (slurp)
@@ -236,16 +239,20 @@
                                                          :order-item/amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
                                                                                           (:amount_unit %))}})
                                    :body
-                                   :id)))]
-    {:grocery-map   grocery-map
-     :grocery-units units
-     :recipe-map    recipe-map
-     :ingredients   ingredients
-     :order-map     order-map
-     :order-items   order-items
-     :menu-id       menu-id
-     :menu-item-id menu-item-id
-     :mnu-item-size-ids menu-item-size-ids}))
+                                   :id)))
+        results {:grocery-map   grocery-map
+                 :grocery-units units
+                 :recipe-map    recipe-map
+                 :ingredients   ingredients
+                 :order-map     order-map
+                 :order-items   order-items
+                 :menu-id       menu-id
+                 :menu-item-id menu-item-id
+                 :mnu-item-size-ids menu-item-size-ids}]
+    (->> (make-request :get (str "/v1/orders?detailed=true&admin=true")
+                       {:auth true})
+         :body)
+    results))
 
 (defn init-app []
   (if (.exists (io/file users-config))
@@ -302,10 +309,16 @@
   (map #(auth0/delete-user! (:auth/auth0 state/system) (:user_id %))
        (filter #(str/starts-with? (:email %) "integration-test")
                (auth0/get-users (:auth/auth0 state/system))))
-  (make-request :get "/v1/account"
-                {:auth true})
+  (-> (make-request :get "/v1/orders?detailed=true&admin=true"
+                    {:auth true})
+      :body
+      (first)
+      :user-order/id
+      (#(make-request :get (str "/v1/orders/" %)
+                      {:auth true})))
   (.getJdbcUrl (:connectable (:db/postgres state/system)))
   (make-test-users 2)
+  (order-db/find-all-orders (:db/postgres state/system) nil true)
   (go)
   (go false)
   (pprint @tokens)
