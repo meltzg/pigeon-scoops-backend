@@ -23,7 +23,8 @@
                            :summary "mark all in progress items for this recipe as complete"}}]]
    ["/orders" {:openapi    {:tags ["orders"]}}
     ["" {:get  {:handler   (order/list-all-orders db)
-                :parameters {:query {(ds/opt :admin) boolean?}}
+                :parameters {:query {(ds/opt :admin) boolean?
+                                     (ds/opt :detailed) boolean?}}
                 :responses {200 {:body [responses/order]}}
                 :summary "list of orders"}
          :post {:handler    (order/create-order! db)

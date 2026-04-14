@@ -14,11 +14,11 @@
 (defn list-all-orders [db]
   (fn [request]
     (let [production-manager? (production-manager? request)
-          admin-request? (-> request :parameters :query :admin)
+          {admin-request? :admin detailed? :detailed} (-> request :parameters :query)
           uid (when-not (and admin-request?
                              production-manager?)
                 (-> request :claims :sub))]
-      (rr/response (vec (order-db/find-all-orders db uid))))))
+      (rr/response (vec (order-db/find-all-orders db uid detailed?))))))
 
 (defn create-order! [db]
   (fn [request]

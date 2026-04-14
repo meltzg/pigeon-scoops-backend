@@ -35,28 +35,47 @@
    :menu/duration-type :duration/month})
 
 (deftest orders-list-test
-  (let [admin-order-id (-> (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order})
+  (let [recipe-id (get-in (ts/test-endpoint :post "/v1/recipes" {:use-auth? true :body recipe}) [:body :id])
+        menu-id (get-in (ts/test-endpoint :post "/v1/menus" {:use-auth? true :body menu}) [:body :id])
+        _ (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
+                            {:use-auth? true :body {:menu-item/recipe-id recipe-id}})
+        admin-order-id (-> (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order})
                            :body
                            :id)
         other-order-id (-> (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order :use-other-user true})
                            :body
                            :id)]
+    (mapv (fn [[order-id use-other-user?]]
+            (ts/test-endpoint :post (str "/v1/orders/" order-id)
+                              {:use-auth? true
+                               :use-other-user use-other-user?
+                               :body (assoc order-item :order-item/recipe-id recipe-id)}))
+          [[admin-order-id false] [other-order-id true]])
     (testing "List orders"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true})]
         (is (= 200 status))
-        (is (vector? body))
+        (is (pos? (count body)))
         (is ((set (map :user-order/id body)) admin-order-id))
-        (is (not ((set (map :user-order/id body)) other-order-id)))))
+        (is (not ((set (map :user-order/id body)) other-order-id)))
+        (is (every? nil? (map :user-order/items body)))))
+    (testing "List orders with detauls"
+      (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders?detailed=true" {:use-auth? true})
+            body (filter #(#{admin-order-id other-order-id} (parse-uuid (:user-order/id %))) body)]
+        (is (= 200 status))
+        (is (pos? (count body)))
+        (is ((set (map :user-order/id body)) admin-order-id))
+        (is (not ((set (map :user-order/id body)) other-order-id)))
+        (is (every? seq (map :user-order/items body)))))
     (testing "List orders. admins can get orders from all users"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :params {:admin true}})]
         (is (= 200 status))
-        (is (vector? body))
+        (is (pos? (count body)))
         (is ((set (map :user-order/id body)) admin-order-id))
         (is ((set (map :user-order/id body)) other-order-id))))
     (testing "List orders. non admins cannot get orders from all users"
       (let [{:keys [status body]} (ts/test-endpoint :get "/v1/orders" {:use-auth? true :use-other-user true :params {:admin true}})]
         (is (= 200 status))
-        (is (vector? body))
+        (is (pos? (count body)))
         (is (not ((set (map :user-order/id body)) admin-order-id)))
         (is ((set (map :user-order/id body)) other-order-id))))))
 
