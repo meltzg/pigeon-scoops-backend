@@ -24,7 +24,8 @@
    (ds/opt :order-item/amount-unit) (s/and keyword?
                                            (set (concat common/other-units
                                                         (keys mass/conversion-map)
-                                                        (keys volume/conversion-map))))})
+                                                        (keys volume/conversion-map))))
+   (ds/opt :order-item/menu-item-size-id) uuid?})
 
 (def order
   {:user-order/id             uuid?

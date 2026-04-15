@@ -50,7 +50,8 @@
                                         :order-item/amount      number?
                                         :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                              (keys mass/conversion-map)
-                                                                                             (keys volume/conversion-map))))}}
+                                                                                             (keys volume/conversion-map))))
+                                        (ds/opt :order-item/menu-item-size-id) (s/nilable uuid?)}}
                     :responses  {201 {:body {:id uuid?}}}
                     :summary    "Create order-item"}}]
       ["/:order-item-id"
@@ -60,7 +61,8 @@
                                            :order-item/amount      number?
                                            :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                                 (keys mass/conversion-map)
-                                                                                                (keys volume/conversion-map))))}}
+                                                                                                (keys volume/conversion-map))))
+                                           (ds/opt :order-item/menu-item-size-id) (s/nilable uuid?)}}
                        :responses  {204 {:body nil?}}
                        :summary    "Update order-item"}
             :delete {:handler    (order/delete-order-item! db)
