@@ -31,6 +31,8 @@ jobs:
         run: |
           find ~/.m2/repository -name "*.lastUpdated" -delete || true
           find ~/.m2/repository -name "_remote.repositories" -delete || true
+      - name: Install test dependencies
+        run: lein with-profile +dev deps
       - name: Run tests
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
