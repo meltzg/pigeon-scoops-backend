@@ -30,8 +30,8 @@
                  [org.slf4j/jul-to-slf4j "2.0.17"]
                  [org.apache.logging.log4j/log4j-to-slf4j "2.26.0"]]
   :plugins [[lein-ancient "0.7.0"]
-            [com.github.clj-kondo/lein-clj-kondo "0.2.5"]
-            [lein-cljfmt "0.6.8"]]
+            [com.github.clj-kondo/lein-clj-kondo "2026.04.15"]
+            [lein-cljfmt "0.9.2"]]
   :profiles {:uberjar {:aot :all}
              :dev     {:source-paths   ["dev/src"
                                         "test"]
