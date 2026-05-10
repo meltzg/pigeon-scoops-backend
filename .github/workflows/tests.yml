@@ -27,15 +27,6 @@ jobs:
           chmod +x lein
           sudo mv lein /usr/local/bin/lein
           lein version  # Verify installation
-      - name: Cache Leiningen
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.m2/repository
-            ~/.lein
-          key: ${{ runner.os }}-lein-${{ hashFiles('project.clj') }}
-          restore-keys: |
-            ${{ runner.os }}-lein-
       - name: Run tests
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
