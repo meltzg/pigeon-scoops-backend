@@ -27,6 +27,11 @@ jobs:
           chmod +x lein
           sudo mv lein /usr/local/bin/lein
           lein version  # Verify installation
+      - name: Clear Lein cache metadata
+        run: |
+          rm -rf ~/.m2/repository
+      - name: Prefetch dependencies
+        run: lein deps
       - name: Run tests
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
