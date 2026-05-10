@@ -56,7 +56,7 @@
                            user-permissions (set (map #(keyword (str/replace % ":" "/"))
                                                       (get-in request [:claims "https://api.pigeon-scoops.com/perms"])))]
                        (cond
-                         (some? (map #(user-permissions %) expected-permissions))
+                         (seq (remove nil? (map #(user-permissions %) expected-permissions)))
                          (handler request)
                          (seq public-keys)
                          (let [response (handler request)]
