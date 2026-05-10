@@ -21,16 +21,16 @@ jobs:
         with:
           java-version: 21
           distribution: 'temurin'
+      - name: Clear dependency caches
+        run: |
+          rm -rf ~/.m2/repository
+          rm -rf ~/.lein
       - name: Install Leiningen
         run: |
           curl https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein > lein
           chmod +x lein
           sudo mv lein /usr/local/bin/lein
           lein version  # Verify installation
-      - name: Clear failed Maven resolution markers
-        run: |
-          find ~/.m2/repository -name "*.lastUpdated" -delete || true
-          find ~/.m2/repository -name "_remote.repositories" -delete || true
       - name: Install test dependencies
         run: lein with-profile +dev deps
       - name: Run tests
