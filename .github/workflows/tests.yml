@@ -29,10 +29,10 @@ jobs:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
           MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-        run: clj -A:test
+        run: clojure -M:test
       - name: Cleanup test users
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
           MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
-        run: lein with-profile +dev run -m pigeon-scoops-backend.cleanup
+        run: clojure -M:test-cleanup

@@ -25,6 +25,6 @@ jobs:
         with:
           cli: latest
       - name: Formatting
-        run:  clj -M:cljfmt check
+        run:  clojure -M:cljfmt check
       - name: Linting
-        run: clj -M:clj-kondo --lint src --lint test --lint dev
+        run: clojure -M:clj-kondo --lint src --lint test --lint dev
