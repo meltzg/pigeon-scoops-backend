@@ -32,7 +32,9 @@ jobs:
           curl -I https://repo1.maven.org/maven2/org/clojure/clojure/1.12.4/clojure-1.12.4.pom
           curl -I https://repo1.maven.org/maven2/org/clojure/clojure/1.12.4/clojure-1.12.4.jar
       - name: Install dependencies
-        run: lein deps
+        run: |
+          rm -rf ~/.m2/repository
+          lein deps
       - name: Formatting
         run: lein cljfmt check
       - name: Linting
