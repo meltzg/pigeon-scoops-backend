@@ -3,6 +3,10 @@
   :url "http://api.pigeon-scoops.com/"
   :min-lein-version "2.0.0"
   :main pigeon-scoops-backend.server
+  :repositories [["central" {:url "https://repo.maven.apache.org/maven2/"
+                             :snapshots false}]
+                 ["clojars" {:url "https://repo.clojars.org/"
+                             :snapshots false}]]
   :dependencies [[org.clojure/clojure "1.12.4"]
                  [ring "1.15.4"]
                  [integrant "1.0.1"]
