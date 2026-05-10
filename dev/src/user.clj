@@ -12,7 +12,8 @@
             [pigeon-scoops-backend.db-tasks]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [ring.mock.request :as mock]
-            [clojure.pprint :refer [pprint]])
+            [clojure.pprint :refer [pprint]]
+            [pigeon_scoops_backend.server])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 

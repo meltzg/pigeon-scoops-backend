@@ -16,3 +16,4 @@ dev/resources/server-config.edn
 dev/resources/db.sqlite
 dev/resources/*-users.edn
 .clj-kondo/
+.cpcache/
