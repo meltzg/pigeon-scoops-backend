@@ -12,7 +12,8 @@
             [pigeon-scoops-backend.db-tasks]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [ring.mock.request :as mock]
-            [clojure.pprint :refer [pprint]])
+            [clojure.pprint :refer [pprint]]
+            [pigeon_scoops_backend.server])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
 
@@ -204,19 +205,21 @@
                                           :menu/duration-type :duration/day}})
                     :body
                     :id)
-        menu-item-id (-> (make-request :post (str "/v1/menus/" menu-id "/items")
-                                       {:auth true
-                                        :body {:menu-item/recipe-id (first (vals recipe-map))}})
-                         :body
-                         :id)
-        menu-item-size-ids (doall
-                            (map #(-> (make-request :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
-                                                    {:auth true
-                                                     :body {:menu-item-size/amount %
-                                                            :menu-item-size/amount-unit :volume/qt}})
-                                      :body
-                                      :id)
-                                 (range 1 5)))
+        menu-item-ids (map #(-> (make-request :post (str "/v1/menus/" menu-id "/items")
+                                              {:auth true
+                                               :body {:menu-item/recipe-id %}})
+                                :body
+                                :id)
+                           (take 2 (vals recipe-map)))
+        menu-item-size-ids (map #(-> (make-request :post (str "/v1/menus/" menu-id "/items/" (first %) "/sizes")
+                                                   {:auth true
+                                                    :body {:menu-item-size/amount (second %)
+                                                           :menu-item-size/amount-unit :volume/qt}})
+                                     :body
+                                     :id)
+                                (for [miid menu-item-ids
+                                      size (range 1 3)]
+                                  (vector miid size)))
         order-map (->> "dev/resources/seed/orders.json"
                        (slurp)
                        (m/decode "application/json")
@@ -231,15 +234,15 @@
         order-items (->> "dev/resources/seed/flavor_amounts.json"
                          (slurp)
                          (m/decode "application/json")
-                         (map #(-> (make-request :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
-                                                 {:auth true
-                                                  :body {:order-item/recipe-id   (get recipe-map (:flavor_id %))
-                                                         :order-item/status :status/submitted
-                                                         :order-item/amount      (:amount %)
-                                                         :order-item/amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
-                                                                                          (:amount_unit %))}})
-                                   :body
-                                   :id)))
+                         (mapv #(-> (make-request :post (str "/v1/orders/" (get order-map (:order_id %)) "/items")
+                                                  {:auth true
+                                                   :body {:order-item/recipe-id   (get recipe-map (:flavor_id %))
+                                                          :order-item/status :status/submitted
+                                                          :order-item/amount      (:amount %)
+                                                          :order-item/amount-unit (keyword (last (str/split (:amount_unit_type %) #"\."))
+                                                                                           (:amount_unit %))}})
+                                    :body
+                                    :id)))
         results {:grocery-map   grocery-map
                  :grocery-units units
                  :recipe-map    recipe-map
@@ -247,11 +250,16 @@
                  :order-map     order-map
                  :order-items   order-items
                  :menu-id       menu-id
-                 :menu-item-id menu-item-id
-                 :mnu-item-size-ids menu-item-size-ids}]
-    (->> (make-request :get (str "/v1/orders?detailed=true&admin=true")
-                       {:auth true})
-         :body)
+                 :menu-item-ids menu-item-ids
+                 :mnu-item-size-ids menu-item-size-ids
+                 :complete-order-item-statuses
+                 (->> (make-request :get (str "/v1/orders?detailed=true&admin=true")
+                                    {:auth true})
+                      :body
+                      (mapcat :user-order/items)
+                      (map #(:status (make-request :patch (str "/v1/orders/" (:order-item/order-id %) "/items/" (:order-item/id %) "/status")
+                                                   {:auth true
+                                                    :body {:order-item/status :status/complete}}))))}]
     results))
 
 (defn init-app []
