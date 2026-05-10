@@ -1,0 +1,6 @@
+target/
+.git/
+.idea/
+*.iml
+.lein-failures
+.lein-repl-history
