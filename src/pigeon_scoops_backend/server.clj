@@ -2,9 +2,11 @@
   (:gen-class)
   (:require [environ.core :refer [env]]
             [integrant.core :as ig]
-            [pigeon-scoops-backend.db :as config]
+            [pigeon-scoops-backend.utils :refer [load-config init-system]]
             [pigeon-scoops-backend.router :as router]
-            [ring.adapter.jetty :as jetty])
+            [ring.adapter.jetty :as jetty]
+            [pigeon-scoops-backend.db]
+            [pigeon-scoops-backend.db-tasks])
   (:import (org.eclipse.jetty.server Server)))
 
 (defmethod ig/expand-key :server/jetty [k config]
@@ -25,5 +27,5 @@
 (defn -main
   [config-file & _]
   (-> config-file
-      (config/load-config)
-      (config/init-system)))
+      (load-config)
+      (init-system)))

@@ -7,16 +7,6 @@
   (:import (com.zaxxer.hikari HikariDataSource)
            (java.sql Array)))
 
-(defn load-config [config-file]
-  (-> config-file
-      (slurp)
-      (ig/read-string)))
-
-(defn init-system [config]
-  (-> config
-      (ig/expand)
-      (ig/init)))
-
 (defmethod ig/expand-key :db/postgres [k config]
   {k (merge config (when-some [jdbc-url (env :jdbc-database-url)]
                      {:jdbc-url jdbc-url}))})

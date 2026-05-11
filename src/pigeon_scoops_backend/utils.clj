@@ -1,7 +1,18 @@
 (ns pigeon-scoops-backend.utils
-  (:require [next.jdbc :as jdbc]
+  (:require [integrant.core :as ig]
+            [next.jdbc :as jdbc]
             [pigeon-scoops-backend.units.common :as common])
   (:import (java.time Duration ZonedDateTime)))
+
+(defn load-config [config-file]
+  (-> config-file
+      (slurp)
+      (ig/read-string)))
+
+(defn init-system [config]
+  (-> config
+      (ig/expand)
+      (ig/init)))
 
 (defn keyword->db-str [k]
   (subs (str k) 1))

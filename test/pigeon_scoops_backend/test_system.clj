@@ -7,7 +7,7 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth :as auth0]
-            [pigeon-scoops-backend.db :as config]
+            [pigeon-scoops-backend.utils :refer [load-config init-system]]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock]
             [clojure.java.io :as io]
@@ -109,16 +109,16 @@
                    (ig-repl/set-prep!
                     (fn []
                       (let [task-system (-> "resources/db-task-config.edn"
-                                            (config/load-config)
+                                            (load-config)
                                             (assoc-in [:db/postgres :jdbc-url] full-uri)
-                                            (config/init-system))
+                                            (init-system))
                             migration-task (:db-tasks/migration task-system)]
                         (migration-task)
                         (ig/halt! task-system)
                         (-> (if (env :ci-env)
                               "resources/server-config.edn"
                               "dev/resources/server-config.edn")
-                            (config/load-config)
+                            (load-config)
                             (assoc-in [:db/postgres :jdbc-url] full-uri)
                             (assoc-in [:server/jetty :port] port)
                             (assoc-in [:auth/auth0 :skip-auth0-delete?] true)

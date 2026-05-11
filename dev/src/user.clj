@@ -253,7 +253,7 @@
                  :menu-item-ids menu-item-ids
                  :mnu-item-size-ids menu-item-size-ids
                  :complete-order-item-statuses
-                 (->> (make-request :get (str "/v1/orders?detailed=true&admin=true")
+                 (->> (make-request :get "/v1/orders?detailed=true&admin=true"
                                     {:auth true})
                       :body
                       (mapcat :user-order/items)
