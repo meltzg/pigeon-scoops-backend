@@ -67,8 +67,7 @@
 
 (defn get-users [auth]
   (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
-       (http/get
-        (str "https://pigeon-scoops.us.auth0.com/api/v2/users"))
+       (http/get "https://pigeon-scoops.us.auth0.com/api/v2/users")
        (m/decode-response-body)))
 
 (defn get-roles->uids! [auth]

@@ -3,11 +3,11 @@
   (:require [clojure.java.io :as io]
             [clojure.tools.cli :as cli]
             [integrant.core :as ig]
-            [pigeon-scoops-backend.db :as config]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.utils :refer [end-time with-connection]]
-            [tea-time.core :as tt])
+            [pigeon-scoops-backend.utils :refer [end-time with-connection load-config init-system]]
+            [tea-time.core :as tt]
+            [pigeon-scoops-backend.db])
   (:import (java.time ZonedDateTime)
            (org.flywaydb.core Flyway)))
 
@@ -72,8 +72,8 @@
       (let [system (-> opts
                        :options
                        :config-file
-                       (config/load-config)
-                       (config/init-system))
+                       (load-config)
+                       (init-system))
             task (->> opts
                       :options
                       :task

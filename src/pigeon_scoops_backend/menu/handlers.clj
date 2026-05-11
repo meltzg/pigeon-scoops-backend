@@ -121,7 +121,7 @@
             (rr/created (str responses/base-url "/menus/" menu-id)
                         {:id menu-item-size-id}))
         (rr/bad-request {:type    "menu-mismatch"
-                         :message (str "menu-item does not belong to provided menu")
+                         :message "menu-item does not belong to provided menu"
                          :data    (str "menu-id " menu-id)})))))
 
 (defn update-menu-item-size! [db]
@@ -141,7 +141,7 @@
       (cond
         (not= menu-id (:menu-item/menu-id menu-item))
         (rr/bad-request {:type    "menu-mismatch"
-                         :message (str "menu-item does not belong to provided menu")
+                         :message "menu-item does not belong to provided menu"
                          :data    (str "menu-id " menu-id)})
         (menu-db/update-menu-item-size! db menu-item-size)
         (rr/status 204)
