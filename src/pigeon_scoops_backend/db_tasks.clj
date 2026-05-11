@@ -40,7 +40,6 @@
                     (map #(menu-db/update-menu! db (assoc % :menu/end-time (end-time (:menu/duration %)
                                                                                      (:menu/duration-type %)))))))))))
 
-
 (defmethod ig/init-key :db-tasks/migration [_ {:keys [jdbc-url]}]
   (fn []
     (println "\nMigrating database")
@@ -64,7 +63,6 @@
   (tt/cancel! task)
   (println "Stopping task scheduler")
   (tt/stop!))
-
 
 (defn -main
   [& args]
