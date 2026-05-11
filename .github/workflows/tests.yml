@@ -7,8 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
 
     env: # Environment variable for the entire job
@@ -31,6 +30,7 @@ jobs:
           TEST_CLIENT_ID: ${{ secrets.TEST_CLIENT_ID }}
         run: clojure -M:test
       - name: Cleanup test users
+        if: always()
         env:
           MANAGEMENT_CLIENT_ID: ${{ secrets.MANAGEMENT_CLIENT_ID }}
           MANAGEMENT_CLIENT_SECRET: ${{ secrets.MANAGEMENT_CLIENT_SECRET }}
