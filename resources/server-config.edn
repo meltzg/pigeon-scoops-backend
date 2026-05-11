@@ -5,4 +5,6 @@
  :db/postgres               {:jdbc-url "jdbc-url"}
  :auth/auth0                {:test-client-id           "test-client-id"
                              :management-client-id     "client-id"
-                             :management-client-secret "client-secret"}}
+                             :management-client-secret "client-secret"}
+ :db-tasks/scheduler        {:jdbc-url #ig/ref :db/postgres
+                             :accept-orders-interval-seconds 10800}}
