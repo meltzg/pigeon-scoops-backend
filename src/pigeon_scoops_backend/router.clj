@@ -15,6 +15,7 @@
             [reitit.ring.middleware.exception :as exception]
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.spec :as rs]
+            [ring.logger :refer [wrap-with-logger]]
             [reitit.swagger :as swagger]
             [reitit.swagger-ui :as swagger-ui]
             [ring.middleware.cors :refer [wrap-cors]]
@@ -50,22 +51,24 @@
           :handler (openapi/create-openapi-handler)}}])
 
 (defn routes [env]
-  (ring/ring-handler
-   (ring/router
-    [openapi-docs
-     ["/v1"
-      {:openapi {:security [{"auth" []}]}}
-      (grocery/routes env)
-      (recipe/routes env)
-      (menu/routes env)
-      (user-order/routes env)
-      (util-api/routes)
-      (account/routes env)]]
-    router-config)
-   (ring/routes
-    (swagger-ui/create-swagger-ui-handler
-     {:path   "/"
-      :config {:validatorUrl     nil
-               :urls             [{:name "openapi", :url "openapi.json"}]
-               :urls.primaryName "openapi"
-               :operationsSorter "alpha"}}))))
+  (wrap-with-logger
+   (ring/ring-handler
+    (ring/router
+     [openapi-docs
+      ["/v1"
+       {:openapi {:security [{"auth" []}]}}
+       (grocery/routes env)
+       (recipe/routes env)
+       (menu/routes env)
+       (user-order/routes env)
+       (util-api/routes)
+       (account/routes env)]]
+     router-config)
+    (ring/routes
+     (swagger-ui/create-swagger-ui-handler
+      {:path   "/"
+       :config {:validatorUrl     nil
+                :urls             [{:name "openapi", :url "openapi.json"}]
+                :urls.primaryName "openapi"
+                :operationsSorter "alpha"}})
+     (ring/create-default-handler)))))
