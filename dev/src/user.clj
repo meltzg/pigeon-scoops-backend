@@ -8,11 +8,12 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth :as auth0]
-            [pigeon-scoops-backend.db :as db]
-            [pigeon-scoops-backend.db-tasks]
+            [pigeon-scoops-backend.utils :refer [init-system load-config]]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [ring.mock.request :as mock]
             [clojure.pprint :refer [pprint]]
+            [pigeon-scoops-backend.db]
+            [pigeon-scoops-backend.db-tasks]
             [pigeon_scoops_backend.server])
   (:import (java.util UUID)
            (org.testcontainers.containers PostgreSQLContainer)))
@@ -278,13 +279,13 @@
                             (.withPassword "password")
                             (.start))))
    (let [task-system (-> "resources/db-task-config.edn"
-                         (db/load-config)
+                         (load-config)
                          (update-in [:db/postgres :jdbc-url] #(if (nil? %)
                                                                 (str (.getJdbcUrl @db-container)
                                                                      "&user=" (.getUsername @db-container)
                                                                      "&password=" (.getPassword @db-container))
                                                                 %))
-                         (db/init-system))
+                         (init-system))
          migration-task (:db-tasks/migration task-system)]
      (migration-task)
      (ig/halt! task-system))
