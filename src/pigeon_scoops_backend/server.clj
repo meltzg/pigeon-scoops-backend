@@ -1,6 +1,7 @@
 (ns pigeon-scoops-backend.server
   (:gen-class)
-  (:require [environ.core :refer [env]]
+  (:require [clojure.tools.logging :as log]
+            [environ.core :refer [env]]
             [integrant.core :as ig]
             [pigeon-scoops-backend.utils :refer [load-config init-system]]
             [pigeon-scoops-backend.router :as router]
@@ -14,14 +15,15 @@
                      {:port (Integer/parseInt port)}))})
 
 (defmethod ig/init-key :server/jetty [_ {:keys [handler port]}]
-  (println "\nServer running on port" port)
+  (log/info "Server running on port" port)
   (jetty/run-jetty handler {:port port :join? false}))
 
 (defmethod ig/init-key :server/routes [_ config]
-  (println "\nStarting app")
+  (log/info "Starting app")
   (router/routes config))
 
 (defmethod ig/halt-key! :server/jetty [_ ^Server jetty]
+  (log/info "Stopping server")
   (.stop jetty))
 
 (defn -main

@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.db
-  (:require [environ.core :refer [env]]
+  (:require [clojure.tools.logging :as log]
+            [environ.core :refer [env]]
             [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [next.jdbc.connection :as njc]
@@ -12,7 +13,7 @@
                      {:jdbc-url jdbc-url}))})
 
 (defmethod ig/init-key :db/postgres [_ {:keys [jdbc-url]}]
-  (println "\nConfigured DB")
+  (log/info "Configured DB")
   (extend-protocol rs/ReadableColumn
     Array
     (read-column-by-label [v _]
