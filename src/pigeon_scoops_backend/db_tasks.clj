@@ -2,6 +2,7 @@
   (:gen-class)
   (:require [clojure.java.io :as io]
             [clojure.tools.cli :as cli]
+            [clojure.tools.logging :as log]
             [integrant.core :as ig]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.db :as order-db]
@@ -18,7 +19,7 @@
     :parse-fn keyword]])
 
 (defn accept-orders! [jdbc-url]
-  (println "\nAccepting orders on expired menus at" (.toString (ZonedDateTime/now)))
+  (log/info "Accepting orders on expired menus at" (.toString (ZonedDateTime/now)))
   (with-connection
     jdbc-url
     (fn [db]
@@ -42,7 +43,7 @@
 
 (defmethod ig/init-key :db-tasks/migration [_ {:keys [jdbc-url]}]
   (fn []
-    (println "\nMigrating database")
+    (log/info "Migrating database")
     (-> (Flyway/configure)
         (.dataSource (:connectable jdbc-url))
         (.locations (into-array String ["classpath:db/migrations"]))
@@ -54,21 +55,21 @@
     (accept-orders! jdbc-url)))
 
 (defmethod ig/init-key :db-tasks/scheduler [_ {:keys [jdbc-url accept-orders-interval-seconds]}]
-  (println "Starting task scheduler")
+  (log/info "Starting task scheduler")
   (tt/start!)
   (tt/every! accept-orders-interval-seconds (bound-fn [] (accept-orders! jdbc-url))))
 
 (defmethod ig/halt-key! :db-tasks/scheduler [_ task]
-  (println "Stopping scheduled task")
+  (log/info "Stopping scheduled task")
   (tt/cancel! task)
-  (println "Stopping task scheduler")
+  (log/info "Stopping task scheduler")
   (tt/stop!))
 
 (defn -main
   [& args]
   (let [opts (cli/parse-opts args options)]
     (if (:errors opts)
-      (println (:errors opts))
+      (log/error (:errors opts))
       (let [system (-> opts
                        :options
                        :config-file
