@@ -145,6 +145,25 @@
       (let [{:keys [status]} (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" @order-item-id "/status")
                                                {:use-auth? true :body {:order-item/status :status/complete}})]
         (is (= status 204))))
+    (testing "cannot delete orders with items"
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id)
+                                               {:use-auth? true})]
+        (is (= status 400))))
+    (testing "can delete orders with no items"
+      (->> (ts/test-endpoint :get (str "/v1/orders/" @order-id) {:use-auth? true})
+           :body
+           :user-order/items
+           (map #(-> %
+                     :order-item/id
+                     ((fn [item-id]
+                        (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" item-id "/status")
+                                          {:use-auth? true :body {:order-item/status :status/draft}})
+                        (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items/" item-id)
+                                          {:use-auth? true})))))
+           (dorun))
+      (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id)
+                                               {:use-auth? true})]
+        (is (= status 204))))
     (let [{:keys [body]} (ts/test-endpoint :post "/v1/orders" {:use-auth? true :use-other-user true :body order})
           order-id (:id body)
           order-item-id (atom nil)]

@@ -40,7 +40,10 @@
                    :middleware [[(mw/wrap-with-permission :edit/order)]]
                    :parameters {:body {:user-order/note   string?}}
                    :responses  {204 {:body nil?}}
-                   :summary    "Update order"}}]
+                   :summary    "Update order"}
+          :delete {:handler    (order/delete-order! db)
+                   :responses  {204 {:body nil?}}
+                   :summary    "delete order"}}]
      ["/bom" {:get {:handler   (order/retrieve-order-bom db)
                     :responses {200 {:body [grocery-responses/grocery]}}
                     :summary   "Retrieve order bom"}}]

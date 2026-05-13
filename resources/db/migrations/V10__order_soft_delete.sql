@@ -1,0 +1,2 @@
+ALTER TABLE user_order
+    ADD COLUMN deleted BOOLEAN DEFAULT FALSE;

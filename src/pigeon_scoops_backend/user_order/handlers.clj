@@ -52,6 +52,21 @@
                        :message "order not found"
                        :data    (str "order-id " order-id)})))))
 
+(defn delete-order! [db]
+  (fn [request]
+    (let [order-id (-> request :parameters :path :order-id)
+          order (order-db/find-order-by-id db order-id)]
+      (cond
+        (not order) (rr/not-found {:type    "order-not-found"
+                                   :message "order not found"
+                                   :data    (str "order-id " order-id)})
+        (pos? (count (:user-order/items order))) (rr/bad-request {:type    "non-empty-order"
+                                                                  :message "Order can only be deleted if they have no items"
+                                                                  :data    (str "order-id " order-id)})
+        (order-db/delete-order! db order-id) (rr/status 204)
+        :else
+        (rr/status 500)))))
+
 (defn create-order-item! [db]
   (fn [request]
     (with-connection
