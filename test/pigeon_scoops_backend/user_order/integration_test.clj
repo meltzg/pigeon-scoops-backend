@@ -159,7 +159,8 @@
                         (ts/test-endpoint :patch (str "/v1/orders/" @order-id "/items/" item-id "/status")
                                           {:use-auth? true :body {:order-item/status :status/draft}})
                         (ts/test-endpoint :delete (str "/v1/orders/" @order-id "/items/" item-id)
-                                          {:use-auth? true}))))))
+                                          {:use-auth? true})))))
+           (dorun))
       (let [{:keys [status]} (ts/test-endpoint :delete (str "/v1/orders/" @order-id)
                                                {:use-auth? true})]
         (is (= status 204))))
