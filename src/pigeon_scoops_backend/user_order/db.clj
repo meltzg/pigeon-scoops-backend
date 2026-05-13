@@ -70,6 +70,11 @@
       ::jdbc/update-count
       (pos?)))
 
+(defn delete-order! [db order-id]
+  (-> (sql/update! db :user-order {:deleted true} {:user-order/id order-id})
+      ::jdbc/update-count
+      (pos?)))
+
 (defn insert-order-item! [db item]
   (sql/insert! db :order-item (apply-keyword->db-str item :order-item/status :order-item/amount-unit)))
 
