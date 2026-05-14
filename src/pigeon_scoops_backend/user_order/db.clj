@@ -33,9 +33,8 @@
          (let [orders (sql/find-by-keys
                        db
                        :user-order
-                       (if user-id
-                         {:user-order/user-id user-id}
-                         :all))
+                       (cond-> {:user-order/deleted false}
+                         user-id (assoc :user-order/user-id user-id)))
                order-items (->> orders
                                 (map :user-order/id)
                                 (apply (partial find-all-order-items db)))]
