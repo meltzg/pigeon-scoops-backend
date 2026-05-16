@@ -57,7 +57,7 @@
                              (not include-inactive?) (assoc :active true)
                              (not include-deleted?) (assoc :deleted false))))
                         (map #(apply-db-str->keyword % :menu/duration-type)))
-             menu-items (when detailed?
+             menu-items (when (and detailed? (seq menus))
                           (->> menus
                                (map :menu/id)
                                (apply (partial find-menu-items db))))]
