@@ -9,9 +9,8 @@
   (:import (java.util UUID)))
 
 (defn list-all-recipes [db]
-  (fn [request]
-    (let [uid (-> request :claims :sub)
-          recipes (->> (recipe-db/find-all-recipes db uid)
+  (fn [_]
+    (let [recipes (->> (recipe-db/find-all-recipes db false)
                        (map transforms/anonymize-mystery-recipe))]
       (rr/response (doall recipes)))))
 
