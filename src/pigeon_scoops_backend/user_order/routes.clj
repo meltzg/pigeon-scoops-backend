@@ -15,8 +15,9 @@
   [["/production" {:openapi {:tags ["production"]}
                    :middleware [[(mw/wrap-with-permission :manage/production)]]}
     ["" {:get {:handler (order/list-in-progress-items db)
+               :parameters {:query {(ds/opt :separate-sizes) boolean?}}
                :response [responses/order-item]
-               :summary "consolidate and list order items for in-progress orders"}}]
+               :summary "list order items for in-progress orders"}}]
     ["/:recipe-id" {:post {:handler (order/complete-orders-for-recipe db)
                            :parameters {:path {:recipe-id uuid?}}
                            :responses {204 {:body nil?}}
@@ -50,7 +51,7 @@
      ["/items" {:middleware [[(mw/wrap-with-permission :edit/order)]]}
       ["" {:post   {:handler    (order/create-order-item! db)
                     :parameters {:body {:order-item/recipe-id   uuid?
-                                        :order-item/amount      number?
+                                        :order-item/amount      pos?
                                         :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                              (keys mass/conversion-map)
                                                                                              (keys volume/conversion-map))))
@@ -61,7 +62,7 @@
        {:parameters {:path {:order-item-id uuid?}}}
        ["" {:patch    {:handler    (order/update-order-item! db)
                        :parameters {:body {:order-item/recipe-id   uuid?
-                                           :order-item/amount      number?
+                                           :order-item/amount      pos?
                                            :order-item/amount-unit (s/and keyword? (set (concat common/other-units
                                                                                                 (keys mass/conversion-map)
                                                                                                 (keys volume/conversion-map))))

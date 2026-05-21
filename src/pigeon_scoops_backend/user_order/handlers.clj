@@ -81,7 +81,7 @@
                              :menu-item/recipe-id
                              (menu-db/find-active-menu-items db))
                             recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes db)
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items db)
                                                           (map :menu-item/id active-items)))]
           (cond
             (not (or production-manager? (seq active-items)))
@@ -128,7 +128,7 @@
                              :menu-item/recipe-id
                              (menu-db/find-active-menu-items db))
                             recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes db)
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items db)
                                                           (map :menu-item/id active-items)))]
           (cond
             (not= curr-item-status :status/draft)
@@ -239,12 +239,19 @@
           (rr/response (vec grocery-bom)))))))
 
 (defn list-in-progress-items [db]
-  (fn [_]
-    (-> (order-db/find-all-items-by-status db :status/in-progress)
-        (combine-amounts :order-item/amount
-                         :order-item/amount-unit
-                         :order-item/recipe-id)
-        (rr/response))))
+  (fn [request]
+    (let [separate-sizes? (-> request :parameters :query :separate-sizes)]
+      (-> (order-db/find-all-items-by-status db :status/in-progress)
+          (combine-amounts :order-item/amount
+                           :order-item/amount-unit
+                           :order-item/recipe-id
+                           (when separate-sizes?
+                             :order-item/menu-item-size-id))
+          ((partial map #(apply dissoc % (concat [:order-item/id :order-item/order-id]
+                                                 (when-not separate-sizes?
+                                                   [:order-item/menu-item-size-id
+                                                    :order-item/menu-item-size-quantity])))))
+          (rr/response)))))
 
 (defn complete-orders-for-recipe [db]
   (fn [request]

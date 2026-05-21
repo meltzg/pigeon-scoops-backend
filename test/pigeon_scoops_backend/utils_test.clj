@@ -24,7 +24,15 @@
                                     :entity/amount-unit          :mass/kg}
                                    {:entity/entity-discriminant-key-2 "other stuff"
                                     :entity/amount               3
-                                    :entity/amount-unit          :mass/kg}]
+                                    :entity/amount-unit          :mass/kg}
+                                   {:entity/entity-discriminant-key-1 "good stuff"
+                                    :entity/entity-discriminant-key-2 "other stuff"
+                                    :entity/amount               2
+                                    :entity/amount-unit          :volume/gal}
+                                   {:entity/entity-discriminant-key-1 "good stuff"
+                                    :entity/entity-discriminant-key-2 "other stuff"
+                                    :entity/amount               2
+                                    :entity/amount-unit          :volume/qt}]
                                   :entity/amount
                                   :entity/amount-unit
                                   :entity/entity-discriminant-key-1
@@ -40,4 +48,8 @@
              :entity/amount-unit          :mass/kg}
             {:entity/entity-discriminant-key-2 "other stuff"
              :entity/amount               6
-             :entity/amount-unit          :mass/kg}]))))
+             :entity/amount-unit          :mass/kg}
+            {:entity/entity-discriminant-key-1 "good stuff"
+             :entity/entity-discriminant-key-2 "other stuff"
+             :entity/amount               2.5
+             :entity/amount-unit          :volume/gal}]))))
