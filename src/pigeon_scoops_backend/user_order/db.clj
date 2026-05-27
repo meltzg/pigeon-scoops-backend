@@ -7,24 +7,50 @@
                                                  apply-keyword->db-str
                                                  keyword->db-str
                                                  with-connection]]
+            [pigeon-scoops-backend.units.common :refer [reduce-amounts]]
+            [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.transforms :refer [infer-order-status]]))
 
+(defn assoc-item-size-quantity [db & order-items]
+  (let [menu-item-sizes (->> order-items
+                             (map :order-item/menu-item-size-id)
+                             (set)
+                             (apply (partial menu-db/find-menu-item-sizes db))
+                             (map #(vector (:menu-item-size/id %) %))
+                             (into {}))]
+    (map #(let [menu-item-size (get menu-item-sizes (:order-item/menu-item-size-id %))]
+            (if menu-item-size
+              (assoc % :order-item/menu-item-size-quantity
+                     (first
+                      (reduce-amounts /
+                                      (:order-item/amount %)
+                                      (:order-item/amount-unit %)
+                                      (:menu-item-size/amount menu-item-size)
+                                      (:menu-item-size/amount-unit menu-item-size))))
+              %))
+         order-items)))
+
 (defn find-all-order-items [db order-id & order-ids]
-  (->> (conj order-ids order-id)
-       (#(sql/query db (-> (h/select :order-item/*)
-                           (h/from :order-item)
-                           (h/where [:in :order-item/order-id %])
-                           (hsql/format))))
-       (map #(apply-db-str->keyword % :order-item/status :order-item/amount-unit))
-       (group-by :order-item/order-id)))
+  (with-connection
+    db (fn [db]
+         (->> (conj order-ids order-id)
+              (#(sql/query db (-> (h/select :order-item/*)
+                                  (h/from :order-item)
+                                  (h/where [:in :order-item/order-id %])
+                                  (hsql/format))))
+              (map #(apply-db-str->keyword % :order-item/status :order-item/amount-unit))
+              (apply (partial assoc-item-size-quantity db))
+              (group-by :order-item/order-id)))))
 
 (defn find-all-items-by-status [db status]
-  (map #(apply-db-str->keyword %
-                               :order-item/status :order-item/amount-unit)
-       (sql/query db (-> (h/select :order-item/*)
-                         (h/from :order-item)
-                         (h/where [:= :order-item/status (keyword->db-str status)])
-                         (hsql/format)))))
+  (with-connection
+    db (fn [db]
+         (->> (sql/query db (-> (h/select :order-item/*)
+                                (h/from :order-item)
+                                (h/where [:= :order-item/status (keyword->db-str status)])
+                                (hsql/format)))
+              (map #(apply-db-str->keyword % :order-item/status :order-item/amount-unit))
+              (apply (partial assoc-item-size-quantity db))))))
 
 (defn find-all-orders
   [db user-id detailed?]
@@ -57,9 +83,12 @@
                  (apply-db-str->keyword :user-order/amount-unit :user-order/status)))))))
 
 (defn find-order-item-by-id [db order-item-id]
-  (-> (sql/find-by-keys db :order-item {:id order-item-id})
-      (first)
-      (apply-db-str->keyword :order-item/status :order-item/amount-unit)))
+  (with-connection
+    db (fn [db]
+         (->> (sql/find-by-keys db :order-item {:id order-item-id})
+              (map #(apply-db-str->keyword % :order-item/status :order-item/amount-unit))
+              (apply (partial assoc-item-size-quantity db))
+              (first)))))
 
 (defn insert-order! [db order]
   (sql/insert! db :user-order (apply-keyword->db-str order :user-order/amount-unit)))

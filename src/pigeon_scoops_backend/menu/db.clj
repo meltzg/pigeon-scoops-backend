@@ -129,10 +129,19 @@
            (hsql/format))
        (sql/query db)))
 
-(defn find-menu-item-sizes [db & menu-item-ids]
+(defn find-menu-item-sizes-by-items [db & menu-item-ids]
   (->> (-> (h/select :menu-item-size/*)
            (h/from :menu-item-size)
            (h/where [:in :menu-item-id menu-item-ids])
            (hsql/format))
        (sql/query db)
        (map #(apply-db-str->keyword % :menu-item-size/amount-unit))))
+
+(defn find-menu-item-sizes [db & menu-item-size-ids]
+  (when (seq menu-item-size-ids)
+    (->> menu-item-size-ids
+         (#(sql/query db (-> (h/select :menu-item-size/*)
+                             (h/from :menu-item-size)
+                             (h/where [:in :menu-item-size/id %])
+                             (hsql/format))))
+         (map #(apply-db-str->keyword % :menu-item-size/amount-unit)))))

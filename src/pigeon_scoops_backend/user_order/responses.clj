@@ -16,16 +16,17 @@
   (#{:status/complete :status/in-progress} s))
 
 (def order-item
-  {:order-item/id                   uuid?
+  {(ds/opt :order-item/id)                   uuid?
    :order-item/recipe-id            uuid?
-   :order-item/order-id             uuid?
+   (ds/opt :order-item/order-id)             uuid?
    :order-item/status               (s/and keyword? (set status))
-   (ds/opt :order-item/amount)      number?
+   (ds/opt :order-item/amount)      pos?
    (ds/opt :order-item/amount-unit) (s/and keyword?
                                            (set (concat common/other-units
                                                         (keys mass/conversion-map)
                                                         (keys volume/conversion-map))))
-   (ds/opt :order-item/menu-item-size-id) uuid?})
+   (ds/opt :order-item/menu-item-size-id) uuid?
+   (ds/opt :order-item/menu-item-size-quantity) pos?})
 
 (def order
   {:user-order/id             uuid?

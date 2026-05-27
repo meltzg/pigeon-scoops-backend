@@ -101,10 +101,11 @@
         menu-item-id (get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items")
                                                {:use-auth? true :body {:menu-item/recipe-id recipe-id}})
                              [:body :id])
-        _ (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
-                            {:use-auth? true :body {:menu-item-size/menu-item-id menu-item-id
-                                                    :menu-item-size/amount       1
-                                                    :menu-item-size/amount-unit  :volume/pt}})]
+        menu-item-size-id (get-in (ts/test-endpoint :post (str "/v1/menus/" menu-id "/items/" menu-item-id "/sizes")
+                                                    {:use-auth? true :body {:menu-item-size/menu-item-id menu-item-id
+                                                                            :menu-item-size/amount       1
+                                                                            :menu-item-size/amount-unit  :volume/pt}})
+                                  [:body :id])]
     (testing "create order"
       (let [{:keys [status body]} (ts/test-endpoint :post "/v1/orders" {:use-auth? true :body order})]
         (reset! order-id (:id body))
@@ -169,9 +170,19 @@
           order-item-id (atom nil)]
       (testing "other user can create order item for active recipe"
         (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
-                                                      {:use-auth? true :use-other-user true :body (assoc order-item :order-item/recipe-id recipe-id)})]
+                                                      {:use-auth? true :use-other-user true
+                                                       :body
+                                                       (assoc order-item :order-item/recipe-id recipe-id
+                                                              :order-item/menu-item-size-id menu-item-size-id)})
+              {order-body :body} (ts/test-endpoint :get (str "/v1/orders/" order-id)
+                                                   {:use-auth? true :use-other-user true})]
           (reset! order-item-id (:id body))
-          (is (= status 201) (str body))))
+          (is (= status 201) (str body))
+          (is (= (-> order-body
+                     :user-order/items
+                     (first)
+                     :order-item/menu-item-size-quantity)
+                 2.0))))
       (testing "other user cannot create order-item for recipe not in an active menu"
         (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/orders/" order-id "/items")
                                                       {:use-auth?           true
