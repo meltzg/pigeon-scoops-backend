@@ -41,11 +41,13 @@
 
 (defn insert-recipe! [db recipe]
   (sql/insert! db :recipe (-> recipe
+                              (dissoc :recipe/ingredients)
                               (apply-keyword->db-str :recipe/amount-unit)
                               (assoc :recipe/instructions (into-array String (:recipe/instructions recipe))))))
 
 (defn update-recipe! [db recipe]
   (-> (sql/update! db :recipe (-> recipe
+                                  (dissoc :recipe/ingredients)
                                   (apply-keyword->db-str :recipe/amount-unit)
                                   (update :recipe/instructions (partial into-array String)))
                    (select-keys recipe [:recipe/id]))

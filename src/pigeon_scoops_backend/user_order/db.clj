@@ -91,10 +91,15 @@
               (first)))))
 
 (defn insert-order! [db order]
-  (sql/insert! db :user-order (apply-keyword->db-str order :user-order/amount-unit)))
+  (sql/insert! db :user-order (-> order
+                                  (dissoc :user-order/items)
+                                  (apply-keyword->db-str :user-order/amount-unit))))
 
 (defn update-order! [db order]
-  (-> (sql/update! db :user-order (apply-keyword->db-str order :user-order/amount-unit) (select-keys order [:user-order/id]))
+  (-> (sql/update! db :user-order (-> order
+                                      (dissoc :user-order/items)
+                                      (apply-keyword->db-str :user-order/amount-unit))
+                   (select-keys order [:user-order/id]))
       ::jdbc/update-count
       (pos?)))
 
@@ -121,9 +126,9 @@
 
 (defn bulk-status-update! [db status-update-map & recipe-ids]
   (jdbc/with-transaction
-    [tx db]
+    [db db]
     (mapv (fn [[from to]]
-            (sql/query tx (-> (h/update :order-item)
+            (sql/query db (-> (h/update :order-item)
                               (h/set {:order-item/status (keyword->db-str to)})
                               (h/where [:in :order-item/recipe-id recipe-ids]
                                        [:= :order-item/status (keyword->db-str from)])

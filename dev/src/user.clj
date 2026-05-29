@@ -287,6 +287,9 @@
                                                                 %))
                          (init-system))
          migration-task (:db-tasks/migration task-system)]
+     (println "JDBC-URI:" (str (.getJdbcUrl @db-container)
+                               "&user=" (.getUsername @db-container)
+                               "&password=" (.getPassword @db-container)))
      (migration-task)
      (ig/halt! task-system))
    (-> "dev/resources/server-config.edn"
