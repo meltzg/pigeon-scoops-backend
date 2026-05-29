@@ -33,10 +33,14 @@
               (assoc :grocery/units units)))))))
 
 (defn insert-grocery! [db grocery]
-  (sql/insert! db :grocery (apply-keyword->db-str grocery :grocery/department)))
+  (sql/insert! db :grocery (-> grocery
+                               (dissoc :grocery/units)
+                               (apply-keyword->db-str :grocery/department))))
 
 (defn update-grocery! [db grocery]
-  (-> (sql/update! db :grocery (apply-keyword->db-str grocery :grocery/department)
+  (-> (sql/update! db :grocery (-> grocery
+                                   (dissoc :grocery/units)
+                                   (apply-keyword->db-str :grocery/department))
                    (select-keys grocery [:grocery/id]))
       ::jdbc/update-count
       (pos?)))
