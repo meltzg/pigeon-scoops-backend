@@ -6,14 +6,14 @@
             [pigeon-scoops-backend.recipe.transforms :as transforms]
             [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
                                                  apply-keyword->db-str
-                                                 with-connection
+                                                 with-connection!
                                                  combine-amounts]]))
 
-(defn find-all-recipes
+(defn find-all-recipes!
   ([db]
-   (find-all-recipes db false))
+   (find-all-recipes! db false))
   ([db include-deleted?]
-   (with-connection
+   (with-connection!
      db
      (fn [db]
        (map #(apply-db-str->keyword % :recipe/amount-unit)
@@ -22,8 +22,8 @@
                                 :all
                                 {:deleted false})))))))
 
-(defn find-recipe-by-id [db recipe-id]
-  (with-connection
+(defn find-recipe-by-id! [db recipe-id]
+  (with-connection!
     db
     (fn [db]
       (let [[recipe] (sql/find-by-keys db :recipe {:id recipe-id})
@@ -79,8 +79,8 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn ingredient-bom [db {:recipe/keys [id amount amount-unit]}]
-  (with-connection
+(defn ingredient-bom! [db {:recipe/keys [id amount amount-unit]}]
+  (with-connection!
     db
     (fn [db]
       (loop [curr-recipe-ingredients [{:ingredient/ingredient-recipe-id id
@@ -96,7 +96,7 @@
           (let [{:ingredient/keys [ingredient-recipe-id amount amount-unit]} (first curr-recipe-ingredients)
                 {:keys [recipe-ingredients grocery-ingredients]}
                 (->> (transforms/scale-recipe
-                      (find-recipe-by-id db ingredient-recipe-id)
+                      (find-recipe-by-id! db ingredient-recipe-id)
                       amount
                       amount-unit)
                      :recipe/ingredients

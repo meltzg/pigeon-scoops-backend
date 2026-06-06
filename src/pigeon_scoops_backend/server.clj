@@ -3,7 +3,7 @@
   (:require [clojure.tools.logging :as log]
             [environ.core :refer [env]]
             [integrant.core :as ig]
-            [pigeon-scoops-backend.utils :refer [load-config init-system]]
+            [pigeon-scoops-backend.utils :refer [load-config! init-system!]]
             [pigeon-scoops-backend.router :as router]
             [ring.adapter.jetty :as jetty]
             [pigeon-scoops-backend.db]
@@ -29,5 +29,5 @@
 (defn -main
   [config-file & _]
   (-> config-file
-      (load-config)
-      (init-system)))
+      (load-config!)
+      (init-system!)))

@@ -2,14 +2,14 @@
   (:require [integrant.core :as ig]
             [next.jdbc :as jdbc]
             [pigeon-scoops-backend.units.common :as common])
-  (:import (java.time Duration ZonedDateTime)))
+  (:import (java.time Duration)))
 
-(defn load-config [config-file]
+(defn load-config! [config-file]
   (-> config-file
       (slurp)
       (ig/read-string)))
 
-(defn init-system [config]
+(defn init-system! [config]
   (-> config
       (ig/expand)
       (ig/init)))
@@ -30,7 +30,7 @@
               acc))
           entity keys))
 
-(defn with-connection [db f]
+(defn with-connection! [db f]
   (try
     (with-open [conn (jdbc/get-connection db)]
       (let [db (jdbc/with-options conn (:options db))]
@@ -38,12 +38,11 @@
     (catch IllegalArgumentException _
       (f db))))
 
-(defn end-time [duration duration-type]
-  (let [now (ZonedDateTime/now)]
-    (case duration-type
-      :duration/day (.plus now (Duration/ofDays duration))
-      :duration/week (.plusWeeks now duration)
-      :duration/month (.plusMonths now duration))))
+(defn end-time [now duration duration-type]
+  (case duration-type
+    :duration/day (.plus now (Duration/ofDays duration))
+    :duration/week (.plusWeeks now duration)
+    :duration/month (.plusMonths now duration)))
 
 (defn remove-nil-keys [value]
   (cond (map? value)

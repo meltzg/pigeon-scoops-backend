@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.user-order.handlers
-  (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id]]
+  (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id!]]
             [pigeon-scoops-backend.grocery.transforms :refer [grocery-for-amount]]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.recipe.db :as recipe-db]
@@ -7,7 +7,7 @@
             [pigeon-scoops-backend.units.common :as units]
             [pigeon-scoops-backend.user-order.db :as order-db]
             [pigeon-scoops-backend.user-order.responses :refer [terminal?]]
-            [pigeon-scoops-backend.utils :refer [with-connection production-manager? combine-amounts]]
+            [pigeon-scoops-backend.utils :refer [with-connection! production-manager? combine-amounts]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
@@ -18,7 +18,7 @@
           uid (when-not (and admin-request?
                              production-manager?)
                 (-> request :claims :sub))]
-      (rr/response (vec (order-db/find-all-orders db uid detailed?))))))
+      (rr/response (vec (order-db/find-all-orders! db uid detailed?))))))
 
 (defn create-order! [db]
   (fn [request]
@@ -34,7 +34,7 @@
 (defn retrieve-order [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
-          order (order-db/find-order-by-id db order-id)]
+          order (order-db/find-order-by-id! db order-id)]
       (if order
         (rr/response (update order :user-order/items vec))
         (rr/not-found {:type    "order-not-found"
@@ -55,7 +55,7 @@
 (defn delete-order! [db]
   (fn [request]
     (let [order-id (-> request :parameters :path :order-id)
-          order (order-db/find-order-by-id db order-id)]
+          order (order-db/find-order-by-id! db order-id)]
       (cond
         (not order) (rr/not-found {:type    "order-not-found"
                                    :message "order not found"
@@ -69,7 +69,7 @@
 
 (defn create-order-item! [db]
   (fn [request]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [order-id (-> request :parameters :path :order-id)
@@ -79,9 +79,9 @@
               active-items (get
                             (group-by
                              :menu-item/recipe-id
-                             (menu-db/find-active-menu-items db))
+                             (menu-db/find-active-menu-items! db))
                             recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items db)
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items! db)
                                                           (map :menu-item/id active-items)))]
           (cond
             (not (or production-manager? (seq active-items)))
@@ -108,7 +108,7 @@
 
 (defn update-order-item! [db]
   (fn [request]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [{:keys [order-id order-item-id]} (-> request
@@ -121,14 +121,14 @@
                                 :order-item/id order-item-id
                                 :order-item/order-id order-id)
               curr-item-status (->> order-item-id
-                                    (order-db/find-order-item-by-id db)
+                                    (order-db/find-order-item-by-id! db)
                                     :order-item/status)
               active-items (get
                             (group-by
                              :menu-item/recipe-id
-                             (menu-db/find-active-menu-items db))
+                             (menu-db/find-active-menu-items! db))
                             recipe-id)
-              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items db)
+              active-item-sizes (when active-items (apply (partial menu-db/find-menu-item-sizes-by-items! db)
                                                           (map :menu-item/id active-items)))]
           (cond
             (not= curr-item-status :status/draft)
@@ -156,7 +156,7 @@
 
 (defn update-order-item-status! [db]
   (fn [request]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [{:keys [order-id order-item-id]} (-> request
@@ -169,7 +169,7 @@
                              :order-item/status)
               production-manager? (production-manager? request)
               curr-item-status (->> order-item-id
-                                    (order-db/find-order-item-by-id db)
+                                    (order-db/find-order-item-by-id! db)
                                     :order-item/status)
               patch {:order-item/id order-item-id
                      :order-item/order-id order-id
@@ -194,7 +194,7 @@
 
 (defn delete-order-item! [db]
   (fn [request]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [{:keys [order-id order-item-id]} (-> request
@@ -202,7 +202,7 @@
                                                    :path
                                                    (select-keys [:order-id :order-item-id]))
               order-item-status (->> order-item-id
-                                     (order-db/find-order-item-by-id db)
+                                     (order-db/find-order-item-by-id! db)
                                      :order-item/status)]
           (cond
             (terminal? order-item-status)
@@ -216,22 +216,22 @@
 
 (defn retrieve-order-bom [db]
   (fn [request]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [order-id (-> request :parameters :path :order-id)
-              {:user-order/keys [items]} (order-db/find-order-by-id db order-id)
+              {:user-order/keys [items]} (order-db/find-order-by-id! db order-id)
               grocery-bom (->> items
-                               (mapcat #(recipe-db/ingredient-bom db {:recipe/id          (:order-item/recipe-id %)
-                                                                      :recipe/amount      (:order-item/amount %)
-                                                                      :recipe/amount-unit (:order-item/amount-unit %)}))
+                               (mapcat #(recipe-db/ingredient-bom! db {:recipe/id          (:order-item/recipe-id %)
+                                                                       :recipe/amount      (:order-item/amount %)
+                                                                       :recipe/amount-unit (:order-item/amount-unit %)}))
                                (#(combine-amounts %
                                                   :ingredient/amount
                                                   :ingredient/amount-unit
                                                   :ingredient/ingredient-recipe-id
                                                   :ingredient/ingredient-grocery-id))
                                (map #(update (grocery-for-amount
-                                              (find-grocery-by-id db (:ingredient/ingredient-grocery-id %))
+                                              (find-grocery-by-id! db (:ingredient/ingredient-grocery-id %))
                                               (:ingredient/amount %)
                                               (:ingredient/amount-unit %))
                                              :grocery/units
@@ -241,7 +241,7 @@
 (defn list-in-progress-items [db]
   (fn [request]
     (let [separate-sizes? (-> request :parameters :query :separate-sizes)]
-      (-> (order-db/find-all-items-by-status db :status/in-progress)
+      (-> (order-db/find-all-items-by-status! db :status/in-progress)
           (combine-amounts :order-item/amount
                            :order-item/amount-unit
                            :order-item/recipe-id
@@ -253,7 +253,7 @@
                                                     :order-item/menu-item-size-quantity])))))
           (rr/response)))))
 
-(defn complete-orders-for-recipe [db]
+(defn complete-orders-for-recipe! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)]
       (order-db/bulk-status-update! db {:status/in-progress :status/complete} recipe-id))

@@ -18,7 +18,7 @@
                :parameters {:query {(ds/opt :separate-sizes) boolean?}}
                :response [responses/order-item]
                :summary "list order items for in-progress orders"}}]
-    ["/:recipe-id" {:post {:handler (order/complete-orders-for-recipe db)
+    ["/:recipe-id" {:post {:handler (order/complete-orders-for-recipe! db)
                            :parameters {:path {:recipe-id uuid?}}
                            :responses {204 {:body nil?}}
                            :summary "mark all in progress items for this recipe as complete"}}]]
@@ -33,7 +33,7 @@
                 :parameters {:body {:user-order/note string?}}
                 :responses  {201 {:body {:id uuid?}}}}}]
     ["/:order-id" {:parameters {:path {:order-id uuid?}}
-                   :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id production-manager?) db]]}
+                   :middleware [[(mw/wrap-owner :order-id :user-order order-db/find-order-by-id! production-manager?) db]]}
      ["" {:get    {:handler   (order/retrieve-order db)
                    :responses {200 {:body responses/order}}
                    :summary   "Retrieve order"}

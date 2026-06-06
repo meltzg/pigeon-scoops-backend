@@ -5,11 +5,11 @@
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
                                                  apply-keyword->db-str
-                                                 with-connection]])
+                                                 with-connection!]])
   (:import (java.sql Timestamp)))
 
-(defn find-menu-items [db menu-id & menu-ids]
-  (with-connection
+(defn find-menu-items! [db menu-id & menu-ids]
+  (with-connection!
     db
     (fn [db]
       (let [menu-ids (conj menu-ids menu-id)
@@ -30,22 +30,22 @@
              (map #(assoc % :menu-item/sizes (get menu-item-sizes (:menu-item/id %) [])))
              (group-by :menu-item/menu-id))))))
 
-(defn find-menu-item-by-id [db menu-item-id]
-  (with-connection
+(defn find-menu-item-by-id! [db menu-item-id]
+  (with-connection!
     db
     (fn [db]
       (when-let [[item] (sql/find-by-keys db :menu-item {:id menu-item-id})]
         (assoc item :menu-item/sizes (sql/find-by-keys db :menu-item-size {:menu-item-id menu-item-id}))))))
 
-(defn find-all-menus
+(defn find-all-menus!
   ([db]
-   (find-all-menus db false false false))
+   (find-all-menus! db false false false))
   ([db include-inactive?]
-   (find-all-menus db include-inactive? false false))
+   (find-all-menus! db include-inactive? false false))
   ([db include-inactive? detailed?]
-   (find-all-menus db include-inactive? detailed? false))
+   (find-all-menus! db include-inactive? detailed? false))
   ([db include-inactive? detailed? include-deleted?]
-   (with-connection
+   (with-connection!
      db
      (fn [db]
        (let [menus (->> (sql/find-by-keys
@@ -60,7 +60,7 @@
              menu-items (when (and detailed? (seq menus))
                           (->> menus
                                (map :menu/id)
-                               (apply (partial find-menu-items db))))]
+                               (apply (partial find-menu-items! db))))]
          (mapv #(assoc % :menu/items (get menu-items (:menu/id %)))
                menus))))))
 
@@ -71,13 +71,13 @@
                    (apply-keyword->db-str :menu/duration-type)
                    (update :menu/end-time #(when % (Timestamp/from (.toInstant %)))))))
 
-(defn find-menu-by-id [db menu-id]
-  (with-connection
+(defn find-menu-by-id! [db menu-id]
+  (with-connection!
     db
     (fn [db]
       (when-let [[menu] (sql/find-by-keys db :menu {:menu/id menu-id})]
         (-> menu
-            (assoc :menu/items (get (find-menu-items db menu-id) menu-id))
+            (assoc :menu/items (get (find-menu-items! db menu-id) menu-id))
             (apply-db-str->keyword :menu/duration-type))))))
 
 (defn update-menu! [db menu]
@@ -126,7 +126,7 @@
       ::jdbc/update-count
       (pos?)))
 
-(defn find-active-menu-items [db]
+(defn find-active-menu-items! [db]
   (->> (-> (h/select :menu-item/*)
            (h/from :menu-item)
            (h/join :menu [:= :menu/id :menu-item/menu-id])
@@ -134,7 +134,7 @@
            (hsql/format))
        (sql/query db)))
 
-(defn find-menu-item-sizes-by-items [db & menu-item-ids]
+(defn find-menu-item-sizes-by-items! [db & menu-item-ids]
   (->> (-> (h/select :menu-item-size/*)
            (h/from :menu-item-size)
            (h/where [:in :menu-item-id menu-item-ids])
@@ -142,7 +142,7 @@
        (sql/query db)
        (map #(apply-db-str->keyword % :menu-item-size/amount-unit))))
 
-(defn find-menu-item-sizes [db & menu-item-size-ids]
+(defn find-menu-item-sizes! [db & menu-item-size-ids]
   (when (seq menu-item-size-ids)
     (->> menu-item-size-ids
          (#(sql/query db (-> (h/select :menu-item-size/*)

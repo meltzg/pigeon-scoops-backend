@@ -3,30 +3,30 @@
             [next.jdbc.sql :as sql]
             [pigeon-scoops-backend.utils :refer [apply-db-str->keyword
                                                  apply-keyword->db-str
-                                                 with-connection]]))
+                                                 with-connection!]]))
 
-(defn find-all-grocery-units [db grocery-id]
+(defn find-all-grocery-units! [db grocery-id]
   (map #(apply-db-str->keyword %
                                :grocery-unit/unit-common-type
                                :grocery-unit/unit-mass-type
                                :grocery-unit/unit-volume-type)
        (sql/find-by-keys db :grocery-unit {:grocery-id grocery-id})))
 
-(defn find-all-groceries
+(defn find-all-groceries!
   ([db]
-   (find-all-groceries db false))
+   (find-all-groceries! db false))
   ([db include-deleted?]
    (map #(apply-db-str->keyword % :grocery/department)
         (sql/find-by-keys db :grocery (if include-deleted?
                                         :all
                                         {:deleted false})))))
 
-(defn find-grocery-by-id [db grocery-id]
-  (with-connection
+(defn find-grocery-by-id! [db grocery-id]
+  (with-connection!
     db
     (fn [db]
       (let [[grocery] (sql/find-by-keys db :grocery {:id grocery-id})
-            units (find-all-grocery-units db grocery-id)]
+            units (find-all-grocery-units! db grocery-id)]
         (when (seq grocery)
           (-> grocery
               (apply-db-str->keyword :grocery/department)

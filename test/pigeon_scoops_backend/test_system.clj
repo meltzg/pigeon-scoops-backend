@@ -7,7 +7,7 @@
             [integrant.repl.state :as state]
             [muuntaja.core :as m]
             [pigeon-scoops-backend.auth :as auth0]
-            [pigeon-scoops-backend.utils :refer [load-config init-system]]
+            [pigeon-scoops-backend.utils :refer [load-config! init-system!]]
             [pigeon-scoops-backend.db-tasks]
             [ring.mock.request :as mock]
             [clojure.java.io :as io]
@@ -22,7 +22,7 @@
 (def test-users (atom nil))
 (def test-users-file "dev/resources/test-users.edn")
 
-(defn get-test-token [{:keys [test-client-id username password]}]
+(defn get-test-token! [{:keys [test-client-id username password]}]
   (->> {:content-type  :json
         :cookie-policy :standard
         :body          (m/encode "application/json"
@@ -44,8 +44,8 @@
          auth (-> state/system :auth/auth0)
          token (or (if use-other-user (second @tokens) (first @tokens))
                    (if use-other-user
-                     (get-test-token (conj auth (second @test-users)))
-                     (get-test-token (conj auth (first @test-users)))))
+                     (get-test-token! (conj auth (second @test-users)))
+                     (get-test-token! (conj auth (first @test-users)))))
          request (-> (mock/request method uri params)
                      (cond-> use-auth? (mock/header :authorization (str "Bearer " token))
                              body (mock/json-body body)))
@@ -109,16 +109,16 @@
                    (ig-repl/set-prep!
                     (fn []
                       (let [task-system (-> "resources/db-task-config.edn"
-                                            (load-config)
+                                            (load-config!)
                                             (assoc-in [:db/postgres :jdbc-url] full-uri)
-                                            (init-system))
+                                            (init-system!))
                             migration-task (:db-tasks/migration task-system)]
                         (migration-task)
                         (ig/halt! task-system)
                         (-> (if (env :ci-env)
                               "resources/server-config.edn"
                               "dev/resources/server-config.edn")
-                            (load-config)
+                            (load-config!)
                             (assoc-in [:db/postgres :jdbc-url] full-uri)
                             (assoc-in [:server/jetty :port] port)
                             (assoc-in [:auth/auth0 :skip-auth0-delete?] true)
@@ -158,7 +158,7 @@
                                                 passwords
                                                 create-responses))))
                    (spit test-users-file (with-out-str (pprint @test-users)))
-                   (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))
+                   (reset! tokens (mapv #(get-test-token! (conj auth %)) @test-users))
                    (when manage-user?
                      (mapv #(test-endpoint :post "/v1/account" {:use-auth? true :retry-status 401 :use-other-user %}) [true false]))))
      :teardown #(Thread/sleep 2000)
@@ -178,7 +178,7 @@
                             (Thread/sleep 500)))
                         @test-users
                         roles-per-user))
-                  (reset! tokens (mapv #(get-test-token (conj auth %)) @test-users))))
+                  (reset! tokens (mapv #(get-test-token! (conj auth %)) @test-users))))
 
     :teardown #(reset! tokens nil)
     :msg      "make roles failed"}))
