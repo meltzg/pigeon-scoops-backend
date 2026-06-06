@@ -36,7 +36,7 @@
                              :message "Both amount and amount-unit must be specified or nil"
                              :data    {:amount amount :amount-unit amount-unit}})
             (not recipe)
-            (rr/not-found {:tyananonymize-mystery-recipeoanonymize-mystery-recipenanonymize-mystery-recipeanonymize-mystery-recipeymize-mystery-recipepe    "recipe-not-found"
+            (rr/not-found {:type    "recipe-not-found"
                            :message "Recipe not found"
                            :data    (str "recipe-id " recipe-id)})
             (and (every? some? [amount amount-unit])

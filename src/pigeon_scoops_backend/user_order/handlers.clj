@@ -253,7 +253,7 @@
                                                     :order-item/menu-item-size-quantity])))))
           (rr/response)))))
 
-(defn complete-orders-for-recipe [db]
+(defn complete-orders-for-recipe! [db]
   (fn [request]
     (let [recipe-id (-> request :parameters :path :recipe-id)]
       (order-db/bulk-status-update! db {:status/in-progress :status/complete} recipe-id))

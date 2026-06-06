@@ -1,5 +1,5 @@
 (ns pigeon-scoops-backend.recipe.transforms-test
-  (:require [clojure.test :refer [are deftest testing]]
+  (:require [clojure.test :refer [are deftest is testing]]
             [pigeon-scoops-backend.recipe.transforms :as transforms]))
 
 (def recipe
@@ -14,6 +14,20 @@
                          {:ingredient/id          "bar"
                           :ingredient/amount      2
                           :ingredient/amount-unit :common/unit}]})
+
+(deftest anonymize-mystery-recipe-test
+  (testing "non-mystery recipe is returned unchanged"
+    (is (= recipe (transforms/anonymize-mystery-recipe recipe))))
+  (testing "nil is returned unchanged"
+    (is (nil? (transforms/anonymize-mystery-recipe nil))))
+  (testing "mystery recipe hides name, description, and removes instructions and ingredients"
+    (let [mystery (assoc recipe :recipe/is-mystery true
+                         :recipe/description "secret")
+          result  (transforms/anonymize-mystery-recipe mystery)]
+      (is (= "?????" (:recipe/name result)))
+      (is (= "?????" (:recipe/description result)))
+      (is (not (contains? result :recipe/instructions)))
+      (is (not (contains? result :recipe/ingredients))))))
 
 (deftest scale-recipe-test
   (testing "A recipe can be scaled up and down"

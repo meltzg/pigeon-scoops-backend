@@ -1,6 +1,85 @@
 (ns pigeon-scoops-backend.utils-test
-  (:require [clojure.test :refer [deftest is testing]]
-            [pigeon-scoops-backend.utils :as utils]))
+  (:require [clojure.test :refer [are deftest is testing]]
+            [pigeon-scoops-backend.utils :as utils])
+  (:import (java.time ZonedDateTime)))
+
+(deftest keyword->db-str-test
+  (testing "converts a keyword to its string representation without the leading colon"
+    (are [k expected] (= (utils/keyword->db-str k) expected)
+      :foo/bar "foo/bar"
+      :mass/kg "mass/kg"
+      :status/draft "status/draft")))
+
+(deftest apply-db-str->keyword-test
+  (testing "converts specified string keys to keywords"
+    (is (= {:entity/type :mass/kg :entity/name "flour"}
+           (utils/apply-db-str->keyword {:entity/type "mass/kg" :entity/name "flour"}
+                                        :entity/type))))
+  (testing "leaves keys absent from the entity unchanged"
+    (is (= {:entity/name "flour"}
+           (utils/apply-db-str->keyword {:entity/name "flour"} :entity/type))))
+  (testing "applies conversion to multiple keys"
+    (is (= {:entity/type :mass/kg :entity/unit :mass/g}
+           (utils/apply-db-str->keyword {:entity/type "mass/kg" :entity/unit "mass/g"}
+                                        :entity/type :entity/unit)))))
+
+(deftest apply-keyword->db-str-test
+  (testing "converts specified keyword keys to strings"
+    (is (= {:entity/type "mass/kg" :entity/name "flour"}
+           (utils/apply-keyword->db-str {:entity/type :mass/kg :entity/name "flour"}
+                                        :entity/type))))
+  (testing "leaves keys absent from the entity unchanged"
+    (is (= {:entity/name "flour"}
+           (utils/apply-keyword->db-str {:entity/name "flour"} :entity/type))))
+  (testing "applies conversion to multiple keys"
+    (is (= {:entity/type "mass/kg" :entity/unit "mass/g"}
+           (utils/apply-keyword->db-str {:entity/type :mass/kg :entity/unit :mass/g}
+                                        :entity/type :entity/unit)))))
+
+(deftest end-time-test
+  (let [now (ZonedDateTime/now)]
+    (testing ":duration/day adds days"
+      (is (= (.plusDays now 3) (utils/end-time now 3 :duration/day))))
+    (testing ":duration/week adds weeks"
+      (is (= (.plusWeeks now 2) (utils/end-time now 2 :duration/week))))
+    (testing ":duration/month adds months"
+      (is (= (.plusMonths now 1) (utils/end-time now 1 :duration/month))))))
+
+(deftest remove-nil-keys-test
+  (testing "removes top-level nil values"
+    (is (= {:a 1} (utils/remove-nil-keys {:a 1 :b nil}))))
+  (testing "removes nil values recursively in nested maps"
+    (is (= {:a {:b 2}} (utils/remove-nil-keys {:a {:b 2 :c nil}}))))
+  (testing "removes nil values inside collections"
+    (is (= {:a [{:b 1}]} (utils/remove-nil-keys {:a [{:b 1 :c nil}]}))))
+  (testing "empty map returns empty map"
+    (is (= {} (utils/remove-nil-keys {}))))
+  (testing "non-map scalars are returned as-is"
+    (is (= 42 (utils/remove-nil-keys 42)))
+    (is (= "hello" (utils/remove-nil-keys "hello")))))
+
+(deftest doall-deep-test
+  (testing "realizes lazy sequences inside a map"
+    (let [result (utils/doall-deep {:a (map inc [1 2 3])})]
+      (is (vector? (:a result)))
+      (is (= [2 3 4] (:a result)))))
+  (testing "realizes nested lazy sequences"
+    (let [result (utils/doall-deep [(map inc [1 2])])]
+      (is (vector? result))
+      (is (= [[2 3]] result))))
+  (testing "scalars pass through unchanged"
+    (is (= 5 (utils/doall-deep 5)))
+    (is (= "hi" (utils/doall-deep "hi")))))
+
+(deftest production-manager?-test
+  (testing "returns truthy when the request has the manage:production permission"
+    (let [request {:claims {"https://api.pigeon-scoops.com/perms" ["manage:production" "view:grocery"]}}]
+      (is (utils/production-manager? request))))
+  (testing "returns falsy when the permission is absent"
+    (let [request {:claims {"https://api.pigeon-scoops.com/perms" ["view:grocery"]}}]
+      (is (not (utils/production-manager? request)))))
+  (testing "returns falsy when perms key is missing"
+    (is (not (utils/production-manager? {:claims {}})))))
 
 (deftest combine-amounts-test
   (testing "A list of amounts can be combined by discriminant keys and unit type"
