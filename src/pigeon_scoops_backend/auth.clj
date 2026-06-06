@@ -21,7 +21,7 @@
 (defmethod ig/init-key :auth/auth0 [_ config]
   config)
 
-(defn get-management-token [{:keys [management-client-id management-client-secret]}]
+(defn get-management-token! [{:keys [management-client-id management-client-secret]}]
   (->> {:content-type  :json
         :cookie-policy :standard
         :body          (m/encode "application/json"
@@ -36,12 +36,12 @@
 (defn delete-user! [{:keys [skip-auth0-delete?] :as auth} uid]
   (if skip-auth0-delete?
     {:status 204}
-    (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
+    (->> {:headers {"Authorization" (str "Bearer " (get-management-token! auth))}}
          (http/delete
           (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid)))))
 
 (defn create-user! [auth {:keys [connection email password]}]
-  (let [token (get-management-token auth)]
+  (let [token (get-management-token! auth)]
     (->> {:headers          {"Authorization" (str "Bearer " token)}
           :throw-exceptions false
           :cookie-policy    :standard
@@ -53,26 +53,26 @@
          (http/post "https://pigeon-scoops.us.auth0.com/api/v2/users")
          (m/decode-response-body))))
 
-(defn get-roles [token]
+(defn get-roles! [token]
   (->> {:headers       {"Authorization" (str "Bearer " token)}
         :cookie-policy :standard
         :content-type  :json}
        (http/get "https://pigeon-scoops.us.auth0.com/api/v2/roles")
        (m/decode-response-body)))
 
-(defn get-role-ids [token role-names]
-  (->> (get-roles token)
+(defn get-role-ids! [token role-names]
+  (->> (get-roles! token)
        (filter #((set role-names) (:name %)))
        (map :id)))
 
-(defn get-users [auth]
-  (->> {:headers {"Authorization" (str "Bearer " (get-management-token auth))}}
+(defn get-users! [auth]
+  (->> {:headers {"Authorization" (str "Bearer " (get-management-token! auth))}}
        (http/get "https://pigeon-scoops.us.auth0.com/api/v2/users")
        (m/decode-response-body)))
 
 (defn get-roles->uids! [auth]
-  (let [token (get-management-token auth)
-        roles (get-roles token)]
+  (let [token (get-management-token! auth)
+        roles (get-roles! token)]
     (->> roles
          (map #(vector (-> % :name keyword)
                        (->> {:headers {"Authorization" (str "Bearer " token)}
@@ -84,7 +84,7 @@
          (into {}))))
 
 (defn update-roles! [auth uid roles]
-  (let [token (get-management-token auth)
+  (let [token (get-management-token! auth)
         current-roles (->> {:headers {"Authorization" (str "Bearer " token)}
                             :cookie-policy :standard
                             :content-type :json}
@@ -102,7 +102,7 @@
                                  :content-type     :json
                                  :throw-exceptions false
                                  :body             (m/encode "application/json"
-                                                             {:roles (get-role-ids token (map name roles))})}
+                                                             {:roles (get-role-ids! token (map name roles))})}
                                 (method (str "https://pigeon-scoops.us.auth0.com/api/v2/users/" uid "/roles"))
                                 :status
                                 (= 204))

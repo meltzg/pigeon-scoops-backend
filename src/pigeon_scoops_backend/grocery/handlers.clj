@@ -6,7 +6,7 @@
 
 (defn list-all-groceries [db]
   (fn [_]
-    (rr/response (vec (grocery-db/find-all-groceries db)))))
+    (rr/response (vec (grocery-db/find-all-groceries! db)))))
 
 (defn create-grocery! [db]
   (fn [request]
@@ -19,7 +19,7 @@
 (defn retrieve-grocery [db]
   (fn [request]
     (let [grocery-id (-> request :parameters :path :grocery-id)
-          grocery (grocery-db/find-grocery-by-id db grocery-id)]
+          grocery (grocery-db/find-grocery-by-id! db grocery-id)]
       (if grocery
         (rr/response (update grocery :grocery/units vec))
         (rr/not-found {:type    "grocery-not-found"

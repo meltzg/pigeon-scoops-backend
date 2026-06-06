@@ -1,16 +1,16 @@
 (ns pigeon-scoops-backend.recipe.handlers
-  (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id]]
+  (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id!]]
             [pigeon-scoops-backend.grocery.transforms :refer [grocery-for-amount]]
             [pigeon-scoops-backend.recipe.db :as recipe-db]
             [pigeon-scoops-backend.recipe.transforms :as transforms]
             [pigeon-scoops-backend.responses :as responses]
-            [pigeon-scoops-backend.utils :refer [with-connection]]
+            [pigeon-scoops-backend.utils :refer [with-connection!]]
             [ring.util.response :as rr])
   (:import (java.util UUID)))
 
 (defn list-all-recipes [db]
   (fn [_]
-    (let [recipes (->> (recipe-db/find-all-recipes db false)
+    (let [recipes (->> (recipe-db/find-all-recipes! db false)
                        (map transforms/anonymize-mystery-recipe))]
       (rr/response (doall recipes)))))
 
@@ -29,7 +29,7 @@
                                            :parameters
                                            :query)
           recipe (transforms/anonymize-mystery-recipe
-                  (recipe-db/find-recipe-by-id db recipe-id))
+                  (recipe-db/find-recipe-by-id! db recipe-id))
           scaled-recipe (transforms/scale-recipe recipe amount amount-unit)]
       (cond (not= (nil? amount) (nil? amount-unit))
             (rr/bad-request {:type    "invalid-amount"
@@ -118,18 +118,18 @@
 
 (defn retrieve-recipe-bom [db]
   (fn [request]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [recipe-id (-> request :parameters :path :recipe-id)
               {:keys [amount amount-unit]} (-> request
                                                :parameters
                                                :query)
-              ingredient-bom (recipe-db/ingredient-bom db {:recipe/id          recipe-id
-                                                           :recipe/amount      amount
-                                                           :recipe/amount-unit amount-unit})
+              ingredient-bom (recipe-db/ingredient-bom! db {:recipe/id          recipe-id
+                                                            :recipe/amount      amount
+                                                            :recipe/amount-unit amount-unit})
               grocery-bom (map #(update (grocery-for-amount
-                                         (find-grocery-by-id db (:ingredient/ingredient-grocery-id %))
+                                         (find-grocery-by-id! db (:ingredient/ingredient-grocery-id %))
                                          (:ingredient/amount %)
                                          (:ingredient/amount-unit %))
                                         :grocery/units

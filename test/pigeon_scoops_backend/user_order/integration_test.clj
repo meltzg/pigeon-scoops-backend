@@ -278,7 +278,7 @@
                                         :status/draft :status/canceled}
                                     (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
-                            (order-db/find-all-order-items db order-id))]
+                            (order-db/find-all-order-items! db order-id))]
         (is (every? #(= (:order-item/status %) :status/canceled)
                     (get items true)))
         (is (every? #(= (:order-item/status %) :status/draft)
@@ -296,7 +296,7 @@
                                         :status/draft :status/canceled}
                                     (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
-                            (order-db/find-all-order-items db order-id))]
+                            (order-db/find-all-order-items! db order-id))]
         (is (every? #(= (:order-item/status %) :status/in-progress)
                     (get items true)))
         (is (every? #(= (:order-item/status %) :status/draft)
@@ -315,7 +315,7 @@
                                         :status/draft :status/canceled}
                                     (first recipe-ids))
       (let [items (group-by #(= (:order-item/recipe-id %) (first recipe-ids))
-                            (order-db/find-all-order-items db order-id))]
+                            (order-db/find-all-order-items! db order-id))]
         (is (every? #(= (:order-item/status %) :status/complete)
                     (get items true)))
         (is (every? #(= (:order-item/status %) :status/draft)
@@ -362,7 +362,7 @@
     (testing "in progress are moved to complete. Other items are not"
       (is (= (:status (ts/test-endpoint :post (str "/v1/production/" recipe-id) {:use-auth? true}))
              204))
-      (let [updated-items (map (partial order-db/find-order-item-by-id db) order-item-ids)]
+      (let [updated-items (map (partial order-db/find-order-item-by-id! db) order-item-ids)]
         (are [updated-item expected-status]
              (= (:order-item/status updated-item) expected-status)
           (first updated-items) :status/complete

@@ -1,13 +1,13 @@
 (ns pigeon-scoops-backend.account.handlers
   (:require [pigeon-scoops-backend.account.db :as account-db]
             [pigeon-scoops-backend.auth :as auth0]
-            [pigeon-scoops-backend.utils :refer [with-connection]]
+            [pigeon-scoops-backend.utils :refer [with-connection!]]
             [ring.util.response :as rr]
             [ring.util.codec :refer [form-decode]]))
 
 (defn get-accounts! [auth db]
   (fn [_]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [accounts (account-db/find-all-accounts! db)
@@ -24,11 +24,11 @@
 
 (defn create-account! [db]
   (fn [request]
-    (with-connection
+    (with-connection!
       db
       (fn [db]
         (let [{:keys [sub picture] :as claims} (:claims request)
-              existing-account (account-db/find-account-by-id db sub)]
+              existing-account (account-db/find-account-by-id! db sub)]
           (if existing-account
             (rr/status 204)
             (do

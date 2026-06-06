@@ -6,7 +6,7 @@
             [integrant.core :as ig]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.user-order.db :as order-db]
-            [pigeon-scoops-backend.utils :refer [end-time with-connection load-config init-system]]
+            [pigeon-scoops-backend.utils :refer [end-time with-connection! load-config! init-system!]]
             [tea-time.core :as tt]
             [pigeon-scoops-backend.db])
   (:import (java.time ZonedDateTime)
@@ -20,13 +20,13 @@
 
 (defn accept-orders! [jdbc-url]
   (log/info "Accepting orders on expired menus at" (.toString (ZonedDateTime/now)))
-  (with-connection
+  (with-connection!
     jdbc-url
     (fn [db]
-      (let [expired-menus (->> (menu-db/find-all-menus db)
+      (let [expired-menus (->> (menu-db/find-all-menus! db)
                                (filter #(> (.toEpochSecond (ZonedDateTime/now))
                                            (.getEpochSecond (.toInstant (:menu/end-time %))))))
-            recipes-to-accept (->> (menu-db/find-active-menu-items db)
+            recipes-to-accept (->> (menu-db/find-active-menu-items! db)
                                    (filter #((set (map :menu/id expired-menus)) (:menu-item/menu-id %)))
                                    (mapv :menu-item/recipe-id))]
         (when (seq recipes-to-accept)
@@ -38,7 +38,8 @@
                     (map #(menu-db/update-menu! db (assoc % :menu/active false)))))
         (dorun (->> expired-menus
                     (filter :menu/repeats)
-                    (map #(menu-db/update-menu! db (assoc % :menu/end-time (end-time (:menu/duration %)
+                    (map #(menu-db/update-menu! db (assoc % :menu/end-time (end-time (ZonedDateTime/now)
+                                                                                     (:menu/duration %)
                                                                                      (:menu/duration-type %)))))))))))
 
 (defmethod ig/init-key :db-tasks/migration [_ {:keys [jdbc-url]}]
@@ -73,8 +74,8 @@
       (let [system (-> opts
                        :options
                        :config-file
-                       (load-config)
-                       (init-system))
+                       (load-config!)
+                       (init-system!))
             task (->> opts
                       :options
                       :task
