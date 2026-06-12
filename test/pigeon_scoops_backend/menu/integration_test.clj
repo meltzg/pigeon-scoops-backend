@@ -109,8 +109,9 @@
         (is (= status 204))))
     (testing "create menu item size"
       (let [{:keys [status body]} (ts/test-endpoint :post (str "/v1/menus/" @menu-id "/items/" @menu-item-id "/sizes")
-                                                    {:use-auth? true :body {:menu-item-size/amount       4
-                                                                            :menu-item-size/amount-unit  :mass/lb}})]
+                                                    {:use-auth? true :body {:menu-item-size/amount             4
+                                                                            :menu-item-size/amount-unit        :mass/lb
+                                                                            :menu-item-size/available-quantity 10}})]
         (reset! menu-item-size-id (:id body))
         (is (= status 201) (str "body " body))))
     (testing "update menu item size"
@@ -118,6 +119,12 @@
                                                         {:use-auth? true :body {:menu-item-size/amount       3
                                                                                 :menu-item-size/amount-unit  :volume/gal}})]
         (is (= status 204) (str resp))))
+    (testing "retrieve menu includes available-quantity on sizes"
+      (let [{:keys [status body]} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
+                                                    {:use-auth? true})
+            sizes (->> body :menu/items (mapcat :menu-item/sizes))]
+        (is (= status 200))
+        (is (every? #(contains? % :menu-item-size/available-quantity) sizes))))
     (testing "retrieve full menu"
       (let [{:keys [status]} (ts/test-endpoint :get (str "/v1/menus/" @menu-id)
                                                {:use-auth? true})]

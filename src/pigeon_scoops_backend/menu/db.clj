@@ -150,3 +150,27 @@
                              (h/where [:in :menu-item-size/id %])
                              (hsql/format))))
          (map #(apply-db-str->keyword % :menu-item-size/amount-unit)))))
+
+(defn decrement-menu-item-size-available-quantity! [db menu-item-size-id qty]
+  (-> (jdbc/execute-one! db
+                         (hsql/format
+                          (-> (h/update :menu-item-size)
+                              (h/set {:available-quantity [:case
+                                                           [:>= :available-quantity qty]
+                                                           [:- :available-quantity qty]
+                                                           :else :available-quantity]})
+                              (h/where [:= :id menu-item-size-id]
+                                       [:or [:< :available-quantity 0]
+                                        [:>= :available-quantity qty]]))))
+      ::jdbc/update-count
+      pos?))
+
+(defn increment-menu-item-size-available-quantity! [db menu-item-size-id qty]
+  (jdbc/execute-one! db
+                     (hsql/format
+                      (-> (h/update :menu-item-size)
+                          (h/set {:available-quantity [:case
+                                                       [:>= :available-quantity 0]
+                                                       [:+ :available-quantity qty]
+                                                       :else :available-quantity]})
+                          (h/where [:= :id menu-item-size-id])))))
