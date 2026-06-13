@@ -56,19 +56,21 @@
                     :summary    "delete menu-item"}}]
       ["/sizes" {:middleware [[(mw/wrap-with-permission :edit/menu)]]}
        ["" {:post   {:handler    (menu/create-menu-item-size! db)
-                     :parameters {:body {:menu-item-size/amount       number?
-                                         :menu-item-size/amount-unit  (s/and keyword? (set (concat common/other-units
-                                                                                                   (keys mass/conversion-map)
-                                                                                                   (keys volume/conversion-map))))}}
+                     :parameters {:body {:menu-item-size/amount                        number?
+                                         :menu-item-size/amount-unit                   (s/and keyword? (set (concat common/other-units
+                                                                                                                    (keys mass/conversion-map)
+                                                                                                                    (keys volume/conversion-map))))
+                                         (ds/opt :menu-item-size/available-quantity)   integer?}}
                      :responses  {201 {:body {:id uuid?}}}
                      :summary    "Create menu-item size"}}]
        ["/:menu-item-size-id"
         {:parameters {:path {:menu-item-size-id uuid?}}
          :put    {:handler    (menu/update-menu-item-size! db)
-                  :parameters {:body {:menu-item-size/amount       number?
-                                      :menu-item-size/amount-unit  (s/and keyword? (set (concat common/other-units
-                                                                                                (keys mass/conversion-map)
-                                                                                                (keys volume/conversion-map))))}}
+                  :parameters {:body {:menu-item-size/amount                        number?
+                                      :menu-item-size/amount-unit                   (s/and keyword? (set (concat common/other-units
+                                                                                                                 (keys mass/conversion-map)
+                                                                                                                 (keys volume/conversion-map))))
+                                      (ds/opt :menu-item-size/available-quantity)   integer?}}
                   :responses  {204 {:body nil?}}
                   :summary    "Update menu-item size"}
          :delete {:handler    (menu/delete-menu-item-size! db)

@@ -8,3 +8,6 @@
     (->> order-items
          (map :order-item/status)
          (apply max-key #(- (.indexOf status %))))))
+
+(defn can-submit? [available-quantity qty]
+  (or (neg? available-quantity) (>= available-quantity qty)))

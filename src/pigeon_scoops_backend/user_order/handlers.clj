@@ -1,5 +1,6 @@
 (ns pigeon-scoops-backend.user-order.handlers
-  (:require [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id!]]
+  (:require [next.jdbc :as jdbc]
+            [pigeon-scoops-backend.grocery.db :refer [find-grocery-by-id!]]
             [pigeon-scoops-backend.grocery.transforms :refer [grocery-for-amount]]
             [pigeon-scoops-backend.menu.db :as menu-db]
             [pigeon-scoops-backend.recipe.db :as recipe-db]
@@ -168,9 +169,8 @@
                              :body
                              :order-item/status)
               production-manager? (production-manager? request)
-              curr-item-status (->> order-item-id
-                                    (order-db/find-order-item-by-id! db)
-                                    :order-item/status)
+              curr-item (order-db/find-order-item-by-id! db order-item-id)
+              curr-item-status (:order-item/status curr-item)
               patch {:order-item/id order-item-id
                      :order-item/order-id order-id
                      :order-item/status new-status}]
@@ -188,9 +188,25 @@
                               :type    :authorization-required})
                 (rr/status 401))
             :else
-            (if (order-db/update-order-item! db patch)
-              (rr/status 204)
-              (rr/bad-request patch))))))))
+            (let [size-id (:order-item/menu-item-size-id curr-item)
+                  size-qty (some-> (:order-item/menu-item-size-quantity curr-item) long)]
+              (jdbc/with-transaction+options [conn db]
+                (cond
+                  (and (= new-status :status/submitted)
+                       size-id size-qty
+                       (not (menu-db/decrement-menu-item-size-available-quantity! conn size-id size-qty)))
+                  (rr/bad-request {:type    "insufficient-quantity"
+                                   :message "Not enough quantity available for this size"
+                                   :data    {:menu-item-size-id size-id}})
+                  :else
+                  (do
+                    (when (and (= curr-item-status :status/submitted)
+                               (= new-status :status/draft)
+                               size-id size-qty)
+                      (menu-db/increment-menu-item-size-available-quantity! conn size-id size-qty))
+                    (if (order-db/update-order-item! conn patch)
+                      (rr/status 204)
+                      (rr/bad-request patch))))))))))))
 
 (defn delete-order-item! [db]
   (fn [request]
@@ -201,18 +217,26 @@
                                                    :parameters
                                                    :path
                                                    (select-keys [:order-id :order-item-id]))
-              order-item-status (->> order-item-id
-                                     (order-db/find-order-item-by-id! db)
-                                     :order-item/status)]
+              curr-item (order-db/find-order-item-by-id! db order-item-id)
+              order-item-status (:order-item/status curr-item)]
           (cond
             (terminal? order-item-status)
             (rr/bad-request {:type    "non-deletable-status"
                              :message (str "Cannot delete an order item in a terminal state. " order-item-status " is not terminal")
                              :data    order-item-status})
-            (order-db/delete-order-item! db {:id order-item-id :order-id order-id})
-            (rr/status 204)
             :else
-            (rr/bad-request (-> request :parameters :body))))))))
+            (jdbc/with-transaction+options [conn db]
+              (if (order-db/delete-order-item! conn {:id order-item-id :order-id order-id})
+                (do
+                  (when (and (= order-item-status :status/submitted)
+                             (:order-item/menu-item-size-id curr-item)
+                             (:order-item/menu-item-size-quantity curr-item))
+                    (menu-db/increment-menu-item-size-available-quantity!
+                     conn
+                     (:order-item/menu-item-size-id curr-item)
+                     (long (:order-item/menu-item-size-quantity curr-item))))
+                  (rr/status 204))
+                (rr/bad-request (-> request :parameters :body))))))))))
 
 (defn retrieve-order-bom [db]
   (fn [request]
